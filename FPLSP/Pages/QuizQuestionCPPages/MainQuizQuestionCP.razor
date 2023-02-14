@@ -1,0 +1,124 @@
+﻿@page "/MainQuizQuestionsCP"
+@using FPLSP.Components.QuizQuestionCPComponents
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos.QuizQuestionCPDtos
+@using FPLSP.Server.Infrastructure.ViewModels.QuizQuestionCPVm
+
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+<div class="row">
+    <div class="col-md-4">
+        <h2>Danh Sách QuizQuestion</h2>
+    </div>
+    
+</div>
+<div class="row mt-3">
+    <div class="col-md-2">
+        <a class="btn btn-outline-primary" href="/CreateQuizQuestionCP">Thêm QuizQuestion</a>
+    </div>
+    <div class="col-md-2"></div>
+    <div class="col-md-8">
+        <FormSearchQuizQuestionCP OnSearch="SearchQuizQuestionCP"></FormSearchQuizQuestionCP>
+    </div>
+</div>
+<div class="row">
+    @if (ListQuizQuestionCP != null)
+    {
+        <table class="table table-hover align-middle mt-3">
+            <thead class="table-success">
+                <tr>
+                    <th>Form câu hỏi</th>
+                    <th>Mã Câu Hỏi</th>
+                    <th>Tên Câu Hỏi</th>
+                    <th>Chức năng</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in ListQuizQuestionCP)
+                {
+                    <tr>
+                        <td>@item.QuizQuestionForm-@item.QuestionTypeName</td>
+                        <td>@item.QuestionCode</td>
+                        <td>@item.QuestionName</td>
+                        <td>
+                            <div class="dropdown">
+                                <a class="btn btn-secondary dropdown-toggle" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                                    <li><a class="dropdown-item" @onclick="() => RedirectToUpdate(item.Id)">Cập nhật</a></li>
+                                    <li><a class="dropdown-item" @onclick="() => RedirectToDelete(item.Id)">Xóa</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <span>
+            Loading......
+        </span>
+    }
+</div>
+<div class="row">
+    <div class="col-11 align-self-center">
+        <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+    </div>
+</div>
+@code {
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    public List<QuizQuestionCPDtos> ListQuizQuestionCP { get; set; } = new List<QuizQuestionCPDtos>();
+
+    private PagingParameters _quizquestionParameters = new PagingParameters();
+    public MetaData MetaData { get; set; } = new MetaData();
+    public string Error { get; set; }
+    [Inject] public IQuizQuestionCPRepo _quizQuestionCPClient { get; set; }
+
+    private ListQuizQuestionSearch QuizQuestionCPListSearch = new ListQuizQuestionSearch();
+
+    protected async override Task OnInitializedAsync()
+    {
+        await GetTasks();
+    }
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _quizQuestionCPClient.GetQuizQuestionList(QuizQuestionCPListSearch);
+            ListQuizQuestionCP = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+    private void RedirectToUpdate(Guid id)
+    {
+
+        var url = Path.Combine("/UpdateQuizQuestionCP/", id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task RedirectToDelete(Guid id)
+    {
+        var url = Path.Combine("/DeleteQuizQuestionCP/", id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        QuizQuestionCPListSearch.PageNumber = page;
+        await GetTasks();
+    }
+    public async Task SearchQuizQuestionCP(ListQuizQuestionSearch quizquestion)
+    {
+        QuizQuestionCPListSearch = quizquestion;
+        await GetTasks();
+    }
+}

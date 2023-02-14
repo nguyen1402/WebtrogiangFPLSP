@@ -1,0 +1,125 @@
+﻿ @page "/UpdateQuizQuestionCP/{Id}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.KindOfQuestionCPDtos
+@using FPLSP.Server.Domain.Enums
+@using FPLSP.Server.Infrastructure.ViewModels.KìnOfQuestionCPVm
+@using FPLSP.Server.Infrastructure.ViewModels.QuizQuestionCPVm
+
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<h3>Cập nhật QuizQuestion</h3>
+<div class="row mt-3 mb-3">
+    <div class="form-group pt-2 col-12">
+        <div class="row pt-2 col-1 ms-0 text-right">
+            <a href="/MainQuizQuestionsCP" class="btn btn-outline-danger">Quay Lại</a>
+        </div>
+    </div>
+</div>
+@if (ShowAuthError)
+{
+    <div class="alert alert-danger" role="alert">
+        @Error
+    </div>
+}
+<EditForm Model="QuizQuestion" OnValidSubmit="Update" class="card card-body bg-light mt-5">
+    <DataAnnotationsValidator />
+    <div class="form-group">
+        <div class="row">
+            <div class="form-group pt-2 col-md-6">
+                <label for="name" class="col-md-2 col-form-label">Loại Câu Hỏi:</label>
+                <div class="col-md-12">
+                    <InputSelect id="name" class="form-control" @bind-Value="QuizQuestion.KindoOfQuestionId">
+                        <option value="">Loại câu hỏi</option>
+                        @foreach (var item in ListKOQCP)
+                        {
+                            <option value="@item.Id">@item.QuestionForm - @item.QuestionTypeName</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => QuizQuestion.KindoOfQuestionId)" />
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-6">
+                <label for="name" class="col-md-2 col-form-label">Mã Câu hỏi:</label>
+                <div class="col-md-12">
+                    <InputText id="name" class="form-control" @bind-Value="QuizQuestion.QuestionCode" />
+                    <ValidationMessage For="@(() => QuizQuestion.QuestionCode)" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-6">
+                <label for="name" class="col-md-2 col-form-label">Tên Câu Hỏi:</label>
+                <div class="col-md-12">
+                    <InputText id="name" class="form-control" @bind-Value="QuizQuestion.QuestionName"/>
+                    <ValidationMessage For="@(() => QuizQuestion.KindoOfQuestionId)" />
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-6">
+                <label for="name" class="col-md-2 col-form-label">Trạng thái:</label>
+                <div class="col-md-12">
+                    <InputSelect id="name" class="form-control" @bind-Value="QuizQuestion.Status">
+                        <option value="0">Đang hoạt động</option>
+                        <option value="1">Ngưng hoạt động</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => QuizQuestion.QuestionCode)" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+        </div>
+        <div class="row">
+        </div>
+    </div>
+
+    <div class="row pt-2">
+        <div class="col-md-12 text-center">
+            <button type="submit" class="btn btn-success">Cập Nhật</button>
+        </div>
+    </div>
+</EditForm>
+@code {
+    private ListKOQCPSearch KOQCPListSearch = new ListKOQCPSearch();
+    [Inject] public NavigationManager Navigation { get; set; }
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+    public List<KindOfQuestionCPDtos> ListKOQCP { get; set; } = new List<KindOfQuestionCPDtos>();
+    public QuizQuestionCPVm QuizQuestion { get; set; } = new QuizQuestionCPVm();
+    [Inject] public IQuizQuestionCPRepo _quizQuestionCPClient { get; set; }
+    [Inject] public IKindoOfQuestionCPRepo _koqCPClient { get; set; }
+    [Parameter]
+    public string Id { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        var pagingResponse = await _koqCPClient.GetKOQList(KOQCPListSearch);
+        ListKOQCP = pagingResponse.Items;
+        QuizQuestion = await _quizQuestionCPClient.GetQuizQuestionCPbyId(Guid.Parse(Id));
+        QuizQuestion.KindoOfQuestionId = QuizQuestion.KindoOfQuestionId;
+        QuizQuestion.QuestionName = QuizQuestion.QuestionName;
+        QuizQuestion.QuestionCode = QuizQuestion.QuestionCode;
+    }
+    private async Task Update()
+    {
+
+        ShowAuthError = false;
+        var result = await _quizQuestionCPClient.UpdateQuizQuestionCP(Guid.Parse(Id), QuizQuestion);
+
+        if (result != 1)
+        {
+            Error = "Lỗi";
+            ShowAuthError = true;
+            Navigation.NavigateTo("/UpdateQuizQuestionCP");
+        }
+        else
+        {
+            Navigation.NavigateTo("/MainQuizQuestionsCP");
+
+        }
+
+
+    }
+}
+
+
+
+
+

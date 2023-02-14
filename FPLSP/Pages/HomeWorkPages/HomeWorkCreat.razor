@@ -1,0 +1,93 @@
+﻿@page "/Homeworkcreate/{idclass}/{subjectId}/{idlesson}/{lecuId}/{specializedId}"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.HomeWork
+
+<div class="row pt-3">
+
+    <h3>Thêm link bài tập</h3>
+
+    @if (ShowAuthError)
+    {
+        <div class="alert alert-danger" role="alert">
+            @Error
+        </div>
+    }
+    <EditForm Model="sumit" OnValidSubmit="Create" class="card card-body bg-light mt-5">
+        <DataAnnotationsValidator />
+        <div class="row">
+            <div class="form-group pt-2 col-md-6">
+                <div class="col-md-12">
+                    <InputText placeholder="Nhập link bài tập" class="form-control" @bind-Value="sumit.LinkHomeWork"></InputText>
+                    <ValidationMessage For="@(() => sumit.LinkHomeWork)" />
+                </div>
+            </div>
+            <div class="form-group row pt-2 col-md-6">
+                <div class="col-3">
+                    <button type="submit" class="btn btn-success">Tạo mới</button>
+                </div>
+                <div class="col-3">
+                    <a @onclick="()=>Quaylai()" class="btn btn-danger">Quay Lại</a>
+                </div>
+            </div>
+
+        </div>
+    </EditForm>
+
+</div>
+@code{
+    [Parameter]
+        public string specializedId { get; set; }
+        [Parameter]
+        public string lecuId { get; set; }
+        [Parameter]
+        public string subjectId { get; set; }
+
+        [Parameter]
+        public string idclass { get; set; }
+
+        [Parameter]
+        public string idlesson { get; set; }
+
+        private HomeWorkCreatVM sumit = new HomeWorkCreatVM();
+        [Inject]
+        public NavigationManager Navigation { get; set; }
+
+        [Inject]
+        public IHomeWorkClient _iHomeWorkClient { get; set; }
+        
+        [Inject] private IToastService _toastService { get; set; }
+        public bool ShowAuthError { get; set; }
+        [Parameter]
+        public string Error { get; set; }
+
+
+        private async Task Create() { 
+            ShowAuthError = false;
+            sumit.IdSubject = Guid.Parse(subjectId);
+            sumit.IdClass = Guid.Parse(idclass);
+            sumit.IdLesson = Guid.Parse(idlesson);
+            sumit.IdUser = lecuId;
+            var result = await _iHomeWorkClient.CreateCP(sumit);
+
+            if (result != 1)
+            {
+                _toastService.ShowError("Mỗi 1 bài học chỉ được phép có 1 link giao bài hoặc Link bài tập đã tồn tại !");
+                Navigation.NavigateTo($"/Homeworkcreate/{idclass}/{subjectId}/{idlesson}/{lecuId}/{specializedId}");
+            }
+            else
+            {
+                _toastService.ShowSuccess("Thêm thành công");
+                Navigation.NavigateTo($"/HomeWorklist/{idclass}/{lecuId}/{subjectId}/{specializedId}/{idlesson}");
+            }
+        }
+       
+        private void ClearForm()
+        {
+            sumit.LinkHomeWork = "";
+        }
+        private void Quaylai()
+        {
+            Navigation.NavigateTo($"/HomeWorklist/{idclass}/{lecuId}/{subjectId}/{specializedId}/{idlesson}");
+        }
+}

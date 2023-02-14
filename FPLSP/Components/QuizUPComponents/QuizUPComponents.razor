@@ -1,0 +1,48 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels.QuizUp
+
+
+<EditForm Model="@_quizCPListSearch" OnSubmit=@SearchForm>
+    <div class="row">
+        <div class="col-4">
+            <InputSelect @bind-Value="_quizCPListSearch.Status" class="form-select">
+                <option value="">Tất cả</option>
+                <option value="0">Đang hoạt động</option>
+                <option value="1">Đã dừng hoạt động</option>
+            </InputSelect>
+        </div>
+
+        <div class="col-4 ps-0 pe-0">
+            <InputText placeholder="Nhập tên Quiz" class="form-control" @bind-Value="_quizCPListSearch.Search"></InputText>
+        </div>
+        <div class="col-4">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+            <button class="btn btn-outline-success ms-2" @onclick="() => ClearSearch()">Làm mới</button>
+        </div>
+
+    </div>
+</EditForm>
+@code{
+    [Parameter]
+        public EventCallback<ListQuizUpSearch> OnSearch { get; set; }
+
+        private ListQuizUpSearch _quizCPListSearch = new ListQuizUpSearch();
+
+        private async Task SearchForm(EditContext context)
+        {
+            await OnSearch.InvokeAsync(_quizCPListSearch);
+        }
+        private void LeverSearch(int? a,string search)
+        {
+            _quizCPListSearch.Status = a;
+            _quizCPListSearch.Search = search;
+            SearchForm(null);
+        }
+        public async Task ClearSearch()
+        {
+
+            _quizCPListSearch.Status = null;
+            _quizCPListSearch.Search = "";
+            _quizCPListSearch.PageNumber = 1;
+            await SearchForm(null);
+        }
+}

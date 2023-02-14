@@ -1,0 +1,163 @@
+﻿@page "/specialized"
+
+@using FPLSP.Components
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Specialized
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+<div class="row pt-3">
+    <div class="col-md-4">
+        <h3>Chuyên ngành</h3>
+    </div>
+    <div class="col-md-2 float-end">
+        <a class="btn btn-outline-primary" href="/createspecialized">+ Chuyên ngành</a>
+    </div>
+</div>
+        @if (CPListAll.Where(c => c.Level == 0).ToList() == null || CPListAll == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <div class="row">
+        @if (CPListAll.Where(c => c.Level == 0).ToList().Count == 0)
+        {
+            <span>Danh sách chuyên ngành rỗng</span>
+        }
+        else
+        {
+            <div class="col-md-2">
+            </div>
+
+            <div class="col-md-8">
+
+                <MudPaper Width="100%" Elevation="0">
+                    <MudTreeView T="string" ExpandOnClick="true" Hover="true">
+                        @foreach (var item in CPListAll.Where(c => c.Level == 0).ToList())
+                        {
+                            <MudTreeViewItem Value="@(item.SpecializationName)" @onclick="() => RedirectToSubject(item.Id)" Icon="@Icons.Custom.FileFormats.FileVideo" EndText="@CPListAll.Where(c => c.Level == 1 && c.IdSpeciality == item.Id).ToList().Count().ToString()">
+                                @foreach (var item1 in CPListAll.Where(c => c.Level == 1 && c.IdSpeciality == item.Id).ToList())
+                    {
+                        <MudTreeViewItem Value="@(item1.SpecializationName)" @onclick="() => RedirectToSubject(item1.Id)" Icon="@Icons.Custom.FileFormats.FileDocument" EndText="@CPListAll.Where(c => c.Level == 2 && c.IdSpeciality == item1.Id).ToList().Count().ToString()">
+                            @foreach (var item2 in CPListAll.Where(c => c.Level == 2 && c.IdSpeciality == item1.Id).ToList())
+                        {
+                            <MudTreeViewItem Value="@(item2.SpecializationName)" @onclick="() => RedirectToSubject(item2.Id)" Icon="@Icons.Custom.FileFormats.FileDocument" EndText="@CPListAll.Where(c => c.Level == 2 && c.IdSpeciality == item2.Id).ToList().Count().ToString()" />
+                        }
+                    </MudTreeViewItem>
+                    }
+                </MudTreeViewItem>
+                        }
+                    </MudTreeView>
+                </MudPaper>
+            </div>
+
+            <div class="col-md-2">
+            </div>
+        }
+    </div>
+}
+@*
+    <td class="align-middle">
+    <div class="dropdown">
+    <a class="dropdown-toggle" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+    <li><a class="dropdown-item" @onclick="() => RedirectToDetails(sj.Id)">Chi tiết chuyên ngành</a></li>
+    <li><a class="dropdown-item" @onclick="() => RedirectToUpdate(sj.Id)">Cập nhật chuyên ngành</a></li>
+    <li><a class="dropdown-item" @onclick="() => RedirectToDelete(sj.Id)">Xóa chuyên ngành</a></li>
+    <li><a class="dropdown-item" @onclick="() => RedirectToSpeccializedhep(sj.Id)">Chuyên ngành hẹp</a></li>
+    </ul>
+    </div>
+    </td>*@
+
+@code {
+    public List<SpecializedDto> CPList { get; set; } = new List<SpecializedDto>();
+    public List<SpecializedDto> CPListAll { get; set; } = new List<SpecializedDto>();
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    private SpecializedListSearch _parameters = new SpecializedListSearch();
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    [Inject]
+    public ISpecializedCPRepo _iSpecializedClient { get; set; }
+
+    public string Error { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        await GetTasks();
+        await GetTasksAll();
+
+
+    }
+
+    public async Task SearchTask(SpecializedListSearch specializedListSearch)
+    {
+        _parameters = specializedListSearch;
+        await GetTasks();
+    }
+
+    private void RedirectToSubject(Guid id)
+    {
+
+        var url = Path.Combine("/subjects/", id.ToString());
+        NavigationManager.NavigateTo(url, true);
+    }
+    //private void RedirectToDetails(Guid id)
+    //{
+
+    //    var url = Path.Combine("/detailspecialized/", id.ToString());
+    //    NavigationManager.NavigateTo(url);
+    //}
+    //private void RedirectToUpdate(Guid id)
+    //{
+
+    //    var url = Path.Combine("/updatespecialized/", id.ToString());
+    //    NavigationManager.NavigateTo(url);
+    //}
+
+    //private async Task RedirectToDelete(Guid id)
+    //{
+    //    var url = Path.Combine("/deletespecialized/", id.ToString());
+    //    NavigationManager.NavigateTo(url);
+    //}
+    //private void RedirectToSpeccializedhep(Guid id)
+    //{
+
+    //    var url = Path.Combine("/specializedhep/", id.ToString());
+    //    NavigationManager.NavigateTo(url);
+    //}
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _iSpecializedClient.Gets(Guid.Empty, _parameters);
+            CPList = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+    private async Task GetTasksAll()
+    {
+        try
+        {
+            CPListAll = await _iSpecializedClient.GetAll();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _parameters.PageNumber = page;
+        await GetTasks();
+    }}

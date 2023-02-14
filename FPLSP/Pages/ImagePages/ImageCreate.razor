@@ -1,0 +1,108 @@
+﻿@page "/ImageCreate"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.ContentOfExamsCP
+@using FPLSP.Server.Infrastructure.ViewModels.ImagesCP
+
+
+<div class="row pt-3">
+    <h3>Tạo Mới Ảnh</h3>
+
+    <div class="row">
+        <div class="col-1">
+        </div>
+        <div class="d-flex justify-content-center col-10 ">
+            <EditForm Model="_Create" OnValidSubmit="Create" class="card card-body bg-light mt-5">
+                <DataAnnotationsValidator />
+                <div class="form-group">
+                    <div class="form-group row">
+                        <label for="image" class="col-md-2 col-form-label"><i class="fa-regular fa-image"></i> Hình Ảnh:</label>
+                        <div class="col-md-10">
+                            <ImageUpload OnChange="AssignImageUrl" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label"><i class="fa-regular fa-clipboard"></i> Mô Tả:</label>
+                            <div class="col-md-10">
+                                <InputText id="name" class="form-control" @bind-Value="_Create.Descriptions" />
+                                <ValidationMessage For="@(() => _Create.Descriptions)" />
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label"><i class="fa-solid fa-check"></i> Trạng thái:</label>
+                            <div class="col-md-10">
+                                <InputSelect @bind-Value="_Create.Status" class="form-control">
+                                    <option value="0">Chưa sử dụng</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+
+                   
+                    <div class="form-group row mt-2">
+                        <label for="name" class="col-md-2 col-form-label"><i class="fas fa-light fa-file-lines"></i> Nôi Dung Đề Thi:</label>
+                        <div class="col-md-10">
+                            <InputSelect class="form-control" @bind-Value="_Create.CoeId">
+                                @if (_lstCoe != null)
+                                {
+                                    @foreach (var item in _lstCoe)
+                                    {
+                                        <option value="@item.Id">@item.CoeCode - @item.Content</option>
+                                    }
+                                }
+                            </InputSelect>
+                        </div>
+                    </div>
+                </div>
+                <div class="row pt-2">
+                    <div class="col-md-6 text-center">
+                        <button type="submit" class="btn btn-primary">Tạo</button>
+                    </div>
+                    <div class="col-md-6 text-center">
+                        <a href="/ImageList" class="btn btn-danger">Quay Lại</a>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+        <div class="col-1">
+        </div>
+    </div>
+   
+</div>
+
+@code{
+    [Inject] private IImageCPRepo _imageCPRepo { get; set; }
+    [Inject] private NavigationManager _navier { get; set; }
+    private ImageCPCreateVm _Create = new ImageCPCreateVm();
+
+    protected bool IsDisabled { get; set; }
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    [Inject] private IContentOfExamCPRepo _contentOfExamCPRepo { get; set; }
+    private CoeListSearchVm _coeListSearchVm = new CoeListSearchVm();
+    private List<ContentOfExamCPDto> _lstCoe = new List<ContentOfExamCPDto>();
+    protected async override Task OnInitializedAsync()
+    {
+        await Get();
+    }
+    private async Task Get()
+    {
+
+        var pagingResponse = await _contentOfExamCPRepo.GetCoeCPList(_coeListSearchVm);
+        _lstCoe = pagingResponse.Items;
+    }
+    private async Task Create(EditContext editContext)
+    {
+
+        var result = await _imageCPRepo.CreateImageCP(_Create);
+        if (result)
+        {
+            _navier.NavigateTo("/ImageList");
+        }
+    }
+
+    private void AssignImageUrl(string imgUrl) => _Create.Path = imgUrl;
+}
+

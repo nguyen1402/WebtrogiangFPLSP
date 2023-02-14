@@ -1,0 +1,133 @@
+﻿@*@page "/detailsubject/{id}"
+@using FPLSP.Repositories
+@using FPLSP.Server.Domain.Dtos
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+@if (subject != null)
+{
+    <div class="row">
+        <div class="col-md-2"></div>
+        <div class="col-md-4">
+            <div class="card p-3">
+                <img src="@subject.Image" onerror="this.src='./css/images/Others/logoFPT.png'" class="card-img-top" alt="subject ig">
+            </div>
+        </div>
+        <div class="col-md-5">
+            <h5 class="card-title">@subject.SubjectCode - @subject.SubjectName</h5>
+            <p class="card-text" style="font-size:18px">Thời gian : @subject.StartDay.Day/@subject.StartDay.Month/@subject.StartDay.Year - @subject.EndDay.Day/@subject.EndDay.Month/@subject.EndDay.Year</p>
+            <p class="card-text" style="font-size:18px">Số buổi học : @subject.TotalOfSub</p>
+            <div class="row pb-3">
+                <div class="col-3"> <p class="card-text" style="font-size:18px">Số bài học : @subject.countLesson</p></div>
+                <div class="col-6">
+                    @if (subject.listlesson != null)
+                    {
+
+                        <div class="row">
+                            <div class="dropdown">
+                                <a class="btn btn-secondary col-md-8" style="text-decoration:none;" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Danh sách bài học
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                                    @foreach (var item in subject.listlesson)
+                                    {
+                                        <li><a class="dropdown-item" @onclick="() => RedirectToLessons(item.Id)">@item.LessonCode-@item.LessonName</a></li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+
+                    }
+                </div>
+            </div>
+            <div class="row pb-3">
+                <div class="col-3"> <p class="card-text" style="font-size:18px">Số quiz : @subject.countQuiz</p></div>
+                <div class="col-6">
+                    @if (subject.listquizs != null)
+                    {
+
+                        <div class="row">
+                            <div class="dropdown">
+                                <a class="btn btn-secondary col-8" style="text-decoration:none;" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Danh sách quiz
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                                    @foreach (var item in subject.listquizs)
+                                    {
+                                        <li><a class="dropdown-item" @onclick="() => RedirectToQuizs(item.Id)">@item.QuizName</a></li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+
+                    }
+                </div>
+            </div>
+            @if (subject.chuyennganh != null)
+            {
+
+                <p class="card-text" style="font-size:18px">
+                    <div class="col-3">Thuộc chuyên ngành:</div>
+                    @foreach (var item in subject.chuyennganh)
+                    {
+                        <p class="col-6" style="font-size:18px">@item</p>
+                    }
+                </p>
+
+            }
+            <p class="card-text" style="font-size:18px">
+                Trạng Thái:
+                @if (subject.Status == 1)
+                {
+                    <b>Đang học</b>
+                }
+                else
+                {
+                    <b>Chưa bắt đầu</b>
+                }
+            </p>
+            <div class="col-md-12 pt-2 text-center">
+                <a @onclick="()=>Quaylai()" class="btn btn-outline-danger">Quay Lại</a>
+            </div>
+        </div>
+    </div>
+    }
+    @code {
+    private SubjectDto subject;
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    [Inject]
+    ISubjectClient _iSubjectClient { get; set; }
+    [Parameter]
+    public string Id { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        subject = await _iSubjectClient.GetSubjectbyId(Guid.Parse(Id));
+    }
+    private async Task RedirectToLessons(Guid id)
+    {
+        var url = Path.Combine("/lessoncontent/", Id.ToString(), id.ToString());
+        Navigation.NavigateTo(url);
+    }
+    private async Task RedirectToQuizs(Guid id)
+    {
+        var url = Path.Combine("/quizQuesstionQuizCP/", id.ToString(), Id.ToString());
+        Navigation.NavigateTo(url);
+    }
+
+    private async Task Quaylai()
+    {
+        string x;
+        if (subject.Idspec == null)
+        {
+            x = Guid.Empty.ToString();
+        }
+        else
+        {
+            x = subject.Idspec.ToString();
+        }
+        var url = Path.Combine("/subjects/", x);
+        Navigation.NavigateTo(url);
+    }
+    }
+    *@

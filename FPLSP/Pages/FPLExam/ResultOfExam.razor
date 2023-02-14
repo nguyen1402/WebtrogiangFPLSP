@@ -1,0 +1,39 @@
+﻿@page "/resultofexaminationroom/{GetRole}/{GetIdUser}"
+
+@using AntDesign
+@using FPLSP.Server.Domain.Entities.CoresParts;
+@using Microsoft.AspNetCore.Identity;
+@inject NavigationManager NavigationManager;
+<Result Status="403"
+        Title="Phòng Thi Này Đã Kết Thúc"
+        SubTitle="Phòng thi này đã kết thúc hoặc đã bị xóa vui lòng nhấn nút quay lại !"
+        Extra="extra" />
+@code
+{
+    [Parameter]
+    public string GetIdUser { get; set; }
+    [Parameter]
+    public string GetRole { get; set; }
+    RenderFragment extra => @<Button OnClick="()=>BackToHomePage()" Type="primary">Quay Lại</Button>;
+    [Inject]
+    public UserManager<UserSignIn> userManager { get; set; }
+    private UserSignIn userSignIn = new UserSignIn();
+    protected async override Task OnInitializedAsync()
+    {
+        userSignIn = userManager.Users.ToList().Find(c => c.Id == GetIdUser);
+    }
+    public async Task BackToHomePage()
+    {
+        var isstudent = await userManager.IsInRoleAsync(userSignIn,"SV FPLExam");
+        if (isstudent)
+        {
+            NavigationManager.NavigateTo($"/loadingpage/{GetIdUser}");
+        }
+        else
+        {
+            NavigationManager.NavigateTo($"/countdownexamnination/{GetIdUser}");
+        }
+
+       
+    }
+}

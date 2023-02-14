@@ -1,0 +1,377 @@
+@page "/DetailsClassLeccu/{idClassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}"
+@using Blazored.Toast.Services
+@using FPLSP.Components.StudentCPComponents
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Dtos.StudentUPDtos
+@using FPLSP.Server.Domain.Entities.UserParts
+@using FPLSP.Server.Infrastructure.Services.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.GiaoVienTaoLop
+@using FPLSP.Server.Infrastructure.ViewModels.StudentClassUPVm
+@using FPLSP.Server.Infrastructure.ViewModels.StudentQuizUPVm
+@using FPLSP.Server.Infrastructure.ViewModels.StudentsUPVm
+@using FPLSP.Server.Infrastructure.ViewModels.Subject
+@attribute [Authorize(Roles = "LecturerFPLSP")]
+
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">Chuyên ngành: <a style="color:blue;box-shadow: 0 1px" @onclick="() => ResToSpec()">@lstSpecAll.Where(c=>c.Id == Guid.Parse(specializedId)).Select(c=>c.SpecializationName).FirstOrDefault()</a></li>
+        <li class="breadcrumb-item">Môn:<a style="color:blue;box-shadow: 0 1px" @onclick="() => Mon()">@SubjectUPList.Where(c=>c.Id == Guid.Parse(subjectId)).Select(c=>c.SubjectName).FirstOrDefault()</a></li>
+        <li class="breadcrumb-item">Lớp :<a style="color:blue;box-shadow: 0 1px" @onclick="() => RedirectToDetails()">@_lstClassUps.Where(c=>c.Id == Guid.Parse(idClass)).Select(c=>c.ClassroomName).FirstOrDefault()</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Danh sách sinh viên</li>
+    </ol>
+</nav>
+<div class="row pt-3">
+    <div class="col-2  d-flex">
+        <div class="p-2">
+            <a class="btn btn-outline-danger" @onclick="() => Quaylai()" title="Quay lại"><i class="bi bi-arrow-return-left"></i></a>
+        </div>
+    </div>
+    <div class="col-7  d-flex">
+        <div class="p-2" stype="text-aline:center">
+            <FPLSP.Pages.StudentUPPages.StudentUPSearch OnSearch="SearchStudentUP"></FPLSP.Pages.StudentUPPages.StudentUPSearch>
+        </div>
+    </div>
+    <div class="col-3  d-flex flex-row-reverse">
+        @if (_lststudentUpDtosALL.Where(c=>c.IsChecked == true).ToList().Count()>0)
+        {
+            <div class="p-2">
+                <a class=" btn btn-outline-danger" title="Xóa sinh viên khỏi lớp" @onclick="() => Removes()">Xóa sinh viên</a>
+             </div>
+        }
+        
+        @if (_lststudentUpDtosALL.Where(c => c.IsChecked == true).ToList().Count() == 0)
+        {
+            <div class="p-2">
+                <a class=" btn btn-outline-primary" title="Thêm sinh viên vào lớp" @onclick="() => AddStudentInClass()">Thêm sinh viên</a>
+        </div>
+        }
+    </div>
+</div>
+
+<div class="row">
+    @if (_lststudentUpDtosALL.Count() > 0)
+    {
+        <table class="table table-hover align-middle table-bordered mt-3" style="text-align:center">
+<thead class="table-success">
+                <tr>
+                    <th><input type="checkbox" @bind="@Check" @onchange="EventArgs => {CheckAllExpense( EventArgs.Value);} " @bind:event="oninput"></th>
+                    <th stype="width:10%">Ảnh</th>
+                    <th stype="width:15%">Mã Sinh Viên</th>
+                    <th stype="width:20%">Tên Sinh Viên</th>
+                    <th stype="width:15%">Email</th>
+                    <th stype="width:10%">Số điện thoại</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in _lststudentUpDtosALL)
+                {
+                    <tr>
+                        <td><input type="checkbox" checked=@item.IsChecked @onchange="()=>CheckManual(item.Id,item.IsChecked)"></td>
+                        <td><img src="@item.ImageUrl" onerror="this.src='./css/images/Others/logoFPT.png'" alt="@item.ImageUrl" height=100px width=100px style="object-fit:contain"></td>
+                        <td>@item.StudentCode</td>
+                        <td>@item.StudentName</td>
+                        <td>@item.Email</td>
+                        <td>@item.PhoneNumber</td>
+                       @* @if (@item.Status == 0)
+                        {
+                            <td>Không hoạt động</td>
+                        }
+                        else
+                        {
+                            <td>Đang hoạt động</td>
+                        }*@
+
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        @if (encounter != 14)
+        {
+            <LoadingIndicator></LoadingIndicator>
+        }
+        else
+        {
+            <h5>Danh sách sinh viên trống</h5>
+        }
+    }
+
+</div>
+<div class="footer text-muted">
+    <div class="row mt-3">
+        <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+    </div>
+</div>
+<PopUpConfirm ConfirmationMessage="Bạn có chắc muốn xóa sinh viên ra khỏi lớp ?"
+              ConfirmationTitle="Xác nhận của bạn ?"
+              @ref="DeleConfirmation"
+              ConfirmationChanged="OnConfirmationDelete">
+
+</PopUpConfirm>
+@code {
+    protected PopUpConfirm DeleConfirmation { set; get; }
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (deleteconfirmed)
+        {
+            await Remove();
+        }
+    }
+    private async Task Removes()
+    {
+        DeleConfirmation.show();
+    }
+    [Parameter]
+    public string idClassNonDecrypt { get; set; }
+    [Parameter]
+    public string specializedIdNonDecrypt { get; set; }
+    [Parameter]
+    public string lecuIdNonDecrypt { get; set; }
+    [Parameter]
+    public string subjectIdNonDecrypt { get; set; }
+
+
+    public string idClass = "";
+
+    public string specializedId = "";
+    
+    public string lecuId = "";
+    
+    public string subjectId = "";
+
+
+    [Parameter]
+    public string Error { get; set; }
+    [Inject]
+public IStudentUPRepo _studentUPRepo { get; set; }
+
+    [Inject]
+    public IStudentClassUPRepo _reportClassUPRepo { get; set; }
+    [Inject]
+    public IStudentQuizUPRepo _studentQuizUPRepo { get; set; }
+    [Inject]
+    public ICopySubjectInClassRepo ICopySubjectInClassRepo { get; set; }
+
+    [Inject]
+    public ISubmitHomeWorkApiClient _IsubmitHomeWorkApiClient { get; set; }
+
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+    [Inject]
+    public IClassSubjectApiClient _iClassSubjectApiClient { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    private int encounter;
+    private SubjectClassVM subjectClassVM { get; set; } = new SubjectClassVM();
+
+    public List<StudentUpDto> _lststudentUpDtosALL { get; set; } = new List<StudentUpDto>();
+
+    public List<StudentUpDto> _liststudentClassJoin { get; set; } = new List<StudentUpDto>();
+    public List<StudentClassUP> _studentClassUPDtos { get; set; } = new List<StudentClassUP>();
+    public List<SubjectClassUP> _lstsubjectClassUPs { get; set; } = new List<SubjectClassUP>();
+    public List<ClassUp> _lstClassUps { get; set; } = new List<ClassUp>();
+    public List<StudentUpDto> _lstStudentUpDtosExist { get; set; } = new List<StudentUpDto>();
+    public List<StudentUpDto> _lstStudentUpDtosShow { get; set; } = new List<StudentUpDto>();
+    public List<Guid?> lstGuidIdStudent { get; set; } = new List<Guid?>();
+
+
+
+    public ListIdQuiz _listIdQuizzes = new ListIdQuiz();
+    private StudentUPListSearchVm studentUPListSearchVm = new StudentUPListSearchVm();
+    private StudentClassUPCreateVm _studentClassUPCreateVm = new StudentClassUPCreateVm();
+    private StudentQuizCreateUPVM _studentQuizCreateUPVM = new StudentQuizCreateUPVM();
+    private Random random = new Random();
+    private bool Check = false;
+
+
+    public bool ShowAuthError { get; set; }
+
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    public List<SpecializedDto> lstSpecAll { get; set; } = new List<SpecializedDto>();
+    [Inject]
+    public ISpecializedCPRepo _iSpecializedClient { get; set; }
+
+    [Inject] public ISubjectUPRepo _subjectUPRepo { get; set; }
+    public List<SubjectDto> SubjectUPList { get; set; } = new List<SubjectDto>();
+    private SubjectListSearch SubjectListSearch = new SubjectListSearch();
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        lecuId = _cryptoServices.Decrypt(lecuIdNonDecrypt.Replace("I0H", "/"));
+        subjectId = _cryptoServices.Decrypt(subjectIdNonDecrypt.Replace("I0H", "/"));
+        idClass = _cryptoServices.Decrypt(idClassNonDecrypt.Replace("I0H", "/"));
+        specializedId = _cryptoServices.Decrypt(specializedIdNonDecrypt.Replace("I0H", "/"));
+
+        _lststudentUpDtosALL = new List<StudentUpDto>();
+        studentUPListSearchVm = new StudentUPListSearchVm();
+        _lstStudentUpDtosShow = new List<StudentUpDto>();
+_lstsubjectClassUPs = await _iClassSubjectApiClient.GetAllSubjectClass();
+        await GetTasks();
+    }
+
+    private async Task GetTasks()
+    {
+        try
+        {
+            for (var i = 0; i < 15; i++)
+            {
+                encounter = i;
+            }
+            var SubjectUPListpagingResponse1 = await _subjectUPRepo.GetSubjects(Guid.Parse(specializedId), SubjectListSearch);
+            SubjectUPList = SubjectUPListpagingResponse1.Items;
+            lstSpecAll = await _iSpecializedClient.GetAll();
+            _studentClassUPDtos = await _reportClassUPRepo.GetAllStudentUPAsync();
+            var pagingResponse = await _studentUPRepo.GetStudentUPList(studentUPListSearchVm);
+            var items = await _studentUPRepo.GetAllStudentDtosAsync();
+            _lstClassUps = await _iClassSubjectApiClient.GetlstClassUP(Guid.Parse(subjectId));
+
+
+            _listIdQuizzes = await _iClassSubjectApiClient.GetListIDQuiz(Guid.Parse(subjectId));
+
+            var joicode = _lstsubjectClassUPs.Where(c => c.SubjectId == Guid.Parse(subjectId) && c.ClassId == Guid.Parse(idClass)).Select(c => c.JoinCode).FirstOrDefault();
+
+            var lstGuidIdClass = _studentClassUPDtos.Where(c => c.ClassId == Guid.Parse(idClass) && c.JoinCodeAsign == joicode).Select(c => c.StudentId).ToList();
+
+            _lststudentUpDtosALL = items.Where(c => lstGuidIdClass.Contains(c.Id)).ToList();
+            //MetaData = new MetaData()
+            //    {
+            //        TotalCount = _lststudentUpDtosALL.Count(),
+            //        PageSize = studentUPListSearchVm.PageSize,
+            //        CurrentPage = studentUPListSearchVm.PageNumber,
+            //        TotalPages = (int)Math.Ceiling(_lststudentUpDtosALL.Count() / (double)studentUPListSearchVm.PageSize)
+            //    };
+            foreach (var item in _lststudentUpDtosALL.Where(c => c.StudentName == null).ToList())
+            {
+                _lststudentUpDtosALL.Remove(item);
+            }
+            if (string.IsNullOrEmpty(studentUPListSearchVm.Status) == false)
+            {
+                _lststudentUpDtosALL = _lststudentUpDtosALL.Where(x => x.Status == Convert.ToInt32(studentUPListSearchVm.Status)).ToList();
+            }
+            if (studentUPListSearchVm.NameStudent != null)
+            {
+                _lststudentUpDtosALL = _lststudentUpDtosALL.Where(x => x.StudentName.ToLower().Contains(studentUPListSearchVm.NameStudent.ToLower()) || x.StudentCode.ToLower().Contains(studentUPListSearchVm.NameStudent.ToLower())).ToList();
+            }
+
+            var data = _lststudentUpDtosALL.Skip((studentUPListSearchVm.PageNumber - 1) * studentUPListSearchVm.PageSize).Take(studentUPListSearchVm.PageSize).ToList();
+            var lstpage = new PageList<StudentUpDto>(data,
+                _lststudentUpDtosALL.Count(),
+                studentUPListSearchVm.PageNumber,
+                studentUPListSearchVm.PageSize);
+            _lststudentUpDtosALL = lstpage.Items;
+MetaData = lstpage.MetaData;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+    }
+    private async Task RedirectToChitiet(Guid? idclass, Guid? subjectId)
+    {
+        var url = Path.Combine($"/ViewChiTitet/{idclass}/{specializedId}/{lecuId}/{subjectId}");
+        Navigation.NavigateTo(url);
+    }
+    private async Task SelectedPage(int page)
+    {
+        studentUPListSearchVm.PageNumber = page;
+        Check = false;
+        await GetTasks();
+    }
+
+    private async Task Remove()
+    {
+
+        var joicode = _lstsubjectClassUPs.Where(c => c.SubjectId == Guid.Parse(subjectId) && c.ClassId == Guid.Parse(idClass)).Select(c => c.JoinCode).FirstOrDefault();
+        foreach (var x in _lststudentUpDtosALL.Where(c => c.IsChecked == true).ToList())
+        {
+
+            if (_studentClassUPDtos.Any(c => c.JoinCodeAsign == joicode && c.StudentId == x.Id))
+            {
+                _reportClassUPRepo.DeleteStudentUP(joicode, x.Id);
+                _IsubmitHomeWorkApiClient.DeleteSubmit(Guid.Parse(idClass), Guid.Parse(subjectId), x.Id);
+            }
+            //foreach (var quiz in _listIdQuizzes.idquiz)
+            //{
+            //    _studentQuizUPRepo.Delete(x.Id, quiz);
+            //}
+
+        }
+        _toastService.ShowSuccess("Xóa thành công " + _lststudentUpDtosALL.Where(c => c.IsChecked == true).ToList().Count() + " sinh viên");
+        await GetTasks();
+        var url = Path.Combine($"/DetailsClassLeccu/{idClassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        Navigation.NavigateTo(url);
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            _lststudentUpDtosALL.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            _lststudentUpDtosALL.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+    void CheckManual(Guid st, bool check)
+    {
+        if (check == true)
+        {
+            foreach (var x in _lststudentUpDtosALL.Where(c => c.Id == st))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in _lststudentUpDtosALL.Where(c => c.Id == st))
+            {
+                x.IsChecked = true;
+            }
+        }
+
+    }
+    private async Task ResToSpec()
+    {
+        var url = Path.Combine($"/LectuterSpecializedSubjectls/{lecuIdNonDecrypt}/{specializedIdNonDecrypt}");
+        Navigation.NavigateTo(url);
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine($"/ViewChiTitet/{idClassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        Navigation.NavigateTo(url);
+    }
+    private async Task RetoSubject()
+    {
+        var url = Path.Combine($"/Giaovien/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        Navigation.NavigateTo(url);
+    }
+private async Task AddStudentInClass()
+    {
+        var url = Path.Combine($"/AddStudentInClass/{idClassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        Navigation.NavigateTo(url);
+    }
+    private async Task Mon()
+    {
+        var url = Path.Combine($"/Giaovien/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        Navigation.NavigateTo(url);
+    }
+    private async Task RedirectToDetails()
+    {
+        var url = Path.Combine($"/ViewChiTitet/{idClassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        Navigation.NavigateTo(url);
+    }
+    public async Task SearchStudentUP(StudentUPListSearchVm studentUPListSearch)
+    {
+        studentUPListSearchVm = studentUPListSearch;
+        await GetTasks();
+    }
+
+}

@@ -1,0 +1,367 @@
+﻿@page "/resourcelink/{idspecializedNonDecrypt}/{idsubjectNonDecrypt}/{idlessonNonDecrypt}"
+@using Blazored.Toast.Services
+@using FPLSP.Components
+@using FPLSP.Components.ResourceLinkCP
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.ResourceLink
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+
+<div class="row">
+    <h3 class="ps-0">Danh sách link nội dung bài học</h3>
+</div>
+<div class="row pt-3">
+    <div class="col-3 ps-0">
+        <a class="btn btn-outline-danger me-3" @onclick="() => Quaylai()">Quay Lại</a>
+        <a class="btn btn-primary me-3" @onclick="() => RedirectToCreat()">Thêm Link</a>
+    </div>
+    <div class="col-7 pe-5">
+        <div class="row">
+            <div class="col-4">
+                <EditForm Model="_parameters">
+                    <div class="col-12">
+                        <InputSelect ValueExpression="@(()=>_parameters.Status)" Value="@_parameters.Status" ValueChanged="@((int newValue) => ChangeValue(newValue))" class="form-select">
+                            <option value="3">Tất cả</option>
+                            <option value="0">Không hoạt động</option>
+                            <option value="1">Đang hoạt động</option>
+                        </InputSelect>
+                    </div>
+                </EditForm>
+            </div>
+            <div class="col-8">
+                <EditForm Model="_parameters">
+                    <div class="row">
+                        <div class="col-6 ps-0 pe-0">
+                            <InputText placeholder="Nhập tiêu đề link" class="form-control" @bind-Value="_parameters.Name"></InputText>
+                        </div>
+                        <div class="col-6">
+                            <button @onclick="() => TimKiem()" class="btn btn-primary">Tìm kiếm</button>
+                            <button class="btn btn-outline-success ms-2" @onclick="() => Undo()">Làm mới</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+    <div class="col-2 ps-3">
+        <div class="dropdown-center">
+            <button class="btn btn-info ps-4 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Chức Năng
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" @onclick="() => DeleteAll()">Đổi trạng thái</a></li>
+            </ul>
+
+        </div>
+    </div>
+</div>
+
+@if (ListRourceLink.Count > 0|| (tg = DateTime.Now - time).Days < 7)
+{
+        <div class="row">
+
+            <table class="table table-hover align-middle table-bordered mt-3" style="text-align:center">
+                <thead class="table-success">
+                    <tr>
+                        <th><input type="checkbox" @bind="@Check" @onchange="EventArgs => { CheckAllExpense( EventArgs.Value); } " @bind:event="oninput"></th>
+                        <th width="20%">Tiêu đề Link</th>
+                        <th width="25%">Link</th>
+                        <th width="20%">Mô tả</th>
+                        <th width="15%">Trạng thái</th>
+                        <th width="20%">Chức năng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in ListRourceLink.OrderBy(c=>c.DateCreated).ThenBy(c=>c.ResourcesTitle))
+                {
+                            <tr>
+                                <td><input type="checkbox" checked=@item.IsChecked @onchange="()=>CheckManual(item.Id,item.IsChecked)"></td>
+                                <td>@item.ResourcesTitle</td>
+                                <td><a href="@item.Path">@item.Path</a></td>
+                                <td>@item.Descriptions</td>
+                        @if (@item.Status == 0)
+                        {
+                                        <td>Không hoạt động</td>
+                        }
+                        else
+                        {
+                                        <td>Đang hoạt động</td>
+                        }
+                                <td class="text-center">
+                            @*<a class="btn btn-info " type="button" title="Nội dung bài học" @onclick="()=>RedirectToLessonContent(idspec,idsubject,item.Id)">
+                                <i class="bi bi-book"></i>
+                                </a>*@
+                                    <a class="btn btn-primary " type="button" title="Sửa" id="show-emp"
+                       @onclick="() => RedirectToUpdate1(item.Id)">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a class="btn btn-danger " type="button" title="Đổi trạng thái" @onclick="()=>DeleteLesson(item.Id)">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </a>
+
+                                </td>
+                            </tr>
+                }
+                </tbody>
+            </table>
+
+            <Comfirmation ConfirmationMessage="Bạn có chắc muốn đổi trạng thái không không?"
+                  ConfirmationTitle="Đổi trạng thái link nội dung bài học"
+                  @ref="DeleteConfirmation"
+                  ConfirmationChanged="OnConfirmationDelete"></Comfirmation>
+        </div>
+        <div class="footer text-muted">
+            <div class="row mt-3">
+
+                <span>
+                    <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+                </span>
+
+            </div>
+        </div>
+
+}
+else
+{
+        <span>
+            <LoadingIndicator></LoadingIndicator>
+        </span>
+}
+@code {
+    public List<ResourceLinkDto> ListRourceLink { get; set; } = new List<ResourceLinkDto>();
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    private ResourceLinkListSearch _parameters = new ResourceLinkListSearch();
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    [Inject]
+    public IResourceLinkRepo _iResourcelinkClient { get; set; }
+    [Parameter]
+    public string idspecializedNonDecrypt { get; set; }
+    [Parameter]
+    public string idsubjectNonDecrypt { get; set; }
+    [Parameter]
+    public string idlessonNonDecrypt { get; set; }
+    public string idspecialized = "";
+    public string idsubject = "";
+    public string idlesson = "";
+    public string Error { get; set; }
+    public DateTime time { get; set; }
+    public TimeSpan tg;
+    public bool Check = false;
+    private int stt = 0;
+    private List<Guid> _removeListResourcelink = new List<Guid>();
+    [Inject]
+    public ISubjectClient _iSubjectClient { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    private string _idResourceLink;
+    protected Comfirmation DeleteConfirmation { get; set; }
+
+    List<SubjectDto> lstSubjectDtos = new List<SubjectDto>();
+
+    Uri uri;
+    string maxlevel = "";
+    string IdCoSo = "";
+    protected async override Task OnInitializedAsync()
+    {
+        uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (string.IsNullOrEmpty(uri.Query) == false)
+        {
+            var urifist = uri.Query.Split("?")[1];
+            maxlevel = _cryptoServices.Decrypt(urifist.Split("LDN01")[0].Replace("I0H", "/"));
+            IdCoSo = _cryptoServices.Decrypt(urifist.Split("LDN01")[1].Replace("I0H", "/"));
+        }
+        idspecialized = _cryptoServices.Decrypt(idspecializedNonDecrypt.Replace("I0H", "/"));
+        idsubject = _cryptoServices.Decrypt(idsubjectNonDecrypt.Replace("I0H", "/"));
+        idlesson = _cryptoServices.Decrypt(idlessonNonDecrypt.Replace("I0H", "/"));
+        _parameters.Status = 3;
+        _parameters.IdSubject =Guid.Parse(idsubject);
+        lstSubjectDtos = await _iSubjectClient.GetAllSubjectByIdSpecialzed(Guid.Parse(idspecialized));
+        
+        await GetTasks();
+    }
+    private async Task Undo()
+    {
+        _parameters.Name = "";
+        _parameters.Status = 3;
+        _parameters.PageNumber = 1;
+        await GetTasks();
+
+    }
+    private async Task TimKiem()
+    {
+        await GetTasks();
+    }
+    private async Task ChangeValue(int value)
+    {
+        _parameters.Status = value;
+        _parameters.Name = _parameters.Name;
+        await GetTasks();
+    }
+    public async Task SearchTask(ResourceLinkListSearch resourceLinkListSearch)
+    {
+        _parameters = resourceLinkListSearch;
+        Check = false;
+        await GetTasks();
+    }
+    private void RedirectToDetails(Guid id)
+    {
+
+        var url = Path.Combine($"/detailsresourcelink/{id.ToString()}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToUpdate1(Guid idresource)
+    {
+        var url = Path.Combine("/updateresourcelink/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idlesson).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idresource).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task RedirectToDelete(Guid id)
+    {
+        var url = Path.Combine($"/deleteresourcelink/{id.ToString()}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _iResourcelinkClient.Gets(_parameters);
+            ListRourceLink = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+            time = DateTime.Now;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+
+    private void Quaylai()
+    {
+        
+        var url = Path.Combine("/subjects/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToCreat()
+    {
+        var url = Path.Combine("/createresourcelink/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idlesson).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task SelectedPage(int page)
+    {
+        _parameters.PageNumber = page;
+        Check = false;
+        await GetTasks();
+    }
+
+    public async Task OnDelete(Guid id)
+    {
+        _idResourceLink = id.ToString();
+        DeleteConfirmation.show();
+    }
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+
+        stt = 0;
+        if (deleteconfirmed && _idResourceLink == null && _removeListResourcelink.Count == 0)
+        {
+            _toastService.ShowError("Bạn chưa chọn đối tượng để đổi trạng thái");
+            await GetTasks();
+            //NavigationManager.NavigateTo($"/lesson/{idspec}/{idsubject}");
+        }
+        else if (deleteconfirmed && _idResourceLink != null)
+        {
+            var result = await _iResourcelinkClient.Delete(Guid.Parse(_idResourceLink));
+            if (result == 1)
+            {
+                _toastService.ShowSuccess("Đổi trạng thái thành công");
+                await GetTasks();
+                var url = Path.Combine("/resourcelink/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H"), _cryptoServices.Encrypt((idlesson).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+
+                NavigationManager.NavigateTo(url);
+            }
+            else
+            {
+                _toastService.ShowError("Đổi trạng thái thất bại");
+                await GetTasks();
+                var url = Path.Combine("/resourcelink/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H"), _cryptoServices.Encrypt((idlesson).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+
+                NavigationManager.NavigateTo(url);
+            }
+        }
+        else if (deleteconfirmed && _removeListResourcelink != null)
+        {
+
+            var result = await _iResourcelinkClient.RemoveListResource(_removeListResourcelink);
+            if (result)
+            {
+                _toastService.ShowSuccess("Đổi trạng thái thành công");
+                await GetTasks();
+                var url = Path.Combine("/resourcelink/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H"), _cryptoServices.Encrypt((idlesson).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+
+                NavigationManager.NavigateTo(url);
+            }
+            else
+            {
+                _toastService.ShowError("Đổi trạng thái thất bại");
+
+                await GetTasks();
+                var url = Path.Combine("/resourcelink/", _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H"), _cryptoServices.Encrypt((idlesson).ToString()).Replace("/", "I0H"));
+                NavigationManager.NavigateTo(url);
+            }
+        }
+        _idResourceLink = null;
+        _removeListResourcelink = null;
+        Check = false;
+    }
+    public void DeleteLesson(Guid id)
+    {
+        _idResourceLink = id.ToString();
+        DeleteConfirmation.show();
+    }
+    void CheckManual(Guid reportId, bool check)
+    {
+        stt = 0;
+        if (check == true)
+        {
+            foreach (var x in ListRourceLink.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in ListRourceLink.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    void DeleteAll()
+    {
+        stt = 0;
+        _removeListResourcelink = ListRourceLink.Where(c => c.IsChecked == true).Select(c => c.Id).ToList();
+        DeleteConfirmation.show();
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        stt = 0;
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            ListRourceLink.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            ListRourceLink.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+}

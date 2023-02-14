@@ -1,0 +1,47 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels.CabinProject
+
+<EditForm Model="@_semesterListSearch" OnSubmit=@SearchForm>
+    <div class="row">
+        <div class="col-4">
+            <InputSelect @bind-Value="_semesterListSearch.Status" class="form-select">
+                <option value="">Tất cả</option>
+                <option value="0">Đang hoạt động</option>
+                <option value="2">Đã dừng hoạt động</option>
+            </InputSelect>
+        </div>
+
+        <div class="col-4 ps-0 pe-0">
+            <InputText placeholder="Nhập tên kì hoặc block" class="form-control" @bind-Value="_semesterListSearch.Search"></InputText>
+        </div>
+        <div class="col-4">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+            <button class="btn btn-outline-success ms-2" @onclick="() => ClearSearch()">Làm mới</button>
+        </div>
+
+    </div>
+</EditForm>
+@code {
+    [Parameter]
+    public EventCallback<SemesterBlockSearch> OnSearch { get; set; }
+
+    private SemesterBlockSearch _semesterListSearch = new SemesterBlockSearch();
+
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(_semesterListSearch);
+    }
+    private async void LeverSearch(int? a, string search)
+    {
+        _semesterListSearch.Status = a;
+        _semesterListSearch.Search = search;
+         await SearchForm(null);
+    }
+    public async Task ClearSearch()
+    {
+
+        _semesterListSearch.Status = null;
+        _semesterListSearch.Search = "";
+        _semesterListSearch.PageNumber = 1;
+        await SearchForm(null);
+    }
+}

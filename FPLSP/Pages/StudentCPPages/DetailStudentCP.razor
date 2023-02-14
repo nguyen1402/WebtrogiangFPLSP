@@ -1,0 +1,110 @@
+﻿@page "/DetailStudentCP/{Id}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.StudentCPDtos
+
+<h3>Thông tin sinh viên</h3>
+<div class="row mt-3 mb-3">
+    <div class="form-group pt-2 col-12">
+        <div class="row pt-2 col-1 ms-0 text-right">
+            <a href="/MainStudentsCP" class="btn btn-outline-danger">Quay Lại</a>
+        </div>
+    </div>
+</div>
+@if (student != null)
+{
+    <div class="form-group">
+        <div class="row">
+            <div class="form-group pt-2 col-md-12">
+            </div>   
+        </div>
+        <img src="/Image/StudentCP/@student.ImageUrl" alt="@student.ImageUrl" height=190 width=170>
+
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Mã Sinh Viên: <b>@student.StudentCode</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Tên Sinh Viên: <b>@student.StudentName</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Giới tính: 
+                    @if(student.Gender == false)
+                    {
+                        <b>Nam</b>
+                    }else{
+                        <b>Nữ</b>
+                    }
+                </label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Ngày sinh: <b>@student.DateOfBirth.Day/@student.DateOfBirth.Month/@student.DateOfBirth.Year</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Email: <b>@student.Email</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Số điện thoại: <b>@student.PhoneNumber</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Địa chỉ: <b>@student.Address</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Dân tộc: <b>@student.Ethnic</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">CMT/CCCD: <b>@student.IdentityCardNumber</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Ngày cấp: <b>@student.IssuedOn.Day/@student.IssuedOn.Month/@student.IssuedOn.Year</b</label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Tên Bố: <b>@student.FathersName</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Tên Mẹ: <b>@student.MotherName</b</label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Mô tả: <b>@student.Description</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Trạng thái: 
+                    @if(student.Status == 0)
+                    {
+                        <b>Đang hoạt động</b>
+                    }else{
+                        <b>Ngưng hoạt động</b>
+                    }
+                </label>
+            </div>
+        </div>
+    </div>
+
+
+
+}
+@code {
+    public StudentCPDtos student;
+        [Inject]
+        public NavigationManager Navigation { get; set; }
+        [Inject]
+        IStudentCPApiClient _iStudentCPApiClient { get; set; }
+        [Parameter]
+        public string Id { get; set; }
+
+        protected async override Task OnInitializedAsync()
+        {
+            student = await _iStudentCPApiClient.GetStudentById(Guid.Parse(Id));
+        }
+}

@@ -1,0 +1,306 @@
+
+
+﻿
+body[b-hewq2jbcpd] {
+    font-family: 'Anek Latin', sans-serif;
+    color: #f27125;
+}
+/* Remove the navbar's default rounded borders and increase the bottom margin */
+/* .navbar {
+      margin-bottom: 50px;
+      border-radius: 0;
+    }
+    /* Remove the jumbotron's default bottom margin */
+h1[b-hewq2jbcpd] {
+    color: #004a80;
+}
+
+h3[b-hewq2jbcpd] {
+    color: #187ebd;
+}
+
+
+
+.headerright[b-hewq2jbcpd] {
+    text-align: right;
+    font-size: 1em;
+    color: #004a80;
+    margin-bottom: 15px;
+}
+
+.jumbotron[b-hewq2jbcpd] {
+    margin-bottom: 0;
+    background-color: #ffffff;
+    padding-top: 48px;
+    padding-bottom: 48px;
+}
+
+/* .container{
+    	width: 960px;
+    	line-height: 0.8;
+    } */
+a.linkopacity img[b-hewq2jbcpd] {
+    opacity: 0.5;
+}
+
+
+a.linkopacity:hover img[b-hewq2jbcpd] {
+    opacity: 1.0;
+}
+
+.login-page[b-hewq2jbcpd] {
+    text-align: center;
+}
+
+
+
+.bor[b-hewq2jbcpd] {
+    font-family: 'Anek Latin', sans-serif;
+    color: #f27125;
+}
+
+.bgcolor[b-hewq2jbcpd] {
+}
+
+.buton[b-hewq2jbcpd] {
+    border-radius: 25px;
+    background-color: #fd397a;
+    border: 1px solid #FEEFDD;
+}
+
+/* Add a gray background color and some padding to the footer */
+footer[b-hewq2jbcpd] {
+    background-color: #283054;
+    line-height: 1;
+    color: azure;
+}
+
+    footer p[b-hewq2jbcpd] {
+        color: white;
+        font-size: 1em;
+    }
+
+.footer-text__orange[b-hewq2jbcpd] {
+    color: orange;
+}
+
+.campus-image p[b-hewq2jbcpd] {
+    margin: 20px;
+    color: #004a80;
+    font-size: 0.6em;
+}
+
+.col-xs-5ths[b-hewq2jbcpd], .col-sm-5ths[b-hewq2jbcpd], .col-md-5ths[b-hewq2jbcpd], .col-lg-5ths[b-hewq2jbcpd] {
+    position: relative;
+    min-height: 1px;
+    padding-right: 10px;
+    padding-left: 10px;
+}
+
+.col-xs-5ths[b-hewq2jbcpd] {
+    width: 20%;
+    float: left;
+}
+
+@media (min-width: 768px) {
+    footer p[b-hewq2jbcpd] {
+        font-size: 0.8em;
+    }
+}
+
+@media (min-width: 992px) {
+    .col-md-5ths[b-hewq2jbcpd] {
+        width: 20%;
+        float: left;
+    }
+}
+
+@media (min-width: 1200px) {
+    .col-lg-5ths[b-hewq2jbcpd] {
+        width: 20%;
+        float: left;
+    }
+}
+
+.material-icons[b-hewq2jbcpd] {
+    font-size: 9px;
+    color: orange;
+}
+
+.footerline[b-hewq2jbcpd] {
+    background-color: orange;
+    height: 10px;
+}
+
+.container[b-hewq2jbcpd] {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    text-align: center;
+}
+
+.column[b-hewq2jbcpd] {
+    flex-basis: 14%;
+    border-radius: 50px 0 50px 0;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+    margin: 0 3%;
+}
+
+    .column img[b-hewq2jbcpd] {
+        border-radius: 50px 0 50px 0;
+        height: 37vh;
+        width: 100%;
+        object-fit: cover;
+    }
+
+.text-line[b-hewq2jbcpd] {
+    color: #ffd393;
+}
+
+.card[b-hewq2jbcpd] {
+    height: 330px;
+    width: 580px;
+    background: white;
+    border-radius: 20px;
+    color: white;
+    box-shadow: 20px 20px rgba(0,0,0,.25);
+    transition: all .4s ease;
+    border: 2px solid #7f7776;
+}
+
+
+.layer[b-hewq2jbcpd] {
+    background: transparent;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: 0.5s;
+}
+
+    .layer:hover[b-hewq2jbcpd] {
+        background: rgb(225, 225, 225, 0.70);
+    }
+
+    .layer h3[b-hewq2jbcpd] {
+        width: 100%;
+        font-weight: 600;
+        color: #fff;
+        font-size: large;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        position: absolute;
+        opacity: 1;
+        transition: 0.3s;
+    }
+
+    .layer:hover h3[b-hewq2jbcpd] {
+        color: rgb(255, 106, 0);
+        bottom: 41%;
+        opacity: 1;
+    }
+
+body[b-hewq2jbcpd] {
+    font-size: calc(1em + 1vw)
+}
+/* Remove the navbar's default rounded borders and increase the bottom margin */
+/* .navbar {
+      margin-bottom: 50px;
+      border-radius: 0;
+    }
+    /* Remove the jumbotron's default bottom margin */
+.jumbotron[b-hewq2jbcpd] {
+    margin-bottom: 0;
+    background-color: #ffffff;
+}
+
+/* .container{
+    	width: 960px;
+    	line-height: 0.8;
+    } */
+a.linkopacity img[b-hewq2jbcpd] {
+    opacity: 0.5;
+}
+
+
+a.linkopacity:hover img[b-hewq2jbcpd] {
+    opacity: 1.0;
+}
+
+/* Add a gray background color and some padding to the footer */
+footer[b-hewq2jbcpd] {
+    background-color: #283054;
+    line-height: 1;
+}
+
+    footer p[b-hewq2jbcpd] {
+        color: white;
+        font-size: 1em;
+    }
+
+.footer-text__orange[b-hewq2jbcpd] {
+    color: orange;
+}
+
+.campus-image p[b-hewq2jbcpd] {
+    margin: 20px;
+    color: #004a80;
+    font-size: 0.6em;
+}
+
+.hovergallery img[b-hewq2jbcpd] {
+    -webkit-transform: scale(0.8); /*Webkit: Scale down image to 0.8x original size*/
+    -moz-transform: scale(0.8); /*Mozilla scale version*/
+    -o-transform: scale(0.8); /*Opera scale version*/
+    -webkit-transition-duration: 0.5s; /*Webkit: Animation duration*/
+    -moz-transition-duration: 0.5s; /*Mozilla duration version*/
+    -o-transition-duration: 0.5s; /*Opera duration version*/
+    opacity: 0.7; /*initial opacity of images*/
+    margin: 0 10px 5px 0; /*margin between images*/
+}
+
+    .hovergallery img:hover[b-hewq2jbcpd] {
+        -webkit-transform: scale(1.1); /*Webkit: Scale up image to 1.2x original size*/
+        -moz-transform: scale(1.1); /*Mozilla scale version*/
+        -o-transform: scale(1.1); /*Opera scale version*/
+        box-shadow: 0px 0px 30px gray; /*CSS3 shadow: 30px blurred shadow all around image*/
+        -webkit-box-shadow: 0px 0px 30px gray; /*Safari shadow version*/
+        -moz-box-shadow: 0px 0px 30px gray; /*Mozilla shadow version*/
+        opacity: 1;
+    }
+
+.col-xs-5ths[b-hewq2jbcpd], .col-sm-5ths[b-hewq2jbcpd], .col-md-5ths[b-hewq2jbcpd], .col-lg-5ths[b-hewq2jbcpd] {
+    position: relative;
+    min-height: 1px;
+    padding-right: 10px;
+    padding-left: 10px;
+}
+
+.col-xs-5ths[b-hewq2jbcpd] {
+    width: 20%;
+    float: left;
+}
+
+@media (min-width: 768px) {
+    footer p[b-hewq2jbcpd] {
+        font-size: 0.8em;
+    }
+}
+
+@media (min-width: 992px) {
+    .col-md-5ths[b-hewq2jbcpd] {
+        width: 20%;
+        float: left;
+    }
+}
+
+@media (min-width: 1200px) {
+    .col-lg-5ths[b-hewq2jbcpd] {
+        width: 20%;
+        float: left;
+    }
+}

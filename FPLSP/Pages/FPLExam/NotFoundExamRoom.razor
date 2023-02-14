@@ -1,0 +1,22 @@
+﻿@page "/notfoundtheexaminationroom/{GetIdUser}"
+
+@using AntDesign
+@using FPLSP.Pages.FPLExam
+
+@inject NavigationManager NavigationManager;
+<Result Status="404"
+        Title="Không Tìm Thấy Phòng"
+        SubTitle="Xin Lỗi, vui lòng quay trở lại trang chủ để tiếp tục checkin"
+        Extra="extra" />
+
+@code
+{
+    [Parameter]
+    public string GetIdUser { get; set; }
+    RenderFragment extra => @<Button  OnClick="()=>BackToHomePage()" Type="primary">Quay Lại</Button>;
+
+    public async Task BackToHomePage()
+    {
+        NavigationManager.NavigateTo($"/loadingpage/{GetIdUser}");
+    }
+}

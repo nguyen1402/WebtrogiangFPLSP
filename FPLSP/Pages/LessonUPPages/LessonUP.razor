@@ -1,0 +1,267 @@
+﻿@page "/lessonUP/{idsubjectUP}"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.LessonUP
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+<div class="row">
+    <h3 class="ps-0">Danh sách bài học môn : @subjectDto.SubjectCode - @subjectDto.SubjectName</h3>
+</div>
+<div class="row pt-3">
+    <div style="width:12%">
+        <a class="btn btn-outline-danger me-3" @onclick="() => Quaylai()">Quay Lại</a>
+    </div>
+    <div class="col-9 pe-5">
+        <LessonUPSearch OnSearch="SearchTask"></LessonUPSearch>
+    </div>
+    <div class="col-1 ps-3">
+        <div class="dropdown-center">
+            <button class="btn btn-info ps-4 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Chức Năng
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" @onclick="() => DeleteAll()">Xóa</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="row">
+
+    <table class="table table-hover align-middle table-bordered mt-3" style="text-align:center">
+        <thead class="table-success">
+            <tr>
+                <th><input type="checkbox" @bind="@Check" @onchange="EventArgs => { CheckAllExpense( EventArgs.Value); } " @bind:event="oninput"></th>
+                <th width="20%">Tên bài học</th>
+                <th width="20%">Mô tả</th>
+                <th width="20%">Trạng thái</th>
+                <th width="20%">Tiến độ</th>
+                <th width="20%">Chức năng</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in _lstLessonUPs)
+            {
+                <tr>
+                    <td><input type="checkbox" checked=@item.IsChecked @onchange="()=>CheckManual(item.Id,item.IsChecked)"></td>
+                    <td>@item.LessonName</td>
+                    <td>@item.Descriptions</td>
+                    @if (@item.Status == 0)
+                    {
+                        <td>Không hoạt động</td>
+                    }
+                    else
+                    {
+                        <td>Đang hoạt động</td>
+                    } 
+                    @if (@item.IsCompleted)
+                    {
+                        <td>Hoàn thành</td>
+                    }
+                    else
+                    {
+                        <td>Chưa hoàn thành</td>
+                    }
+                    <td class="text-center">
+                        <a class="btn btn-primary " type="button" title="Sửa" id="show-emp"
+                       @onclick="() => RedirectToUpdate(item.Id)">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a class="btn btn-danger " type="button" title="Xóa" @onclick="()=>OnDelete(item.Id)">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+                        <a class="btn btn-info " type="button" title="Nội dung bài học" @onclick="()=>RedirectToLesson(item.Id,item.SubjectId)">
+                            <i class="bi bi-book"></i>
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <Comfirmation ConfirmationMessage="Bạn có chắc muốn xóa không?"
+                  ConfirmationTitle="Xóa bài học"
+                  @ref="DeleteConfirmation"
+                  ConfirmationChanged="OnConfirmationDelete"></Comfirmation>
+</div>
+<div class="footer text-muted">
+    <div class="row mt-3">
+
+        <span>
+            <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+        </span>
+
+</div>
+</div>
+@code {
+    [Inject] private ILessonUPRepo _LessonUPRepo { get; set; }
+    [Inject] public NavigationManager NavigationManager { get; set; }
+    [Inject] private ISubjectUPRepo _subjectUPRepo { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+
+    private List<SubjectDto> _lstsubjectDtos { get; set; }
+
+    public MetaData MetaData { get; set; } = new MetaData();
+    public SubjectDto subjectDto { get; set; } = new SubjectDto();
+
+    private List<LessonUPViewModel> _lstLessonUPs { get; set; } = new List<LessonUPViewModel>();
+
+    private LessonUPListSearch _LessonUPSearch = new LessonUPListSearch();
+    private bool Check = false;
+    private string _idLesson;
+    private List<Guid> _removeLesson = new List<Guid>();
+    [CascadingParameter]
+    private Error Error { get; set; }
+
+    private string deleteID { get; set; }
+
+    [Parameter]
+    public string idsubjectUP { get; set; }
+    protected Comfirmation DeleteConfirmation { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Guid idsubject = Guid.NewGuid();
+        try
+        {
+            idsubject = Guid.Parse(idsubjectUP);
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+        _lstsubjectDtos = await _subjectUPRepo.GetAllSubjectAsync();
+        await GetTasks();
+    }
+    public async Task SearchTask(LessonUPListSearch lessonListSearch)
+    {
+        _LessonUPSearch = lessonListSearch;
+        _LessonUPSearch.PageNumber = 1;
+        await GetTasks();
+    }
+    void DeleteAll()
+    {
+        _removeLesson = _lstLessonUPs.Where(c => c.IsChecked == true).Select(c => c.Id).ToList();
+        DeleteConfirmation.show();
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            _lstLessonUPs.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            _lstLessonUPs.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+    void CheckManual(Guid reportId, bool check)
+    {
+        if (check == true)
+        {
+            foreach (var x in _lstLessonUPs.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in _lstLessonUPs.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    private void RedirectToLesson(Guid id, Guid? subjectid)
+    {
+
+        var url = Path.Combine($"/lessonContentUP/{subjectid}/{id}");
+        NavigationManager.NavigateTo(url);
+    }
+    public async Task SearchLessonUP(LessonUPListSearch LessonUPSearch)
+    {
+        _LessonUPSearch = LessonUPSearch;
+        await GetTasks();
+    }
+
+    public void OnDelete(Guid id)
+    {
+        deleteID = id.ToString();
+        DeleteConfirmation.show();
+    }
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+
+        if (deleteconfirmed && deleteID == null && _removeLesson.Count == 0)
+        {
+            _toastService.ShowError("Bạn chưa chọn đối tượng để xóa");
+            await GetTasks();
+        }
+        else if (deleteconfirmed && deleteID != null)
+        {
+            var result = await _LessonUPRepo.Delete(Guid.Parse(deleteID));
+            if (result)
+            {
+                _toastService.ShowSuccess("Xóa thành công");
+                await GetTasks();
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+                await GetTasks();
+            }
+        }
+        else if (deleteconfirmed && _removeLesson != null)
+        {
+
+            var result = await _LessonUPRepo.RemoveListLessonUP(_removeLesson);
+            if (result)
+            {
+                _toastService.ShowSuccess("Xóa thành công");
+                await GetTasks();
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+
+                await GetTasks();
+            }
+        }
+        deleteID = null;
+        _removeLesson = null;
+        Check = false;
+    }
+
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _LessonUPRepo.GetList(_LessonUPSearch);
+            _lstLessonUPs = pagingResponse.Items.Where(c => c.SubjectId == Guid.Parse(idsubjectUP)).ToList();
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessError(ex);
+        }
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _LessonUPSearch.PageNumber = page;
+        await GetTasks();
+    }
+    private void RedirectToUpdate(Guid id)
+    {
+
+        var url = Path.Combine("/lessonUPUpdate/", id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/subjects/");
+        NavigationManager.NavigateTo(url);
+    }
+}

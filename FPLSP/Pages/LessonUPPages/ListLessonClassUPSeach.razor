@@ -1,0 +1,65 @@
+﻿@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.LessonUP
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<EditForm Model="@lessonUPListSearch" OnSubmit=@SearchForm>
+    <div class="row pl-5">
+        <div class="col-lg-4"></div>
+        <div class=" col-lg-5">
+            <div class="input-group mb-3">
+                <InputText placeholder="Nhập tên bài học..." class="form-control" @bind-Value="lessonUPListSearch.Name"></InputText>
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-outline-secondary">🔍</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-1">
+            <a @onclick="@ClearSearch" class="btn btn-outline-success">Clear</a>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+        public EventCallback<LessonUPListSearch> OnSearch { get; set; }
+        [Inject] private ISubjectUPRepo _subjectUPRepo { get; set; }
+        private List<SubjectDto> _lstsubjectDtos { get; set; }
+
+        private LessonUPListSearch lessonUPListSearch = new LessonUPListSearch();
+        public int isCompleted { get; set; }
+        public string status { get; set; } = "";
+        protected override async Task OnInitializedAsync()
+        {
+            _lstsubjectDtos = await _subjectUPRepo.GetAllSubjectAsync();
+            isCompleted = -1;
+        }
+        private async Task SearchForm(EditContext context)
+        {
+            if (status != "")
+            {
+                lessonUPListSearch.Status = Convert.ToInt32(status);
+            }
+            else
+            {
+                lessonUPListSearch.Status = null;
+            }
+            if (isCompleted == 1)
+            {
+                lessonUPListSearch.IsCompleted = true;
+            }
+            else if (isCompleted == 0)
+            {
+                lessonUPListSearch.IsCompleted = false;
+            }
+            else
+            {
+                lessonUPListSearch.IsCompleted = null;
+            }
+            await OnSearch.InvokeAsync(lessonUPListSearch);
+        }
+        public async Task ClearSearch()
+        {
+            lessonUPListSearch = new LessonUPListSearch();
+            await SearchForm(null);
+        }
+}

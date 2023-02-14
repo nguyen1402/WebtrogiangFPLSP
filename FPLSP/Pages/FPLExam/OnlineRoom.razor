@@ -1,0 +1,1711 @@
+﻿@page "/onlineroomhandler/{Secrete}/{GetIdUser}"
+@using AntDesign
+@using FPLSP.Data.FPLExam;
+@using FPLSP.Repositories.Interfaces.FPLExam;
+@using FPLSP.Server.Domain.Entities.CoresParts;
+@using FPLSP.Server.Infrastructure.ViewModels.FPLExam;
+@using Microsoft.AspNetCore.Components.Server.Circuits;
+@using Microsoft.AspNetCore.Identity;
+@using Microsoft.AspNetCore.SignalR.Client;
+@using System.Text;
+@using System.Timers;
+@inject NotificationService _notice
+@inject IUserInRoomRepo roomHandler
+@inject SweetAlertService Swal;
+@inject NavigationManager navigationManager
+@inject IJSRuntime JsRuntime;
+@inject NavigationManager NavigationManager;
+@inject StateDelegateAcceptTojoin checkingsateuser;
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@attribute [Authorize(Roles = "GV FPLExam,SV FPLExam")]
+<div class="row">
+    <div>
+        @*  @if (examinationRoomDetailViewModel.StartTime > DateTime.Now)
+        {
+        <h5 class="text-center">Thời gian đếm ngược để bắt đầu : @TimeCountDown</h5>
+        }*@
+
+    </div>
+    <AuthorizeView Roles="GV FPLExam">
+        <div class="col-lg-9">
+            <MudPaper Class="pa-5" Elevation="3">
+                <Divider Plain=true><h6>Danh Sách Sinh Viên Môn Thi @examinationRoomDetailViewModel.SubjectName : </h6></Divider>
+                <div class="row mt-3">
+                    @foreach (var runtimeuser in roomHandler.UsersByConnectionId)
+                    {
+                        @foreach (var super in JoinerListSuper.Where(c => c == runtimeuser.Value.Email.Replace("@fpt.edu.vn", "")))
+                        {
+                            <div class="col-lg-4 mt-5">
+                                <div class="profileuser">
+                                    <span class="pro">Giám Thị</span>
+                                    @if (super == checkingemail)
+                                    {
+                                        <img class="round" src="@ImagesUserChange" alt="user" />
+                                    }
+                                    else
+                                    {
+                                        <img class="round" src="@runtimeuser.Value.Image" alt="user" />
+                                    }
+                                    <span>@runtimeuser.Value.Email</span>
+                                    <div class="skills" style="height:170px;">
+                                        <h6 class="text-light text-center">Giám Thị FPL Exam</h6>
+
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+
+
+
+
+                    @foreach (var x in _lstUserInRoom)
+                    {
+
+                        //tiếp tục css cho nick giám thị
+
+                        @* //đây là check luôn cả đăng nhập rồi và phải online vào phòng thì mới chính sửa*@
+                        @foreach (var runtimeuser in roomHandler.UsersByConnectionId.Where(c => c.Value.Email == x.Email))
+                        {
+
+
+
+
+                            //
+                            <div class="col-lg-4 mt-5">
+                                <div class="profileuser">
+                                    <span class="pro">@runtimeuser.Value.StudentCode</span>
+
+
+                                    <Tooltip Placement="AntDesign.Placement.TopLeft" Title="Chỉnh Sửa Thông Tin">
+                                        <span @onclick="()=>ShowEditter(x)" class="toolbarright"><i class="fas fa-ellipsis-h"></i></span>
+                                    </Tooltip>
+                                    @* <Tooltip Placement="AntDesign.Placement.TopLeft" Title="Chỉnh Sửa Thông Tin">
+                            <span @onclick="()=>ShowEditter(x)" class="toolbarright"><i class="fas fa-ellipsis-h"></i></span>
+                            </Tooltip>*@
+
+
+                                    @if (x.Email == getEmail)
+                                    {
+                                        <img class="round" src="@ImagesUserChange" alt="user" />
+                                    }
+                                    else
+                                    {
+                                        <img class="round" src="@runtimeuser.Value.Image" alt="user" />
+                                    }
+                                    <span>@x.Email</span>
+                                    <p class="mt-2">Đã Checkin    <Icon Type="check-circle" Theme="twotone" TwotoneColor="#52c41a" Height="1.5em" Width="1.5em" /></p>
+                                    @if (DateTime.Now >= x.EndTime)
+                                    {
+                                        <p class="mt-2">Đã Hoàn Thành    <Icon Type="check-circle" Theme="twotone" TwotoneColor="#52c41a" Height="1.5em" Width="1.5em" /></p>
+                                    }
+
+                                    <div class="skills">
+                                        <h6 class="text-light">Thông Tin</h6>
+                                        <ul>
+                                            <li>
+                                                <span>
+                                                    Thời Gian Bắt Đầu : @x.StartTime.ToString("HH:mm:ss")
+                                                </span>
+                                            </li>
+                                            <li><span>Thời Gian Kết Thúc : @x.EndTime.ToString("HH:mm:ss")</span></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </MudPaper>
+        </div>
+        @if (whenClickedRaise)
+        {
+            <Modal Title="@("Đề Thi :"+" " + " "+"Môn Học :" +" " + examinationRoomDetailViewModel.SubjectName)"
+               Visible="@_visibleSup"
+               OnOk="@HandleOkSup"
+               DefaultMaximized=true
+               ConfirmLoading="true">
+
+                <embed src="@pdfContent#toolbar=0" width="100%" height="1400px;" />
+            </Modal>
+        }
+
+    </AuthorizeView>
+
+
+
+    <AuthorizeView Roles="SV FPLExam">
+        @* @if (IsShowSpin)
+        {
+        <div class="inthemiddle">
+        <Spin size="large" />
+        </div>
+        }*@
+
+        <div class="col-lg-9">
+            <MudPaper Class="pa-5" Elevation="3">
+                <Divider Plain=true><h6>Danh Sách Sinh Viên Môn Thi Photoshop</h6></Divider>
+                <div class="row mt-3">
+                    @foreach (var runtimeuser in roomHandler.UsersByConnectionId)
+                    {
+                        @foreach (var super in JoinerListSuper.Where(c => c == runtimeuser.Value.Email.Replace("@fpt.edu.vn", "")))
+                        {
+                            <div class="col-lg-4 mt-5">
+                                <div class="profileuser">
+                                    <span class="pro">Giám Thị</span>
+                                    @if (super == checkingemail)
+                                    {
+                                        <img class="round" src="@ImagesUserChange" alt="user" />
+                                    }
+                                    else
+                                    {
+                                        <img class="round" src="@runtimeuser.Value.Image" alt="user" />
+                                    }
+                                    <span>@runtimeuser.Value.Email</span>
+                                    <div class="skills" style="height:170px;">
+                                        <h6 class="text-light text-center">Giám Thị FPL Exam</h6>
+
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    @foreach (var x in _lstUserInRoom)
+                    {
+                        @* //đây là check luôn cả đăng nhập rồi và phải online vào phòng thì mới chính sửa*@
+                        @foreach (var runtimeuser in roomHandler.UsersByConnectionId.Where(c => c.Value.Email == x.Email))
+                        {
+
+
+                            <div class="col-lg-4 mt-5">
+                                <div class="profileuser">
+                                    <span class="pro">@runtimeuser.Value.StudentCode</span>
+                                    @if (DateTime.Now >= x.EndTime)
+                                    {
+                                        <span class="toolbarright">Finshed</span>
+                                    }
+                                    @if (x.Email == getEmail)
+                                    {
+                                        <img class="round" src="@ImagesUserChange" alt="user" />
+                                    }
+                                    else
+                                    {
+                                        <img class="round" src="@runtimeuser.Value.Image" alt="user" />
+                                    }
+                                    <span>@x.Email</span>
+                                    <p class="mt-2">Đã Checkin    <Icon Type="check-circle" Theme="twotone" TwotoneColor="#52c41a" Height="1.5em" Width="1.5em" /></p>
+                                    <div class="skills">
+                                        <h6 class="text-light">Thông Tin</h6>
+                                        <ul>
+                                            <li>
+                                                <span>
+                                                    Thời Gian Bắt Đầu : @x.StartTime.ToString("HH:mm:ss")
+                                                </span>
+                                            </li>
+                                            <li><span>Thời Gian Kết Thúc : @x.EndTime.ToString("HH:mm:ss")</span></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </MudPaper>
+
+        </div>
+
+        <Modal Title="@("Đề Thi :"+" " + " "+"Môn Học :" +" " + examinationRoomDetailViewModel.SubjectName)"
+               Visible="@_visible"
+               OnOk="@HandleOk"
+               DefaultMaximized=true
+               OnCancel="@HandleCancel"
+               ConfirmLoading="@_confirmLoading">
+            <div class="clock">
+                <div>
+
+                    <h5>Thời Gian Làm Bài Còn Lại : </h5>
+
+                </div>
+                <h5 class="@changcolortime">@Time</h5>
+            </div>
+            @if (IsHideExam)
+            {
+                <div class="inthemiddle">
+                    <Spin size="large" />
+                </div>
+            }
+            else
+            {
+                <embed src="@pdfContent#toolbar=0" width="100%" height="1400px;" />
+            }
+        </Modal>
+    </AuthorizeView>
+
+    @* //phần dưới này sẽ cho authorized của giám thị*@
+    <div class="col-lg-3">
+        <MudPaper Class="pa-5" Elevation="3" Style="background-color:#8ec3eb">
+            <Divider Class="text-dark">Thông Tin Phòng Thi</Divider>
+            <AuthorizeView Roles="GV FPLExam">
+                <input class="search__input text-dark" type="text" placeholder="Search">
+            </AuthorizeView>
+            <AuthorizeView Roles="GV FPLExam">
+                @if (DateTime.Now >= examinationRoomDetailViewModel.StartTime)
+                {
+                    @if (whenClickedRaise == false)
+                    {
+                        <Button style="width:100%" Type="primary" class="mt-2" @onclick="_=>ShowerByDupervisior()">Phát Đề Thi</Button>
+                        <Divider></Divider>
+                    }
+                    @if (whenClickedRaise)
+                    {
+                        <Button style="width:100%" Type="primary" class="mt-2" @onclick="_=>SeeSomExamFile()">Xem Đề Thi</Button>
+                        <Divider></Divider>
+                    }
+                }
+            </AuthorizeView>
+            <AuthorizeView Roles="SV FPLExam">
+                @if (DateTime.Now >= examinationRoomDetailViewModel.StartTime)
+                {
+                    @if (IsShowOpenExam)
+                    {
+                        <Button style="width:100%" Type="primary" class="mt-2" @onclick="_=>ShowExam()">Mở Đề Thi</Button>
+                        <Divider></Divider>
+                    }
+                    @if (IsShowOpenExamOnTime)
+                    {
+                        <Button style="width:100%" Type="primary" class="mt-2" @onclick="_=>ShowOneTimeExam()">Mở Đề Thi 1 Lần</Button>
+                        <Divider></Divider>
+                    }
+                }
+
+            </AuthorizeView>
+            <AuthorizeView Roles="GV FPLExam">
+                <Button style="width:100%" Type="primary" class="mt-2" @onclick="_=>open()">Danh Sách Các Yêu Cầu Vào Phòng Thi</Button>
+                <Divider></Divider>
+            </AuthorizeView>
+            <div class="mt-2">
+                <Text> Tên Môn Thi : @examinationRoomDetailViewModel.SubjectName</Text>
+            </div>
+            <div class="mt-2">
+                <Text>Mật Khẩu :@examinationRoomDetailViewModel.SecretKey</Text>
+            </div>
+            <div class="mt-2">
+                <Text>Thời Gian Bắt Đầu:@examinationRoomDetailViewModel.StartTime</Text>
+            </div>
+            <div class="mt-2">
+                <Text>Thời Gian Kết Thúc:@examinationRoomDetailViewModel.EndTime</Text>
+            </div>
+            <AuthorizeView Roles="GV FPLExam">
+                <div class="mt-2">
+                    <Text>Danh Sách Giám Thị : @String.Join(" | ",JoinerListSuper.ToArray())</Text>
+                </div>
+            </AuthorizeView>
+            <div class="mt-2">
+                <Text>Số Lượng Sinh Viên Đã CheckIn :@_lstUserInRoom.Count()</Text>
+            </div>
+            <div class="mt-2">
+                <Text>Số Lượng Sinh Viên Hiện Tại : @roomHandler.UsersByConnectionId.Count()</Text>
+            </div>
+        </MudPaper>
+    </div>
+</div>
+
+@*// phần  này là show chi tiết để chỉnh sửa thông tin sinh viên*@
+<div>
+
+    <Drawer Closable="true" Width="380" Visible="visibleForDetailStudent" Title='("Chi Tiết Sinh Viên")' OnClose="_=>closeStudent(showinfouser)">
+        <Template style="height:90%">
+
+            <div class="d-grid gap-3 d-md-flex justify-content-md-end">
+                @if (DateTime.Now < showinfouser.EndTime)
+                {
+                    @if (EditUser == false)
+                    {
+
+                    }
+                }
+
+                <Button @onclick="()=>EndedProcess(showinfouser)" Type="primary">Kết Thúc Bài Thi  <i class="fas fa-hourglass-end"></i></Button>
+                <Button @onclick="()=>EditUserInfo(EditUser)" Type="primary">Chỉnh Sửa  <i class="fas fa-pencil-alt"></i></Button>
+                <Button @onclick="()=>KickerUser(showinfouser)" Type="primary">Kick  <i class="fal fa-chevron-double-right"></i></Button>
+            </div>
+            <div Class="row d-flex justify-content-center">
+                <Divider>Ảnh Checkin</Divider>
+                <Image Width="320px" Src="@imageDataURL" Height="240px" />
+
+            </div>
+            <Divider>Thông Tin</Divider>
+
+            <div class="row">
+                <div class="col-lg-12">
+                    <Text>Email : @showinfouser.Email</Text>
+                </div>
+                <Divider></Divider>
+                <div class="col-lg-12">
+                    <Text>Thời Gian Checkin : @showinfouser.JoinTime</Text>
+                </div>
+                <Divider></Divider>
+                <div class="col-lg-12">
+                    <Text>Thời Gian Rời Phòng : @showinfouser.LeaveTime</Text>
+                </div>
+                <div class="col-lg-12">
+                    <Text>Đã Mở Đề Thi 1 Lần ? : @(showinfouser.IsViewExamFile == true ? "Chưa Mở" : "Đã Mở")</Text>
+                        @if (showinfouser.IsViewExamFile == false)
+                    {
+                        <Button @onclick="()=>ReOpenForUser(showinfouser)" Style="border-radius:10px;" Type="primary">Mở Lại  <i class="fas fa-reply-all"></i></Button>
+                    }
+                </div>
+                <div class="col-lg-12">
+                    <Text>Thời Gian Bắt Đầu Làm Bài : @showinfouser.StartTime</Text>
+                </div>
+                <div class="col-lg-12">
+                    <Text>Thời Gian Kết Thúc Bài Thi : @showinfouser.EndTime</Text>
+                </div>
+                <div class="col-lg-12">
+                    <Text>Ghi Chú :  @showinfouser.Note</Text>
+                </div>
+                @if (EditUser)
+                {
+                    <div class="col-lg-12">
+                        <label>Tổng thời lượng : @(Convert.ToInt32((showinfouser.EndTime - showinfouser.StartTime).TotalMinutes + AddingMinus)) Phút</label>
+                        <MudSlider @bind-Value="AddingMinus" Min="-45" Max="45" Step="1" Color="MudBlazor.Color.Error">Thời lượng: @AddingMinus Phút</MudSlider>
+
+                    </div>
+                    <div class="col-lg-12">
+                        <label>Lý Do :</label>
+                        <Input required @bind-Value="@showinfouser.Note" />
+
+                    </div>
+                }
+
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+
+                @if (EditUser)
+                {
+                    <Button @onclick="()=>ConfirmEditUser(showinfouser)" Type="primary">Xác Nhận  <i class="fas fa-check"></i></Button>
+                    <Button @onclick="()=>CancelEdit()" Type="primary">Hủy <Icon Type="close" Theme="outline" /></Button>
+                }
+            </div>
+        </Template>
+    </Drawer>
+</div>
+@*// phần  này là xem các request*@
+<div>
+
+    <Drawer Closable="true" Width="420" Visible="visible" Title='("Danh Sách Các Yêu Cầu Vào Phòng Thi")' OnClose="_=>close()">
+        <Template style="height:90%">
+            <div Class="row">
+
+                @* <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <Button Type="primary" class="d-grid gap-2 d-md-flex justify-content-md-end">Chấp Thuận tất Cả</Button>
+                <Button Type="primary" class="d-grid gap-2 d-md-flex justify-content-md-end">Từ Chối Tất Cả</Button>
+                </div>*@
+
+            </div>
+            <Divider>Danh Sách</Divider>
+            @foreach (var request in _lstRequestComeIn.OrderBy(c => c.LeaveTime))
+            {
+                <div class="row">
+                    <div class="col-lg-8">
+                        <Text>@request.Email</Text>
+                    </div>
+                    <div class="col-lg-2">
+                        <Button @onclick="()=>AcceptAuserToJoin(request.IdUser)"><Icon Type="check" Theme="outline" /></Button>
+                    </div>
+                    <div class="col-lg-2">
+                        <Button @onclick="()=>DeclineAuser(request.IdUser)"><Icon Type="close" Theme="outline" /></Button>
+                    </div>
+                </div>
+                <Divider></Divider>
+
+            }
+
+
+
+        </Template>
+    </Drawer>
+</div>
+
+@code {
+    public double size = 5;
+    public double AddingMinus = 0;
+
+    [Inject] public IExaminationRoomDetailRepo _examinationRoomDetailRepo { get; set; }
+    [Inject] public IOnlineExamRoomRepo _onlineExamRoomRepo { get; set; }
+
+    private List<string> _lstNotification = new List<string>();
+    private List<OnlineExamHasImageViewModel> _lstUserInRoom = new List<OnlineExamHasImageViewModel>();
+    private List<OnlineExamHasImageViewModel> _lstRequestComeIn = new List<OnlineExamHasImageViewModel>();
+    [Inject]
+    public AuthenticationStateProvider AuthenticationState { get; set; }
+    [Inject] public UserManager<UserSignIn> _userManager { get; set; }
+
+    private bool IsShowWaitingPage = false;
+    bool visible = false;
+    [Parameter]
+    public string Secrete { get; set; }
+    private string getEmail;
+    private string SenderIdResquester;
+    private string checkingrole = "";
+    [Parameter]
+    public string GetIdUser { get; set; }
+    //
+    private string ImagesUserChange = "";
+    //lấy ra thông tin phòng thi
+    private ExaminationRoomDetailViewModel examinationRoomDetailViewModel = new ExaminationRoomDetailViewModel();
+    //
+    private List<string> JoinerListSuper = new List<string>();
+    //xử lý services show đề thi
+    string pdfContent = "";
+    bool _visible = false;
+    bool _visibleSup = false;
+    bool visibleForDetailStudent = false;
+    bool _confirmLoading = false;
+    private bool IsShowSpin = true;
+    private bool IsCanViewExamFile = false;
+    private bool IsHideExam = false;
+    //chỉnh sửa thông tin sinh viên
+    private OnlineExamHasImageViewModel showinfouser = new OnlineExamHasImageViewModel();
+    private OnlineExamHasImageViewModel getTerUser = new OnlineExamHasImageViewModel();
+    //
+    private string imageDataURL = "data:image/jpeg;base64,";
+    //
+    private System.Timers.Timer _timer = null!;
+    private System.Timers.Timer _timerCountDown = null!;
+    private int _secondsToRun = 0;
+    private int _secondsToRunCountDown = 0;
+
+    protected string Time { get; set; } = "00:00:00";
+    protected string TimeCountDown { get; set; } = "00:00:00";
+    [Parameter]
+    public EventCallback TimerOut { get; set; }
+    private bool IsShowOpenExam = false;
+    private bool IsShowOpenExamOnTime = false;
+    private bool whenClickedRaise = false;
+    private bool EditUser = false;
+    private DateTime? EndTimeChanged = DateTime.Now;
+    private string IdEditter = "";
+    private DateTime? _defautlvalues = DateTime.Now;
+    private string changcolortime = "";
+    private string checkingemail = "";
+    private string Email = "";
+    protected async override Task OnInitializedAsync()
+    {
+
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        AuthenticationStateProvider.AuthenticationStateChanged += this.OnAuthStateChanged;
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            roomHandler.OnChange += OnMyChangeHandler;
+            checkingsateuser.OnChange += OnMyChangeHandlerForAppSate;
+
+            //đăng kí các sự kiện delegate để tương tác các event callback
+
+
+
+            examinationRoomDetailViewModel = await _examinationRoomDetailRepo.GetExaminamRoomDetailBySecret(Secrete);
+            _lstUserInRoom = await _onlineExamRoomRepo.GetOnlineExamRoomById(Secrete);
+            checkingrole = user.Claims.ToList()[11].Value;
+            checkingemail = user.Claims.ToList()[4].Value;
+            ImagesUserChange = user.Claims.ToList()[6].Value;
+            //lấy ra list các sinh viên
+            var getid = user.Claims.ToList().LastOrDefault();
+
+            if (checkingrole == "SV FPLExam")
+            {
+                if (examinationRoomDetailViewModel.ListSupervisorID.Any(c => c == Guid.Parse(GetIdUser)) == false)
+                {
+                    var gettingstatus = await _onlineExamRoomRepo.FastGettingStatus(Secrete, GetIdUser);
+
+                    if (gettingstatus == 4)
+                    {
+
+                        NavigationManager.NavigateTo($"/redirecttoonlineroom/{GetIdUser}/{Secrete}/waittingforaccpet", true);
+                        checkingsateuser.SelectedIdUser = "";
+                    }
+                    if (_lstUserInRoom.Any(c => c.Email == checkingemail) == false)
+                    {
+                        NavigationManager.NavigateTo($"/notfoundtheexaminationroom/{getid}");
+                    }
+                    if (DateTime.Now >= examinationRoomDetailViewModel.EndTime)
+                    {
+                        NavigationManager.NavigateTo($"/resultofexaminationroom/{checkingrole}/{GetIdUser}");
+                    }
+                    await ShowExamFile();
+                }
+                checkingrole = "SV FPLExam";
+                //phải check tài khoản ở đây
+            }
+            if (checkingrole == "GV FPLExam")
+            {
+                if (examinationRoomDetailViewModel.ListSupervisorID.Count() > 0)
+                {
+                    foreach (var x in examinationRoomDetailViewModel.ListSupervisorID)
+                    {
+                        foreach (var z in _userManager.Users.ToList().Where(c => c.Id == x.ToString()))
+                        {
+                            JoinerListSuper.Add(z.Email.Replace("@fpt.edu.vn", ""));
+                            Email = z.Email;
+                        }
+                    }
+                    await InvokeAsync(() => StateHasChanged());
+                }
+                if (DateTime.Now >= examinationRoomDetailViewModel.EndTime)
+                {
+                    NavigationManager.NavigateTo($"/resultofexaminationroom/{checkingrole}/{GetIdUser}");
+                }
+                if (DateTime.Now.Second - examinationRoomDetailViewModel.StartTime.Second >= 45)
+                {
+                    whenClickedRaise = true;
+                }
+                if (!string.IsNullOrEmpty(checkingsateuser.SelectedIdUser))
+                {
+                    _lstRequestComeIn = await _onlineExamRoomRepo.HandlerRequestComeIn(Secrete);
+                    await InvokeAsync(() => StateHasChanged());
+                }
+                if (!string.IsNullOrEmpty(checkingsateuser.SelectedIdUser))
+                {
+                    _lstRequestComeIn = await _onlineExamRoomRepo.HandlerRequestComeIn(Secrete);
+                    await InvokeAsync(() => StateHasChanged());
+                }
+
+                checkingrole = "GV FPLExam";
+                // đây là list danh sách các sinh viên yêu cầu request vào;
+                _lstRequestComeIn = await _onlineExamRoomRepo.HandlerRequestComeIn(Secrete);
+                await ConnectToServer();
+                await ConnectToServerLeftRoom();
+            }
+        }
+
+        _timerCountDown = new System.Timers.Timer(1000);
+        _timerCountDown.Elapsed += OnTimedEventCountDown;
+        _timerCountDown.AutoReset = true;
+        if (examinationRoomDetailViewModel.StartTime > DateTime.Now)
+        {
+
+
+            await CountDownToStart(Convert.ToInt32((examinationRoomDetailViewModel.StartTime - DateTime.Now).TotalSeconds));
+
+        }
+
+    }
+
+
+    private RenderFragment ExtraFooter =@<Button Type="@AntDesign.ButtonType.Primary">Ok</Button>;
+    private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
+    {
+        try
+        {
+            _secondsToRun--;
+
+            await InvokeAsync(() =>
+                                                                                                                                                            {
+                                                                                                                                                                Time = TimeSpan.FromSeconds(_secondsToRun).ToString(@"hh\:mm\:ss");
+                                                                                                                                                                StateHasChanged();
+                                                                                                                                                            });
+
+            if (_secondsToRun <= 0)
+            {
+                _timer.Stop();
+                IsShowOpenExam = false;
+                IsShowOpenExamOnTime = true;
+                _visible = false;
+                await TimerOut.InvokeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await Swal.FireAsync(
+                            "Thông Báo",
+                            "Bạn đã bị kết thúc đề thi vui lòng liên hệ với giảng viên để biết thêm chi tiết",
+                            SweetAlertIcon.Info
+                            );
+            return;
+        }
+
+    }
+    private async Task KickerUser(OnlineExamHasImageViewModel onlineExamHasImageViewModel)
+    {
+        try
+        {
+
+
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                        Title = $"Thông báo",
+                                                                                                                                                                                                                                                                        Text = $"Bạn có đuổi {onlineExamHasImageViewModel.Email} ra khỏi phòng hay không ?",
+                                                                                                                                                                                                                                                                        ShowCancelButton = true,
+                                                                                                                                                                                                                                                                        CancelButtonText = "Hủy"
+                                                                                                                                                                                                                                                                    });
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+
+
+                var res = await _onlineExamRoomRepo.FastUpdateHanlerWhenOut(onlineExamHasImageViewModel.SecretKey, onlineExamHasImageViewModel.IdUser);
+                if (res)
+                {
+                    await Swal.FireAsync(
+                                  "Thông Báo",
+                                  "Vui lòng chờ trong giây lát",
+                                  SweetAlertIcon.Success
+                                  );
+                    checkingsateuser.IdKicker = onlineExamHasImageViewModel.IdUser;
+                    checkingsateuser.Kicker(onlineExamHasImageViewModel.IdUser);
+                    Console.WriteLine(IdEditter);
+                    //làm mới thông tin
+                    EditUser = false;
+                    visibleForDetailStudent = false;
+                    _lstUserInRoom = await _onlineExamRoomRepo.GetOnlineExamRoomById(Secrete);
+                }
+
+
+
+
+                EditUser = true;
+                await InvokeAsync(() => StateHasChanged());
+
+            }
+            else if (result.Dismiss == DismissReason.Cancel)
+            {
+
+                EditUser = false;
+                await InvokeAsync(() => StateHasChanged());
+            }
+        }
+        catch (Exception ex)
+        {
+            await Swal.FireAsync(
+                                "Thông Báo",
+                                "Vui lòng liên hệ với daotao.poly để biết thêm chi tiết",
+                                SweetAlertIcon.Success
+                                );
+            return;
+        }
+    }
+    private async Task ReOpenForUser(OnlineExamHasImageViewModel onlineExamHasImageViewModel)
+    {
+        try
+        {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                        Title = $"Xác Nhận",
+                                                                                                                                                                                                                                                                        Text = $"Bạn Có Chắc Muốn Mở Lại Đề Thi Cho Sinh Viên {onlineExamHasImageViewModel.Email} hay không ?",
+                                                                                                                                                                                                                                                                        Icon = SweetAlertIcon.Warning,
+                                                                                                                                                                                                                                                                        ShowCancelButton = true,
+                                                                                                                                                                                                                                                                        ConfirmButtonText = "Đồng Ý",
+                                                                                                                                                                                                                                                                        CancelButtonText = "Hủy"
+                                                                                                                                                                                                                                                                    });
+
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+                var res = await _onlineExamRoomRepo.ReOpenExamFileForUser(onlineExamHasImageViewModel.SecretKey, onlineExamHasImageViewModel.IdUser);
+
+                if (res)
+                {
+                    await Swal.FireAsync(
+                                                                                                                                                             "Thành Công",
+                                                                                                                                                             "Mở lại đề thi thành công",
+                                                                                                                                                             SweetAlertIcon.Success
+                                                                                                                                                             );
+                    visibleForDetailStudent = false;
+                    _lstUserInRoom = await _onlineExamRoomRepo.GetOnlineExamRoomById(Secrete);
+                }
+                else
+                {
+                    await Swal.FireAsync(
+                                                                                                                                                               "Thất Bại",
+                                                                                                                                                               "Mở lại đề thi thất bại",
+                                                                                                                                                               SweetAlertIcon.Success
+                                                                                                                                                               );
+                }
+
+
+            }
+
+            else if (result.Dismiss == DismissReason.Cancel)
+            {
+
+                    //ở đây xử lý khi hủy upload
+                await Swal.FireAsync(
+                                    "Hủy",
+                                    "Đã Hủy Hòan Tác File",
+                                    SweetAlertIcon.Error
+                                    );
+
+            }
+        }
+        catch (Exception ex)
+        {
+            await Swal.FireAsync(
+                                "Thông Báo",
+                                "Vui lòng liên hệ với daotao.poly để biết thêm chi tiết",
+                                SweetAlertIcon.Success
+                                );
+            return;
+        }
+
+
+
+    }
+    private async void OnTimedEventCountDown(object? sender, ElapsedEventArgs e)
+    {
+        _secondsToRunCountDown--;
+
+        await InvokeAsync(() =>
+                                                                                                                                                        {
+                                                                                                                                                            TimeCountDown = TimeSpan.FromSeconds(_secondsToRunCountDown).ToString(@"hh\:mm\:ss");
+                                                                                                                                                            StateHasChanged();
+                                                                                                                                                        });
+
+        if (_secondsToRun <= 0)
+        {
+            _timerCountDown.Stop();
+
+            await TimerOut.InvokeAsync();
+        }
+    }
+    private async Task ConfirmEditUser(OnlineExamHasImageViewModel onlineExamHasImageViewModel)
+    {
+
+        if (string.IsNullOrEmpty(onlineExamHasImageViewModel.Note))
+        {
+            await Swal.FireAsync(
+                                                                                                                                               "Thông báo",
+                                                                                                                                               "Không được phép để trống lý do",
+                                                                                                                                               SweetAlertIcon.Error
+                                                                                                                                               );
+            return;
+        }
+        var oldtime = onlineExamHasImageViewModel.EndTime;
+        var newtime = oldtime.AddMinutes(AddingMinus);
+        if ((newtime - oldtime).TotalMinutes >= examinationRoomDetailViewModel.TotalTimeOfExam)
+        {
+            await Swal.FireAsync(
+                                                                                                                                                   "Thất Bại",
+                                                                                                                                                           $"Bạn không thể kéo dài thời gian thi cho sinh viên vượt quá thời gian làm bài thi,thời gian cho phép là từ {oldtime.AddMinutes(examinationRoomDetailViewModel.TotalTimeOfExam)} trở lại",
+                                                                                                                                                   SweetAlertIcon.Error
+                                                                                                                                                   );
+            return;
+        }
+
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                    Title = $"Xác Nhận Chỉnh Sửa Thông Tin",
+                                                                                                                                                                                                                                                                    Text = "Bạn có chắc muốn chỉnh sửa thông tin không ?",
+                                                                                                                                                                                                                                                                    ShowCancelButton = true,
+                                                                                                                                                                                                                                                                    CancelButtonText = "Hủy"
+                                                                                                                                                                                                                                                                });
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            OnlineExamViewModel onlineExamViewModel = new OnlineExamViewModel()
+                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                        IdUser = onlineExamHasImageViewModel.IdUser,
+                                                                                                                                                                                                                                                                        SecretKey = onlineExamHasImageViewModel.SecretKey,
+                                                                                                                                                                                                                                                                        IdExaminationRoom = onlineExamHasImageViewModel.IdExaminationRoom,
+                                                                                                                                                                                                                                                                        IsHandlerRequest = onlineExamHasImageViewModel.IsHandlerRequest,
+                                                                                                                                                                                                                                                                        JoinTime = onlineExamHasImageViewModel.JoinTime,
+                                                                                                                                                                                                                                                                        ChekinImage = onlineExamHasImageViewModel.ChekinImage,
+                                                                                                                                                                                                                                                                        LeaveTime = onlineExamHasImageViewModel.LeaveTime,
+                                                                                                                                                                                                                                                                        StartTime = onlineExamHasImageViewModel.StartTime,
+                                                                                                                                                                                                                                                                        EndTime = newtime,
+                                                                                                                                                                                                                                                                        Status = onlineExamHasImageViewModel.Status,
+                                                                                                                                                                                                                                                                        IndexOfStudent = onlineExamHasImageViewModel.IndexOfStudent,
+                                                                                                                                                                                                                                                                        Note = onlineExamHasImageViewModel.Note,
+                                                                                                                                                                                                                                                                        IsCompletedExam = onlineExamHasImageViewModel.IsCompletedExam,
+                                                                                                                                                                                                                                                                        IsViewExamFile = onlineExamHasImageViewModel.IsViewExamFile,
+                                                                                                                                                                                                                                                                        CountTurnJoin = onlineExamHasImageViewModel.CountTurnJoin
+                                                                                                                                                                                                                                                                    };
+
+            var res = await _onlineExamRoomRepo.UpdateOnlineExamRoom(onlineExamViewModel);
+            if (res)
+            {
+                //ở đây xử lý khi hủy upload
+                await Swal.FireAsync(
+                                                                                                                                                  "Thành Công",
+                                                                                                                                                  "Chỉnh Sửa Thông Tin Thành công",
+                                                                                                                                                  SweetAlertIcon.Success
+                                                                                                                                                  );
+                checkingsateuser.ResetTimerUser = onlineExamHasImageViewModel.IdUser;
+                checkingsateuser.HotReloadTimer(onlineExamHasImageViewModel.IdUser);
+                Console.WriteLine(IdEditter);
+                //làm mới thông tin
+                visibleForDetailStudent = false;
+                _lstUserInRoom = await _onlineExamRoomRepo.GetOnlineExamRoomById(Secrete);
+                EditUser = false;
+
+                await InvokeAsync(() => StateHasChanged());
+            }
+            else
+            {
+                await Swal.FireAsync(
+                                                                                                                                                    "Thất Bại",
+                                                                                                                                                    "Chỉnh Sửa Thông Tin Thất Bại",
+                                                                                                                                                    SweetAlertIcon.Error
+                                                                                                                                                    );
+                EditUser = false;
+                await InvokeAsync(() => StateHasChanged());
+            }
+        }
+        else if (result.Dismiss == DismissReason.Cancel)
+        {
+
+                //ở đây xử lý khi hủy upload
+            await Swal.FireAsync(
+                                                                                                                                              "Hủy",
+                                                                                                                                              "Đã hủy chỉnh sửa thông tin",
+                                                                                                                                              SweetAlertIcon.Error
+                                                                                                                                              );
+            EditUser = false;
+            await InvokeAsync(() => StateHasChanged());
+        }
+
+
+
+
+
+    }
+
+    private async Task EndedProcess(OnlineExamHasImageViewModel onlineExamHasImageViewModel)
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                    Title = $"Cảnh Báo",
+                                                                                                                                                                                                                                                                    Text = $"Bạn có chắc muốn kết thúc bài thi của {onlineExamHasImageViewModel.Email} ?",
+                                                                                                                                                                                                                                                                    ShowCancelButton = true,
+                                                                                                                                                                                                                                                                    CancelButtonText = "Hủy"
+                                                                                                                                                                                                                                                                });
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            OnlineExamViewModel onlineExamViewModel = new OnlineExamViewModel()
+                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                        IdUser = onlineExamHasImageViewModel.IdUser,
+                                                                                                                                                                                                                                                                        SecretKey = onlineExamHasImageViewModel.SecretKey,
+                                                                                                                                                                                                                                                                        IdExaminationRoom = onlineExamHasImageViewModel.IdExaminationRoom,
+                                                                                                                                                                                                                                                                        IsHandlerRequest = onlineExamHasImageViewModel.IsHandlerRequest,
+                                                                                                                                                                                                                                                                        JoinTime = onlineExamHasImageViewModel.JoinTime,
+                                                                                                                                                                                                                                                                        ChekinImage = onlineExamHasImageViewModel.ChekinImage,
+                                                                                                                                                                                                                                                                        LeaveTime = onlineExamHasImageViewModel.LeaveTime,
+                                                                                                                                                                                                                                                                        StartTime = onlineExamHasImageViewModel.StartTime,
+                                                                                                                                                                                                                                                                        EndTime = DateTime.Now,
+                                                                                                                                                                                                                                                                        Status = onlineExamHasImageViewModel.Status,
+                                                                                                                                                                                                                                                                        IndexOfStudent = onlineExamHasImageViewModel.IndexOfStudent,
+                                                                                                                                                                                                                                                                        Note = onlineExamHasImageViewModel.Note,
+                                                                                                                                                                                                                                                                        IsCompletedExam = onlineExamHasImageViewModel.IsCompletedExam,
+                                                                                                                                                                                                                                                                        IsViewExamFile = onlineExamHasImageViewModel.IsViewExamFile,
+                                                                                                                                                                                                                                                                        CountTurnJoin = onlineExamHasImageViewModel.CountTurnJoin
+                                                                                                                                                                                                                                                                    };
+
+            var res = await _onlineExamRoomRepo.UpdateOnlineExamRoom(onlineExamViewModel);
+            if (res)
+            {
+                //ở đây xử lý khi hủy upload
+                await Swal.FireAsync(
+                                                                                                                                                      "Thành Công",
+                                                                                                                                                      "Kết thúc bài thi thành công, vui lòng chờ trong giây lát",
+                                                                                                                                                      SweetAlertIcon.Success
+                                                                                                                                                      );
+
+                visibleForDetailStudent = false;
+                _lstUserInRoom = await _onlineExamRoomRepo.GetOnlineExamRoomById(Secrete);
+                checkingsateuser.KillProcess(onlineExamHasImageViewModel.IdUser);
+                checkingsateuser.IdKillProcess = onlineExamHasImageViewModel.IdUser;
+                EditUser = false;
+                await InvokeAsync(() => StateHasChanged());
+            }
+            else
+            {
+                await Swal.FireAsync(
+                                                                                                                                                        "Thất Bại",
+                                                                                                                                                        "Chỉnh Sửa Thông Tin Thất Bại",
+                                                                                                                                                        SweetAlertIcon.Error
+                                                                                                                                                        );
+                EditUser = false;
+                await InvokeAsync(() => StateHasChanged());
+            }
+        }
+        else if (result.Dismiss == DismissReason.Cancel)
+        {
+
+                //ở đây xử lý khi hủy upload
+            await Swal.FireAsync(
+                                                                                                                                                  "Hủy",
+                                                                                                                                                  "Đã hủy chỉnh sửa thông tin",
+                                                                                                                                                  SweetAlertIcon.Error
+                                                                                                                                                  );
+            EditUser = false;
+            await InvokeAsync(() => StateHasChanged());
+        }
+    }
+    private async Task EditUserInfo(bool Clickedcheck)
+    {
+
+
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                    Title = $"Thông báo",
+                                                                                                                                                                                                                                                                    Text = "Bạn có Muốn vào Chỉnh Sửa Hay Không ?",
+                                                                                                                                                                                                                                                                    ShowCancelButton = true,
+                                                                                                                                                                                                                                                                    CancelButtonText = "Hủy"
+                                                                                                                                                                                                                                                                });
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            EditUser = true;
+            await InvokeAsync(() => StateHasChanged());
+
+        }
+        else if (result.Dismiss == DismissReason.Cancel)
+        {
+
+            EditUser = false;
+            await InvokeAsync(() => StateHasChanged());
+        }
+
+    }
+    private async Task OnChangedEndTime(DateTimeChangedEventArgs args)
+    {
+        EndTimeChanged = args.Date;
+    }
+    public void Stop()
+    {
+        _timer.Stop();
+    }
+
+
+    public async Task Start(int secondsToRun)
+    {
+        try
+        {
+            _secondsToRun = secondsToRun;
+
+            if (_secondsToRun > 0)
+            {
+
+
+                Time = TimeSpan.FromSeconds(_secondsToRun).ToString(@"hh\:mm\:ss");
+                await InvokeAsync(() => StateHasChanged());
+                _timer.Start();
+
+
+            }
+        }
+        catch (Exception ex)
+        {
+            await Swal.FireAsync(
+                                    "Thông Báo",
+                                    "Vui lòng liên hệ với daotao.poly để biết thêm chi tiết",
+                                    SweetAlertIcon.Success
+                                    );
+            return;
+        }
+
+    }
+    public async Task CountDownToStart(int secondsToRun)
+    {
+
+        _secondsToRunCountDown = secondsToRun;
+
+        if (secondsToRun > 0)
+        {
+
+
+            TimeCountDown = TimeSpan.FromSeconds(_secondsToRunCountDown).ToString(@"hh\:mm\:ss");
+            await InvokeAsync(() => StateHasChanged());
+            _timerCountDown.Start();
+
+
+        }
+    }
+    private async void OnAuthStateChanged(Task<AuthenticationState> state)
+                                                                                                                                                       => await InvokeAsync(StateHasChanged);
+
+    private async Task CancelEdit()
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                    Title = $"Xác Nhận",
+                                                                                                                                                                                                                                                                    Text = "Bạn có chắc muốn hủy các thay đổi hay không ?",
+                                                                                                                                                                                                                                                                    Icon = SweetAlertIcon.Warning,
+                                                                                                                                                                                                                                                                    ShowCancelButton = true,
+                                                                                                                                                                                                                                                                    ConfirmButtonText = "Đồng Ý",
+                                                                                                                                                                                                                                                                    CancelButtonText = "Hủy"
+                                                                                                                                                                                                                                                                });
+
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            EditUser = false;
+
+        }
+        else if (result.Dismiss == DismissReason.Cancel)
+        {
+
+            //ở đây xử lý khi hủy upload
+            await Swal.FireAsync(
+                                                                                              "Hủy",
+                                                                                              "Đã Hủy Xóa File",
+                                                                                              SweetAlertIcon.Error
+                                                                                              );
+            return;
+        }
+    }
+    public void Dispose()
+    {
+        AuthenticationStateProvider.AuthenticationStateChanged -= this.OnAuthStateChanged;
+        _timer.Dispose();
+
+    }
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+
+        //đến thời gian count down để bắt đầu
+            _timer = new System.Timers.Timer(1000);
+            _timer.Elapsed += OnTimedEvent;
+            _timer.AutoReset = true;
+
+        //timer này check cho xem đang thuộc khoảng thời gian nào để phát đề
+            using var periodicTimer = new PeriodicTimer(TimeSpan.FromSeconds(8));
+            int i = 0;
+            int counter = 0;
+            int countdown = 0;
+
+
+            while (await periodicTimer.WaitForNextTickAsync())
+            {
+
+                if (DateTime.Now.Second - examinationRoomDetailViewModel.StartTime.Second >= 45)
+                {
+                    whenClickedRaise = true;
+                }
+
+                if (string.IsNullOrEmpty(checkingrole))
+                {
+                    examinationRoomDetailViewModel = await _examinationRoomDetailRepo.GetExaminamRoomDetailBySecret(Secrete);
+                    var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                    var user = authState.User;
+                    checkingrole = user.Claims.ToList()[11].Value;
+                }
+                if (checkingrole == "GV FPLExam")
+                {
+                    if (DateTime.Now.Second - examinationRoomDetailViewModel.StartTime.Second == 10 && whenClickedRaise == false)
+                    {
+                        counter++;
+                        await Swal.FireAsync(
+                                                                                                                          "Cảnh Báo",
+                                                                                                                                      $"Cảnh Báo Lần {counter} : vui lòng bạn bấm nút phát đề thi cho sinh viên, Sau {3 - counter} lần nữa sẽ tự động phát !",
+                                                                                                                              SweetAlertIcon.Error
+                                                                                                                              );
+                        if (counter == 3)
+                        {
+                            whenClickedRaise = true;
+                            await InvokeAsync(() => StateHasChanged());
+                        }
+                    }
+                }
+
+                if (DateTime.Now.Second - examinationRoomDetailViewModel.StartTime.Second >= 30)
+                {
+                    whenClickedRaise = true;
+                    await InvokeAsync(() => StateHasChanged());
+                }
+                getTerUser = _lstUserInRoom.Find(c => c.IdUser == GetIdUser);
+                if (getTerUser == null)
+                {
+                    getTerUser = _lstUserInRoom.Find(c => c.IdUser == GetIdUser);
+                }
+                else
+                {
+                    if (!string.IsNullOrEmpty(checkingsateuser.IdKillProcess) && GetIdUser == checkingsateuser.IdKillProcess)
+                    {
+                       
+                        _timer.Enabled = false;
+                        await TimerOut.InvokeAsync();
+                        _timer.Dispose();
+                        IsHideExam = true;
+                        _lstUserInRoom = await _onlineExamRoomRepo.GetOnlineExamRoomById(Secrete);
+                        _confirmLoading = true;
+                        _visible = false;
+
+                        IsHideExam = false;
+                        IsShowOpenExam = false;
+                        IsShowOpenExamOnTime = true;
+                        _confirmLoading = false;
+                        await InvokeAsync(() => StateHasChanged());
+                        checkingsateuser.IdKillProcess = "";
+                    }
+
+                    if (!string.IsNullOrEmpty(checkingsateuser.IdKicker) && GetIdUser == checkingsateuser.IdKicker)
+                    {
+                        NavigationManager.NavigateTo($"/notfoundtheexaminationroom/{GetIdUser}", true);
+                        checkingsateuser.IdKicker = "";
+                    }
+
+                    if (!string.IsNullOrEmpty(checkingsateuser.ResetTimerUser) && GetIdUser == checkingsateuser.ResetTimerUser && whenClickedRaise == true)
+                    {
+                        _timer.Enabled = false;
+                        await TimerOut.InvokeAsync();
+                        _timer.Dispose();
+                        Console.WriteLine("let go");
+                        _lstUserInRoom = await _onlineExamRoomRepo.GetOnlineExamRoomById(Secrete);
+                        getTerUser = _lstUserInRoom.Find(c => c.IdUser == GetIdUser);
+                        _timer = new System.Timers.Timer(1000);
+                        _timer.Elapsed += OnTimedEvent;
+                        _timer.AutoReset = true;
+                        var getrangminus = getTerUser.EndTime - DateTime.Now;
+                        await Start(Convert.ToInt32(getrangminus.TotalSeconds));
+                        checkingsateuser.ResetTimerUser = "";
+                    }
+                    Console.WriteLine(getTerUser.EndTime.ToString());
+                        //đây là trong quá trình còn có thể phát đề
+                    if (DateTime.Now >= getTerUser.StartTime && DateTime.Now < getTerUser.EndTime && whenClickedRaise == true)
+                    {
+                        if (i == 0)
+                        {
+                            var getrangminus = getTerUser.EndTime - DateTime.Now;
+                            await Start(Convert.ToInt32(getrangminus.TotalSeconds));
+                        }
+
+                        await AutoShowExam(getTerUser);
+
+                        IsShowOpenExam = true;
+                        await InvokeAsync(() => StateHasChanged());
+
+                    }
+                        //if (DateTime.Now.Minute - getTerUser.EndTime.Minute == 5 && whenClickedRaise == true)
+                        //{
+                        //    await _notice.Open(new NotificationConfig()
+                    //                                                                                                                                                                                                                                                    {
+                    //                                                                                                                                                                                                                                                        Message = "Thông Báo",
+                    //                                                                                                                                                                                                                                                        Duration = 5,
+                    //                                                                                                                                                                                                                                                        Description = "Thời Gian Làm Bài Chỉ Còn Lại 5 phút,cố gắng lên nào !",
+                    //                                                                                                                                                                                                                                                        NotificationType = NotificationType.Warning
+                    //                                                                                                                                                                                                                                                    });
+                    //    await InvokeAsync(() => StateHasChanged());
+
+                    //}
+                    //if (DateTime.Now.Minute - getTerUser.EndTime.Minute <= 1 && whenClickedRaise == true)
+                    //{
+                    //    changcolortime = "text-danger";
+                    //    await InvokeAsync(() => StateHasChanged());
+
+                    //}
+
+                    if (DateTime.Now > getTerUser.EndTime && whenClickedRaise == true && i == 0)
+                    {
+                        i++;
+                        _timer.Enabled = false;
+                        await TimerOut.InvokeAsync();
+                        _timer.Dispose();
+                        IsHideExam = true;
+                        _lstUserInRoom = await _onlineExamRoomRepo.GetOnlineExamRoomById(Secrete);
+                        _confirmLoading = true;
+                        _visible = false;
+
+                        IsHideExam = false;
+                        IsShowOpenExam = false;
+                        IsShowOpenExamOnTime = true;
+                        _confirmLoading = false;
+                        await InvokeAsync(() => StateHasChanged());
+
+                    }
+                   
+                }
+            }
+
+                        //int counter = 0;
+                        //            //timer này check đóng đề
+                        //using var periodicTimerClose = new PeriodicTimer(TimeSpan.FromSeconds(5));
+                //while (await periodicTimerClose.WaitForNextTickAsync())
+            //{
+
+            //    getTerUser = _lstUserInRoom.Find(c => c.IdUser == GetIdUser);
+            //    if (getTerUser == null)
+            //    {
+            //        getTerUser = _lstUserInRoom.Find(c => c.IdUser == GetIdUser);
+            //    }
+            //    else
+            //    {
+
+
+            //    }
+            //}
+
+
+
+
+            //int counter = 0;
+            ////timer này check phát đề muộn
+            //using var periodicTimerRaisingExxam = new PeriodicTimer(TimeSpan.FromSeconds(15));
+            //while (await periodicTimerRaisingExxam.WaitForNextTickAsync())
+            //{
+            //    if (DateTime.Now > examinationRoomDetailViewModel.StartTime && examinationRoomDetailViewModel.StartTime > DateTime.Now)
+            //    {
+            //        counter++;
+            //        await Swal.FireAsync(
+            //                              "Cảnh Báo",
+            //                                      $"Cảnh Báo Lần {counter} : vui lòng bạn bấm nút phát đề thi cho sinh viên, Sau {3 - counter} lần nữa sẽ tự động phát !",
+            //                              SweetAlertIcon.Error
+            //                              );
+            //        if (counter == 3)
+            //        {
+            //            whenClickedRaise = true;
+            //            await InvokeAsync(() => StateHasChanged());
+            //            periodicTimerRaisingExxam.Dispose();
+            //        }
+            //    }
+            //}
+
+
+        }
+
+    }
+            //service tự động check show đề thi cho sinh viên khi vào phòng
+    private async Task AutoShowExam(OnlineExamHasImageViewModel getTerUser)
+    {
+            //kiểm tra đối tượng nếu trong thời gian thi thì cho auto hiện thị đề thi lên luôn
+
+        await ShowExam();
+        IsCanViewExamFile = true;
+
+    }
+    //service tự động check show đề thi cho sinh viên khi vào phòng
+    private async Task AutoHideExam(OnlineExamHasImageViewModel getTerUser)
+    {
+        //kiểm tra đối tượng nếu trong thời gian thi thì cho auto hiện thị đề thi lên luôn
+
+        _visible = false;
+        IsCanViewExamFile = false;
+
+    }
+    //service tự động check show đề thi cho sinh viên khi vào phòng
+    private async Task AutoShowOneOpen(OnlineExamHasImageViewModel getTerUser)
+    {
+        //kiểm tra đối tượng nếu trong thời gian thi thì cho auto hiện thị đề thi lên luôn
+        _visible = false;
+        IsCanViewExamFile = true;
+
+    }
+
+    private async Task closeStudent(OnlineExamHasImageViewModel onlineExamHasImageViewModel)
+    {
+        // reset thông tin
+        onlineExamHasImageViewModel = new OnlineExamHasImageViewModel();
+        visibleForDetailStudent = false;
+    }
+
+
+    private async Task HandleOkSup(MouseEventArgs e)
+    {
+
+
+        _visibleSup = false;
+        _confirmLoading = false;
+        await InvokeAsync(() => StateHasChanged());
+    }
+
+    private async Task HandleOk(MouseEventArgs e)
+    {
+
+        _confirmLoading = true;
+        await InvokeAsync(() => StateHasChanged());
+        await Task.Delay(500);
+        _visible = false;
+        _confirmLoading = false;
+    }
+
+    private void HandleCancel(MouseEventArgs e)
+    {
+
+        _visible = false;
+    }
+    private async Task ShowerByDupervisior()
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(Email))
+            {
+                var res = await _onlineExamRoomRepo.ShowingExamFile("quadeptrai");
+                if (roomHandler.UsersByConnectionId.Where(c => c.Value.Email != Email).Count() > 0)
+                {
+                    whenClickedRaise = true;
+                    IsHideExam = false;
+
+                    await Swal.FireAsync(
+                                                    "Thông Báo",
+                                                    "Phát Đề Thi Thành Công",
+                                                    SweetAlertIcon.Success);
+                    await InvokeAsync(() => StateHasChanged());
+                }
+                else
+                {
+                    await Swal.FireAsync(
+                                                       "Thông Báo",
+                                                       "Chưa Có Sinh Viên Vào Phòng Thi Nên Chưa Thể Phát Đề Thi",
+                                                       SweetAlertIcon.Error
+                                                       );
+                }
+            }
+        }
+        catch
+        {
+            await Swal.FireAsync(
+                                                          "Thông Báo",
+                                                          "Liên Hệ Với daotao.poly để biết thêm chi tiết",
+                                                          SweetAlertIcon.Error
+                                                          );
+            return;
+        }
+
+
+
+    }
+    private async Task ShowOneTimeExam()
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                    Title = $"Xác Nhận Mở Đề Thi Xem 1 Lần !",
+                                                                                                                                                                                                                                                                    Text = "Bạn có chắc muốn mở đề thi xem 1 lần hay không ?",
+                                                                                                                                                                                                                                                                    Icon = SweetAlertIcon.Warning,
+                                                                                                                                                                                                                                                                    ShowCancelButton = true,
+                                                                                                                                                                                                                                                                    ConfirmButtonText = "Đồng Ý",
+                                                                                                                                                                                                                                                                    CancelButtonText = "Hủy"
+                                                                                                                                                                                                                                                                });
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            var checker = await _onlineExamRoomRepo.GetOnlineExamRoomById(Secrete);
+            var isalreadyshow = checker.Find(c => c.IdUser == GetIdUser).IsViewExamFile;
+            if (isalreadyshow == false)
+            {
+                await Swal.FireAsync(
+                                                                                                                                                "Thông Báo",
+                                                                                                                                                "Bạn đã sử dụng đề mở 1 lần bạn không thể mở lại",
+                                                                                                                                                SweetAlertIcon.Error
+                                                                                                                                                );
+                return;
+            }
+            else
+            {
+                var rescheck = await _onlineExamRoomRepo.FastUpdateHanlerOneTime(Secrete, GetIdUser);
+                if (rescheck)
+                {
+                    _visible = true;
+                    var examshowing = await _examinationRoomDetailRepo.GetExamFileBySerceate(Secrete);
+                    pdfContent = "data:application/pdf;base64,";
+                    pdfContent += System.Convert.ToBase64String(examshowing);
+                }
+                else
+                {
+                    await Swal.FireAsync(
+                                                                                                                                               "Thông Báo",
+                                                                                                                                               "Mở đề thất bại",
+                                                                                                                                               SweetAlertIcon.Error
+                                                                                                                                               );
+                }
+            }
+
+
+
+
+
+        }
+        else if (result.Dismiss == DismissReason.Cancel)
+        {
+
+                    //ở đây xử lý khi hủy upload
+            await Swal.FireAsync(
+                                                                                                                                              "Hủy",
+                                                                                                                                              "Đã Hủy Thêm File",
+                                                                                                                                              SweetAlertIcon.Error
+                                                                                                                                              );
+
+        }
+    }
+    private async Task ShowExam()
+    {
+
+        _visible = true;
+        var examshowing = await _examinationRoomDetailRepo.GetExamFileBySerceate(Secrete);
+        pdfContent = "data:application/pdf;base64,";
+        pdfContent += System.Convert.ToBase64String(examshowing);
+    }
+    private async Task SeeSomExamFile()
+    {
+
+        _visibleSup = true;
+        var examshowing = await _examinationRoomDetailRepo.GetExamFileBySerceate(Secrete);
+        pdfContent = "data:application/pdf;base64,";
+        pdfContent += System.Convert.ToBase64String(examshowing);
+    }
+    private async Task ReloadRequest()
+    {
+        _lstRequestComeIn = await _onlineExamRoomRepo.HandlerRequestComeIn(Secrete);
+    }
+
+    private async Task AcceptAuserToJoin(string IdUser)
+    {
+        if (checkingrole == "GV FPLExam")
+        {
+            if (!string.IsNullOrEmpty(IdUser))
+            {
+                checkingsateuser.AccpetToJoin(IdUser);
+                await Task.Delay(500);
+            }
+
+            await ReloadRequest();
+            await InvokeAsync(() => StateHasChanged());
+        }
+
+    }
+    private async Task DeclineAuser(string IdUser)
+    {
+        if (checkingrole == "GV FPLExam")
+        {
+            if (!string.IsNullOrEmpty(IdUser))
+            {
+                checkingsateuser.Decline(IdUser);
+                await Task.Delay(500);
+            }
+            await ReloadRequest();
+            await InvokeAsync(() => StateHasChanged());
+        }
+    }
+    public async Task open()
+    {
+        await ReloadRequest();
+        await InvokeAsync(() => StateHasChanged());
+        this.visible = true;
+
+    }
+
+    public async Task close()
+    {
+        this.visible = false;
+    }
+
+        //public void Dispose()
+        //{
+        //        if (checkingrole == "GV FPLExam")
+        //    {
+        //        checkingsateuser.OnChange -= OnMyChangeHandlerForAppSate;
+        //        }
+        //        else
+    //        {
+    //            roomHandler.OnChange -= OnMyChangeHandler;
+    //        }
+
+    //}
+    public async void OnMyChangeHandler(object sender, EventArgs args)
+    {
+    // notify the UI that the state has changed
+        await InvokeAsync(() => StateHasChanged());
+    }
+    public async void OnMyChangeHandlerForAppSate(object sender, EventArgs args)
+    {
+    // notify the UI that the state has changed
+        await InvokeAsync(() => StateHasChanged());
+    }
+    private async Task UpdateTurn()
+    {
+        var countturn = await _onlineExamRoomRepo.getTurnById(Secrete, GetIdUser);
+        if (countturn != 0)
+        {
+            IsShowWaitingPage = true;
+            await InvokeAsync(() => StateHasChanged());
+            var res = await _onlineExamRoomRepo.FastUpdateTurn(Secrete, GetIdUser);
+        }
+        else
+        {
+            IsShowWaitingPage = true;
+            await InvokeAsync(() => StateHasChanged());
+        }
+    }
+
+    private async Task ShowEditter(OnlineExamHasImageViewModel onlineExamHasImageViewModel)
+    {
+
+
+        showinfouser = onlineExamHasImageViewModel;
+        imageDataURL = Encoding.ASCII.GetString(showinfouser.ChekinImage);
+        await InvokeAsync(() => StateHasChanged());
+        this.visibleForDetailStudent = true;
+    }
+    private async Task GetUserInroom()
+    {
+        _lstUserInRoom = await _onlineExamRoomRepo.GetOnlineExamRoomById(Secrete);
+    }
+    private async Task DeclineToJoin(string EmailUser, string keycloesed)
+    {
+        var getIdUser = _userManager.Users.Where(c => c.Email == EmailUser).Select(c => c.Id).FirstOrDefault();
+        if (!string.IsNullOrEmpty(getIdUser))
+        {
+            checkingsateuser.Decline(getIdUser);
+
+
+        }
+        await ReloadRequest();
+        await InvokeAsync(() => StateHasChanged());
+
+    }
+    private async Task AcceptedToJoin(string EmailUser, string keycloesed)
+    {
+        var getIdUser = _userManager.Users.Where(c => c.Email == EmailUser).Select(c => c.Id).FirstOrDefault();
+        if (!string.IsNullOrEmpty(getIdUser))
+        {
+            checkingsateuser.AccpetToJoin(getIdUser);
+
+
+        }
+        await ReloadRequest();
+        await InvokeAsync(() => StateHasChanged());
+
+    }
+    private async Task ConnectToServer()
+    {
+        try
+        {
+            string url = "http://localhost:5001/notificationhub";
+            HubConnection _connection = null;
+            bool isConnected = false;
+            string connectionStatus = "Closed";
+            _connection = new HubConnectionBuilder()
+                                                                                                                                                                                                                                                        .WithUrl(url)
+                                                                                                                                                                                                                                                        .Build();
+
+            await _connection.StartAsync();
+            isConnected = true;
+            connectionStatus = "Connected :-)";
+            Console.WriteLine("SinalR Is Starting");
+            _connection.Closed += async (s) =>
+                                                                                                                                                                                                                                                        {
+    isConnected = false;
+    connectionStatus = "Disconnected";
+    await _connection.StartAsync();
+    isConnected = true;
+                                                                                                                                                                                                                                                        };
+
+            _connection.On<string>("OnlineExams", async (res) =>
+                                                                                                                                                                                                                                                        {
+    SenderIdResquester = res;
+
+    string key = $"open{DateTime.Now}";
+    RenderFragment btn =
+    @<div class="row">
+        <Button Type="@AntDesign.ButtonType.Primary" class="mb-3" OnClick="()=>AcceptedToJoin(res,key)">
+            Đồng Ý
+        </Button>
+        <Button Type="@AntDesign.ButtonType.Primary" OnClick="()=>DeclineToJoin(res,key)">
+            Từ Chối
+        </Button>
+    </div>
+                                                                                        ;
+
+    await _notice.Open(new NotificationConfig()
+                                                                                                                                                                                                                                                        {
+                                                                                                                                                                                                                                                            Message = "Yêu Cầu Tham Gia Phòng Thi",
+                                                                                                                                                                                                                                                            Key = key,
+                                                                                                                                                                                                                                                            Description = res + " " + "muốn tham gia vào phòng thi",
+                                                                                                                                                                                                                                                            Btn = btn,
+                                                                                                                                                                                                                                                            NotificationType = NotificationType.Info
+                                                                                                                                                                                                                                                        });
+
+
+
+
+    await InvokeAsync(() => this.StateHasChanged());
+                                                                                                                                                                                                                                                    });
+        }
+        catch (Exception ex)
+        {
+
+            //_error.ProcessError(ex);
+        }
+    }
+    private async Task ConnectToServerLeftRoom()
+    {
+
+        try
+        {
+            string url = "http://localhost:5001/notificationhub";
+            HubConnection _connection = null;
+            bool isConnected = false;
+            string connectionStatus = "Closed";
+            _connection = new HubConnectionBuilder()
+                                                                                        .WithUrl(url)
+                                                                                        .Build();
+
+            await _connection.StartAsync();
+            isConnected = true;
+            connectionStatus = "Connected :-)";
+            Console.WriteLine("SinalR Is Starting");
+            _connection.Closed += async (s) =>
+                                                                                        {
+                                                                                            isConnected = false;
+                                                                                            connectionStatus = "Disconnected";
+                                                                                            await _connection.StartAsync();
+                                                                                            isConnected = true;
+                                                                                        };
+
+            _connection.On<string>("OnlineExamsComeOut", async (res) =>
+                                                                                        {
+                                                                                            await _notice.Open(new NotificationConfig()
+                                                                                                {
+                                                                                                    Message = "Thông Báo",
+                                                                                                    Duration = 2,
+                                                                                                    NotificationType = NotificationType.Info,
+                                                                                                    Description = res + " " + "đã rời khỏi phòng thi"
+                                                                                                });
+
+                                                                                            await InvokeAsync(() => this.StateHasChanged());
+                                                                                        });
+        }
+        catch (Exception ex)
+        {
+
+            //_error.ProcessError(ex);
+        }
+    }
+    //mở đề của sinh viên
+    private async Task ShowExamFile()
+    {
+        try
+        {
+            string url = "http://localhost:5001/notificationhub";
+            HubConnection _connection = null;
+            bool isConnected = false;
+            string connectionStatus = "Closed";
+            _connection = new HubConnectionBuilder()
+                                                                                            .WithUrl(url)
+                                                                                            .Build();
+
+            await _connection.StartAsync();
+            isConnected = true;
+            connectionStatus = "Connected :-)";
+            Console.WriteLine("SinalR Is Starting");
+            _connection.Closed += async (s) =>
+                                                                                            {
+                                                                                                isConnected = false;
+                                                                                                connectionStatus = "Disconnected";
+                                                                                                await _connection.StartAsync();
+                                                                                                isConnected = true;
+                                                                                            };
+
+            _connection.On<string>("ShowExamFile", async (res) =>
+                                                                                            {
+                                                                                                await ShowExam();
+                                                                                                await InvokeAsync(() => StateHasChanged());
+                                                                                            });
+        }
+        catch (Exception ex)
+        {
+
+            //_error.ProcessError(ex);
+        }
+    }
+}
+

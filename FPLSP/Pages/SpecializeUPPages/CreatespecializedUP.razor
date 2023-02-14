@@ -1,0 +1,251 @@
+﻿@page "/createSpecializedUP/"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Specialized
+
+<h3>TẠO MỚI CHUYÊN NGÀNH</h3>
+
+<EditForm Model="@request" OnValidSubmit="@Create" class="card card-body bg-light mt-5" id="create-form">
+    <DataAnnotationsValidator />
+    <div class="form-group">
+        <div class="row">
+            <div class="col-lg-2 pt-4 pl-3">
+                <img style="height: 230px;width: 190px; border-radius: 10px;" src="@request.Image" />
+                <div class="form-group pt-2">
+                    <label for="image" class="form-label">Đổi Ảnh:</label>
+                    <div class="text-danger">
+                        <ImageUpload OnChange="AssignImageUrl" />
+                    </div>
+                </div>
+            </div>
+            <div class="col-10 pt-1">
+                <div class="row">
+                    <div class="form-group pt-2 col-md-6">
+                        <label for="name" class="col-md-4 col-form-label">Mã Chuyên ngành:</label>
+                        <div class="col-md-12">
+                            <InputText id="name" class="form-control" @bind-Value="@request.SpecializedCode" />
+                            <div class="text-danger"><ValidationMessage For="@(() => request.SpecializedCode)" /></div>
+                        </div>
+                    </div>
+                    <div class="form-group pt-2 col-md-6">
+                        <label for="name" class="col-md-4 col-form-label">Tên Chuyên ngành:</label>
+                        <div class="col-md-12">
+                            <InputText id="name" class="form-control" @bind-Value="@request.SpecializationName" />
+                            <div class="text-danger"><ValidationMessage For="@(() => request.SpecializationName)" /></div>
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="row">
+                    <div class="form-group pt-2 col-md-6">
+                        <label for="name" class="col-md-4 col-form-label">Level:</label>
+                        <div class="col-md-12">
+                            <InputSelect @bind-Value="_level" class="form-select">
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                            </InputSelect>
+
+                        </div>
+                    </div><div class="form-group pt-2 col-md-6">
+                        <label for="name" class="col-md-4 col-form-label">Chuyên ngành lớn:</label>
+                        <div class="col-md-12">
+                            <InputSelect @bind-Value="_parentId" class="form-select">
+                                <option value="@Guid.Empty">Chọn chuyên ngành lớn</option>
+                                @if (_lstLevel0 != null)
+                                {
+                                    @foreach (var item in _lstLevel0)
+                                    {
+                                        <option value="@item.Id">@item.SpecializationName</option>
+                                    }
+                                }
+                            </InputSelect>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group pt-2 col-md-6">
+                        <label for="name" class="col-md-4 col-form-label">Trạng thái:</label>
+                        <div class="col-md-12">
+                            <InputSelect @bind-Value="request.Status" class="form-select">
+                                <option value="0">Hoạt động</option>
+                                <option value="1">Không Hoạt động</option>
+                            </InputSelect>
+                            <div class="text-danger"><ValidationMessage For="@(() => request.Status)" /></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div class="d-flex justify-content-center mb-2">
+        <div class="p-2">
+            <button type="submit" class="btn btn-success">Thêm mới</button>
+        </div>
+        <div class="p-2">
+            <a @onclick="()=> clearForm()" class="btn btn-outline-primary">Clear Form</a>
+        </div>
+        <div class="p-2">
+            <a href="/listsubjects" class="btn btn-outline-danger">Quay Lại</a>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+
+    [Inject]
+    public ISpecializedUPRepo _specializedUPRepo { get; set; }
+    public SpecializedVM request = new SpecializedVM();
+    public List<SpecializedDto> _lstLevel0 = new List<SpecializedDto>();
+    public Guid _parentId = new Guid();
+    [Inject] public NavigationManager Navigation { get; set; }
+
+    [Parameter]
+    public string _error { get; set; }
+    [Inject]
+    public IToastService ToastService { get; set; }
+    public int _level { get; set; } = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _lstLevel0 = await _specializedUPRepo.GetAll();
+        _lstLevel0 = _lstLevel0.Where(x => x.Level == 0).ToList();
+
+    }
+    public bool checkName(string x)
+    {
+        foreach (char c in x)
+        {
+            if (!Char.IsLetter(c) && c.ToString() != " ")
+                return false;
+        }
+        return true;
+    }
+    public bool checkCode(string x)
+    {
+        foreach (char c in x)
+        {
+            if (!Char.IsLetter(c) && !Char.IsDigit(c))
+                return false;
+        }
+        return true;
+    }
+    public bool checkNumber(string x)
+    {
+        foreach (char c in x)
+        {
+            if (!Char.IsDigit(c))
+                return false;
+        }
+        return true;
+    }
+    private async Task Create()
+    {
+        var lstSpecializedCP = await _specializedUPRepo.GetAll();
+
+        if (!checkName(request.SpecializationName))
+        {
+            ToastService.ShowError("Tên không được chứa số và ký tự đặc biệt", "Error");
+        }
+        else if (_level == 0)
+        {
+            if (string.IsNullOrEmpty(request.SpecializedCode))
+            {
+                ToastService.ShowError("Mã không được để trống", "Error");
+            }
+            else if (!checkCode(request.SpecializedCode))
+            {
+                ToastService.ShowError("Mã không được chứa khoảng trắng và ký tự đặc biệt", "Error");
+            }
+            else
+            {
+                var temp = lstSpecializedCP.FirstOrDefault(x => x.SpecializationName == request.SpecializationName && x.Level == 0);
+
+                if (temp != null)
+                {
+                    ToastService.ShowError("Chuyên ngành đã tồn tại", "Error");
+                    Navigation.NavigateTo("/createSpecializedUP");
+                }
+                else
+                {
+                    var result = await _specializedUPRepo.Create(Guid.Empty, request);
+
+                    if (result != 1)
+                    {
+                        ToastService.ShowError("Tạo chuyên ngành lớn thất bại", "Error");
+                        Navigation.NavigateTo("/createSpecializedUP");
+                    }
+                    else
+                    {
+                        ToastService.ShowSuccess("Tạo chuyên ngành lớn thành công", "Success");
+                        Navigation.NavigateTo("/SpecializedUP");
+                        this.StateHasChanged();
+                    }
+                }
+            }
+
+        }
+        else if (_level == 1)
+        {
+            if (_parentId != Guid.Empty)
+            {
+                var temp = lstSpecializedCP.FirstOrDefault(x => x.SpecializationName == request.SpecializationName && x.Level == 1);
+
+                if (temp != null)
+                {
+                    ToastService.ShowError("Chuyên ngành đã tồn tại", "Error");
+                    Navigation.NavigateTo("/createSpecializedUP");
+                }
+                else
+                {
+                    var result = await _specializedUPRepo.Create(_parentId, request);
+
+                    if (result != 1)
+                    {
+                        ToastService.ShowError("Tạo chuyên ngành hẹp thất bại", "Error");
+                        Navigation.NavigateTo("/createSpecializedUP");
+                    }
+                    else
+                    {
+                        ToastService.ShowSuccess("Tạo chuyên ngành hẹp thành công", "Success");
+                        Navigation.NavigateTo("/SpecializedUP");
+                        this.StateHasChanged();
+                    }
+                }
+            }
+            else
+            {
+                ToastService.ShowError("Vui lòng chọn chuyên ngành lớn", "Error");
+            }
+        }
+        else
+        {
+            ToastService.ShowError("Lỗi", "Error");
+        }
+
+    }
+
+    public void clearForm()
+    {
+        request.SpecializedCode = null;
+        request.SpecializationName = null;
+        request.Status = 0;
+        _level = 0;
+        _parentId = Guid.Empty;
+
+    }
+    private void AssignImageUrl(string imgUrl)
+    {
+        //request.ImageUrl = imgUrl;
+        if (!(imgUrl.ToLower().Contains(".png") || imgUrl.ToLower().Contains(".jpg") || imgUrl.ToLower().Contains(".gif")))
+        {
+            ToastService.ShowError("Ảnh không hợp lệ", "Error");
+        }
+    }}

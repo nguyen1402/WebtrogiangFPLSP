@@ -1,0 +1,174 @@
+﻿@page "/updatelesson/{idspec}/{idsubject}/{idlesson}"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Lesson
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<div class="row pt-3">
+    <h3>Cập nhật</h3>
+        <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/SpecializedCP">Chuyên ngành</a></li>
+            <li class="breadcrumb-item"><a href="/subjects/@idspec">@namespecialized</a></li>
+            <li class="breadcrumb-item"><a href="/lesson/@idspec/@idsubject">@subject.SubjectName</a></li>
+            <li class="breadcrumb-item active"  aria-current="page">Cập nhật bài học</li>
+    </ol>
+</nav>
+    @if (ShowAuthError)
+    {
+        <div class="alert alert-danger" role="alert">
+            @Error
+        </div>
+    }
+    @if (lesson != null)
+    {
+        <EditForm Model="lesson" OnValidSubmit="Update" class="card card-body bg-light mt-1">
+        <DataAnnotationsValidator />
+        <div class="form-group">
+            <div class="row">
+                <div class="col-6">
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-12">
+                            <label for="name" class="col-md-3 col-form-label">Bài:</label>
+                            <div class="col-md-12">
+                                <InputNumber min=1 id="name" class="form-control" @bind-Value="lesson.Index" />
+                                <div class="text-danger"><ValidationMessage For="@(() => lesson.Index)" /></div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                    <div class="form-group pt-2 col-md-12">
+                        <label for="name" class="col-md-2 col-form-label">Mô tả :</label>
+                        <div class="col-md-12">
+                            <InputText class="form-control" @bind-Value="lesson.Descriptions" />
+                            <div class="text-danger"><ValidationMessage For="@(() => lesson.Descriptions)" /></div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+                
+                <div class="col-6">
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-12">
+                            <label for="name" class="col-md-3 col-form-label">Tên bài học:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="lesson.LessonName" />
+                                <div class="text-danger"><ValidationMessage For="@(() => lesson.LessonName)" /></div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-12">
+                            <label for="name" class="col-md-2 col-form-label">Trạng thái:</label>
+                            <div class="col-md-12">
+                                <InputSelect @bind-Value="lesson.Status" class="form-select">
+                                    <option value="0">Không hoạt động</option>
+                                    <option value="1">Đang hoạt động</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-4"></div>
+                <div class="col-4" style="text-align:center">
+                    <button type="submit" class="btn btn-primary me-2">Cập Nhật</button>
+                    <button type="button" class="btn btn-outline-success me-2" @onclick="KhoiPhuc">Khôi Phục</button>
+                    <a @onclick="() => Quaylai()" class="btn btn-outline-danger">Quay Lại</a>
+                </div>
+                <div class="col-4"></div>
+
+        </div>
+    </EditForm>
+       
+    }
+</div>
+
+@code {
+    private LessonUpdateVM lesson;
+    private LessonDto Undolesson;
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    [Inject]
+    public ILessonCPRepo _iLessonClient { get; set; }
+    public bool ShowAuthError { get; set; }
+    public string Error { get; set; }
+
+    [Parameter]
+    public string idlesson { get; set; }  //id bài học
+    [Parameter]
+    public string idsubject { get; set; }   // id môn học
+    [Parameter]
+    public string idspec { get; set; }  //id chuyên nghành
+    private SubjectDto subject { get; set; } = new SubjectDto();
+    [Inject]
+    public ISubjectClient _iSubjectClient { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    public SpecializedDto specializedDto { get; set; } = new SpecializedDto();
+    string namespecialized { get; set; }
+    [Inject]
+    public ISpecializedCPRepo _iSpecialized { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+
+        specializedDto = await _iSpecialized.GetbyId(Guid.Empty, Guid.Parse(idspec));
+        namespecialized = specializedDto.SpecializationName;
+        subject = await _iSubjectClient.GetSubjectbyId(Guid.Parse(idsubject));
+        var lessondb = await _iLessonClient.GetbyId(Guid.Parse(idlesson));
+        Undolesson = lessondb;
+        lesson = new LessonUpdateVM()
+            {
+                Status = lessondb.Status,
+                LessonName = lessondb.LessonName,
+                Descriptions = lessondb.Descriptions,
+                Index=lessondb.Index
+            };
+        if(lesson.Index < 10)
+        {
+            lesson.LessonName = lesson.LessonName.Substring(8, (lesson.LessonName.Length - 8));
+        }
+        else
+        {
+            lesson.LessonName = lesson.LessonName.Substring(9, (lesson.LessonName.Length - 9));
+        }
+    }
+    private async Task Update()
+    {
+        ShowAuthError = false;
+        var result = await _iLessonClient.Update(Guid.Parse(idlesson), lesson);
+        if (result != 1)
+        {
+            Error = "Lỗi";
+            var url = Path.Combine("/updatelesson/" + idsubject + "/" + idlesson + "/" + idlesson);
+            ShowAuthError = true;
+            Navigation.NavigateTo(url);
+        }
+        else
+        {
+            _toastService.ShowSuccess("Cập nhật thành công");
+            var url = Path.Combine("/lesson/" + idspec + "/" + idsubject);
+            Navigation.NavigateTo(url);
+        }
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/lesson/" + idspec + "/" + idsubject);
+        Navigation.NavigateTo(url);
+    }
+    private async void KhoiPhuc()
+    {
+        lesson.Status = Undolesson.Status;
+        lesson.LessonName = Undolesson.LessonName;
+        lesson.Descriptions = Undolesson.Descriptions;
+        lesson.Index = Undolesson.Index;
+
+
+    }
+}

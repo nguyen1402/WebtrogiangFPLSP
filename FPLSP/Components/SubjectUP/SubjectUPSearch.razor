@@ -1,0 +1,62 @@
+﻿@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Subject
+
+<EditForm Model="@subjectListSearch" OnSubmit=@SearchForm>
+    <div class="row">     
+        <div class="col-lg-3">
+            <InputSelect class="form-select" ValueExpression="@(()=>subjectListSearch.Status)" Value="@subjectListSearch.Status" ValueChanged="@((int? value)=>
+            StatusSearch(value))">
+                <option value="">Trạng thái</option>
+                <option value="0">Chưa bắt đầu</option>
+                <option value="1">Đang giảng dạy</option>
+                <option value="2">Hết hạn</option>
+                <option value="3">Ngưng hoạt động</option>
+            </InputSelect>
+        </div>
+        <div class=" col-lg-7">
+            <div class="input-group mb-3">
+                <InputText placeholder="Nhập tên môn..." class="form-control" @bind-Value="subjectListSearch.Name"></InputText>
+                <div class="input-group-append pl-1">
+                    <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-2">
+            <a @onclick="@ClearSearch" class="btn btn-outline-success">Làm mới </a>
+        </div>
+    </div>
+</EditForm>
+@code{
+    [Inject] public ISubjectUPRepo _subjectUPRepo { get; set; }
+        [Parameter]
+        public EventCallback<SubjectListSearch> OnSearch { set; get; }
+
+
+        private SubjectListSearch subjectListSearch = new SubjectListSearch();
+
+        public List<SubjectDto> SubjectUPList { get; set; } = new List<SubjectDto>();
+
+        private async Task SearchForm(EditContext context)
+        {
+            await OnSearch.InvokeAsync(subjectListSearch);
+
+        }
+        private void SearchCode(string code)
+        {
+            subjectListSearch.SubjectCode = code;
+            SearchForm(null);
+        }
+        private void StatusSearch(int? a)
+        {
+            subjectListSearch.Status = a;
+            SearchForm(null);
+        }
+        public async Task ClearSearch()
+        {
+            subjectListSearch = new SubjectListSearch();
+            await SearchForm(null);
+        }
+}

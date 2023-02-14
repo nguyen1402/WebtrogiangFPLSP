@@ -1,0 +1,58 @@
+﻿@page "/answerup"
+<h3>AnswerUp</h3>
+@using FPLSP.Components
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.AnswerUPDtos
+@using FPLSP.Server.Domain.Dtos.QuizQuestionUPDto
+
+@if (lstAnswer == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>               
+                <th>[Câu hỏi]</th>
+                <th>[Đáp án]</th>
+                <th>[Trạng thái]</th>
+                <th><button><a href="/answerup/add">Thêm</a></button></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in lstAnswer)
+            {
+                <tr>
+                    <td>@item.QuestionName</td>
+                    <td>@item.Answer</td>
+                    <td>OK</td>
+                    <td><a href="/answerup/details/@item.Id">Chi tiết</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Inject] IAnswerUPRepo _answerUPRepo { get; set; }
+    [Inject] IQuizQuestionUPRepo _quizQuestionUPRepo { get; set; }
+    List<AnswerUPDto> AnswerUPDto { get; set; }
+    List<QuizQuestionUpDto> QuizQuestionUpDto { get; set; }
+    dynamic lstAnswer { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        AnswerUPDto = await _answerUPRepo.GetAll();
+        QuizQuestionUpDto = await _quizQuestionUPRepo.GetAll();
+        lstAnswer = from answer in AnswerUPDto
+                    join question in QuizQuestionUpDto
+                    on answer.QuizQuestionId equals question.Id
+                    select new
+                    {
+                        Answer = answer.Answer,
+                        QuestionName = question.QuestionTital,
+                        Status = answer.Status,
+                        Id = answer.Id
+                    };
+    }
+}

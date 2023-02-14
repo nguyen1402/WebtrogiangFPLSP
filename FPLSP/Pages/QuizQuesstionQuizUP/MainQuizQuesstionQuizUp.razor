@@ -1,0 +1,276 @@
+﻿@page "/quizQuesstionQuizUP/{idspecialized}/{idsubject}/{idquiz}"
+@using FPLSP.Components.QuizQuesstionQuizUPComponents
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.QuizQuesstionQuizUP
+@using Blazored.Toast.Services
+
+
+
+<div class="row">
+    <h3 class="ps-0">Danh sách bộ câu hỏi</h3>
+</div>
+<div class="row pt-3">
+    <div class="col-3 ps-0">
+        <a class="btn btn-outline-danger me-3" @onclick="() => Quaylai()">Quay Lại</a>
+        <a class="btn btn-primary me-3" @onclick="() => RedirectToCreate()">Thêm Câu Hỏi</a>
+    </div>
+    <div class="col-7 pe-5">
+        <FormSearchQuizQuizUP OnSearch="SearchTask"></FormSearchQuizQuizUP>
+    </div>
+    <div class="col-2 ps-3">
+        <div class="dropdown-center">
+            <button class="btn btn-info ps-4 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Chức Năng
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" @onclick="() => DeleteAll()">Xóa</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="row">
+
+    <table class="table table-hover align-middle table-bordered mt-3" style="text-align:center">
+        <thead class="table-success">
+            <tr>
+                <th><input type="checkbox" @bind="@Check" @onchange="EventArgs => { CheckAllExpense( EventArgs.Value); } " @bind:event="oninput"></th>
+                <th width="20%">Mã câu hỏi</th>
+                <th width="40%">Câu hỏi</th>
+                <th width="20%">Trạng thái</th>
+                <th width="20%">Chức năng</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in ListQuizQuestionQuizCP)
+            {
+                <tr>
+                    <td><input type="checkbox" checked=@item.IsChecked @onchange="()=>CheckManual(item.QuizQuestionId,item.IsChecked)"></td>
+                    <td>@item.QuestionCode</td>
+                    <td>@item.QuestionName</td>
+                    @if (@item.StatusQuizQuiz == 0)
+                    {
+                        <td>Không hoạt động</td>
+                    }
+                    else
+                    {
+                        <td>Đang hoạt động</td>
+                    }
+
+                    <td class="text-center">
+                        @*<a class="btn btn-info " type="button" title="Bộ câu hỏi" @onclick="()=>RedirectQuizQuestion(idspecialized,idsubject,item.Id)">
+                    <i class="bi bi-question-circle"></i>
+                    </a>*@
+                        <a class="btn btn-primary " type="button" title="Sửa" id="show-emp">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a class="btn btn-danger " type="button" title="Xóa">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <Comfirmation ConfirmationMessage="Bạn có chắc muốn xóa không?"
+                  ConfirmationTitle="Xóa bài học"
+                  @ref="DeleteConfirmation"
+                  ConfirmationChanged="OnConfirmationDelete"></Comfirmation>
+</div>
+<div class="footer text-muted">
+    <div class="row mt-3">
+
+        <span>
+            <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+        </span>
+
+    </div>
+</div>
+@code
+{
+    [Parameter]
+    public string idquiz { get; set; }
+    [Parameter]
+    public string idsubject { get; set; }
+    [Parameter]
+    public string idspecialized { get; set; }
+    public List<QuizQuesstionQuizUPDto> ListQuizQuestionQuizCP { get; set; } = new List<QuizQuesstionQuizUPDto>();
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    private QuizQuesstionQuizUPListSearch _parameters = new QuizQuesstionQuizUPListSearch();
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    [Inject]
+    public IQuizQuesstionQuizUPClient _iQuizQuesstionQuizCPClient { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+
+    private bool Check = false;
+    [Inject] private IToastService _toastService { get; set; }
+
+    private string _idQuizQuestionQuiz;
+    protected Comfirmation DeleteConfirmation { get; set; }
+
+    private List<Guid> _removeListQuizQuestionQuiz = new List<Guid>();
+
+
+    private int stt = 0;
+
+    protected async override Task OnInitializedAsync()
+    {
+        await GetTasks();
+    }
+    public async Task SearchTask(QuizQuesstionQuizUPListSearch lessonContentListSearch)
+    {
+        _parameters = lessonContentListSearch;
+        Check = false;
+        await GetTasks();
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/quizUP/" + idspecialized + "/" + idsubject);
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task RedirectToCreate()
+    {
+        var url = Path.Combine("/createquizQuesstionQuizUP/" + idspecialized + "/" + idsubject + "/" + idquiz.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToDetails(Guid idQuesstion, Guid idQuiz)
+    {
+
+        var url = Path.Combine("/quizQuesstionDetailsQuizCp/", idQuesstion.ToString(), idQuiz.ToString(), idsubject);
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToUpdate(string idspecialized, string idsubject, string idquiz, Guid idQuizQuesstionQuiz)
+    {
+
+        var url = Path.Combine($"/quizQuesstionUpdateAnserQuizUP/{idspecialized}/{idsubject}/{idquiz}/{idQuizQuesstionQuiz}");
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task RedirectToDelete(Guid Idspecialized, Guid Idlecturers)
+    {
+        var url = Path.Combine("/lectuterSpecializedDelete/", idquiz.ToString(), idsubject.ToString(), Idspecialized.ToString(), Idlecturers.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _iQuizQuesstionQuizCPClient.GetPagingParamets(Guid.Parse(idquiz), _parameters);
+            ListQuizQuestionQuizCP = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _parameters.PageNumber = page;
+        Check = false;
+        await GetTasks();
+    }
+
+    public async Task OnDelete(Guid id)
+    {
+        _idQuizQuestionQuiz = id.ToString();
+        DeleteConfirmation.show();
+    }
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+
+        stt = 0;
+        if (deleteconfirmed && _idQuizQuestionQuiz == null && _removeListQuizQuestionQuiz.Count == 0)
+        {
+            _toastService.ShowError("Bạn chưa chọn đối tượng để xóa");
+            await GetTasks();
+            NavigationManager.NavigateTo($"/quizQuesstionQuizUP/{idspecialized}/{idsubject}/{idquiz}");
+        }
+        else if (deleteconfirmed && _idQuizQuestionQuiz != null)
+        {
+            var result = await _iQuizQuesstionQuizCPClient.Delete(Guid.Parse(_idQuizQuestionQuiz));
+            if (result == 1)
+            {
+                _toastService.ShowSuccess("Xóa thành công");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/quizQuesstionQuizUP/{idspecialized}/{idsubject}/{idquiz}");
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/quizQuesstionQuizUP/{idspecialized}/{idsubject}/{idquiz}");
+            }
+        }
+        else if (deleteconfirmed && _removeListQuizQuestionQuiz != null)
+        {
+
+            var result = await _iQuizQuesstionQuizCPClient.DeleteListQuizQuestionQuiz(_removeListQuizQuestionQuiz);
+            if (result == 1)
+            {
+                _toastService.ShowSuccess("Xóa thành công");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/quizQuesstionQuizUP/{idspecialized}/{idsubject}/{idquiz}");
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+
+                await GetTasks();
+                NavigationManager.NavigateTo($"/quizQuesstionQuizUP/{idspecialized}/{idsubject}/{idquiz}");
+            }
+        }
+        _idQuizQuestionQuiz = null;
+        _removeListQuizQuestionQuiz = null;
+        Check = false;
+    }
+    public void DeleteQuiz(Guid id)
+    {
+        _idQuizQuestionQuiz = id.ToString();
+        DeleteConfirmation.show();
+    }
+    void CheckManual(Guid reportId, bool check)
+    {
+        stt = 0;
+        if (check == true)
+        {
+            foreach (var x in ListQuizQuestionQuizCP.Where(c => c.QuizQuestionId == reportId))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in ListQuizQuestionQuizCP.Where(c => c.QuizQuestionId == reportId))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    void DeleteAll()
+    {
+        stt = 0;
+        _removeListQuizQuestionQuiz = ListQuizQuestionQuizCP.Where(c => c.IsChecked == true).Select(c => c.QuizQuestionId).ToList();
+        DeleteConfirmation.show();
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        stt = 0;
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            ListQuizQuestionQuizCP.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            ListQuizQuestionQuizCP.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+}

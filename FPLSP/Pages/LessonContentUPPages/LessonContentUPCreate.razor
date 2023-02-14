@@ -1,0 +1,111 @@
+﻿@page "/lessonContentUPCreate/{idsubjectUP}/{Id}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.LessonContentUP
+@using FPLSP.Server.Infrastructure.ViewModels.LessonUP
+@using FPLSP.Server.Infrastructure.ViewModels.ResourceLinkUP
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<h3>Tạo nội dung bài học UP</h3>
+
+<EditForm Model="request" OnValidSubmit="CreateSubmit">
+    <DataAnnotationsValidator />
+    <div class="mb-3">
+        <label for="LessonContentCode"><b>Mã nội dung bài học</b></label>
+        <InputText class="form-control" @bind-Value="request.LessonContentCode"></InputText>
+        <ValidationMessage For="()=>request.LessonContentCode"></ValidationMessage>
+    </div>
+    <div class="mb-3">
+        <label for="LessonContentName"><b>Tên nội dung bài học</b></label>
+        <InputText class="form-control" @bind-Value="request.LessonContentName"></InputText>
+        <ValidationMessage For="()=>request.LessonContentName"></ValidationMessage>
+    </div>
+    <div class="mb-3">
+        <label for="Content"><b>Nội dung</b></label>
+        <InputText class="form-control" @bind-Value="request.Content"></InputText>
+        <ValidationMessage For="()=>request.Content"></ValidationMessage>
+    </div>
+    <div class="mb-3">
+        <label for="Descriptions"><b>Mô tả</b></label>
+        <InputText class="form-control" @bind-Value="request.Descriptions"></InputText>
+        <ValidationMessage For="()=>request.Descriptions"></ValidationMessage>
+    </div>
+    <div class="mb-3">
+        <label for="Status"><b>Trạng thái</b></label>
+            <InputSelect class="form-control" @bind-Value="status">
+                <option value="0"> </option>
+                <option value="1">Hoạt động</option>
+                <option value="0">Không hoạt động</option>
+            </InputSelect>
+        <ValidationMessage For="()=>request.Status"></ValidationMessage>
+    </div>
+    <div class="mb-3">
+        <label for="LessonId"><b>Tên bài học</b></label>
+        <InputSelect class="form-control" @bind-Value="request.LessonId">
+            <option value="">Chọn bài học</option>
+            @if (_lstLessonUP != null)
+                {
+                    @foreach (var item in _lstLessonUP)
+                    {
+                        <option value="@item.Id">@item.LessonName</option>
+                    }
+                }
+        </InputSelect>
+        <ValidationMessage For="()=>request.LessonId"></ValidationMessage>
+    </div><div class="mb-3">
+        <label for="ResuorceLinkId"><b>Link tài nguyên</b></label>
+        <InputSelect class="form-control" @bind-Value="request.ResuorceLinkId">
+            <option value="">Chọn tài nguyên</option>
+            @if (_lstResourceLinkUP != null)
+                {
+                    @foreach (var item in _lstResourceLinkUP)
+                    {
+                        <option value="@item.Id">@item.ResourcesTitle</option>
+                    }
+                }
+        </InputSelect>
+        <ValidationMessage For="()=>request.ResuorceLinkId"></ValidationMessage>
+    </div>
+    <button type="submit" class="btn btn-primary">Tạo mới</button>
+</EditForm>
+
+<div class="col-md-6 text-center">
+    <a href="/lessonContentUP/@idsubjectUP/@Id" class="btn btn-danger">Quay lại</a>
+</div>
+@code {
+    [Inject] ILessonContentUPRepo lessonContentUPRepo { get; set; }
+    [Inject] NavigationManager NavigationManager { get; set; }
+    [Inject] private ILessonUPRepo _lessonUPRepo { get; set; }
+    private List<LessonUPViewModel> _lstLessonUP { get; set; }
+    [Inject] private IResourceLinkUPRepo _resourceLinkUPRepo { get; set; }
+    private List<ResourceLinkUPViewModel> _lstResourceLinkUP { get; set; }
+
+    [CascadingParameter]
+    private Error Error { get; set; }
+
+    private LessonContentUPCreateRequest request = new LessonContentUPCreateRequest();
+    [Parameter]
+    public string idsubjectUP { get; set; }
+    [Parameter]
+    public string Id { get; set; }
+    public string status { get; set; } = "";
+    protected override async Task OnInitializedAsync()
+    {
+        _lstLessonUP = await _lessonUPRepo.GetAll();
+        _lstResourceLinkUP = await _resourceLinkUPRepo.GetAll();
+    }
+    private async Task CreateSubmit(EditContext context)
+    {
+        try
+        {
+            request.Status = Convert.ToInt32(status);
+            var result = await lessonContentUPRepo.Create(request);
+            if (result)
+            {
+                NavigationManager.NavigateTo($"/lessonContentUP/{idsubjectUP}/{Id}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessError(ex);
+        }
+    }
+}

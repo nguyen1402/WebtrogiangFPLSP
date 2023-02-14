@@ -1,0 +1,145 @@
+﻿@page "/ImageUpdate/{id:guid}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.ContentOfExamsCP
+@using FPLSP.Server.Infrastructure.ViewModels.ImagesCP
+@if (_imageCPUpdateVm != null)
+{
+
+
+    <div class="row pt-3">
+        <h3>Cập Nhập thông tin Ảnh</h3>
+
+        <div class="row">
+            <div class="col-1">
+            </div>
+            <div class="d-flex justify-content-center col-10 ">
+                <EditForm Model="_imageCPUpdateVm" OnValidSubmit="Update" class="card card-body bg-light mt-5">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <div class="form-group row">
+                            <label for="image" class="col-md-2 col-form-label"><i class="fa-regular fa-image"></i> Hình Ảnh:</label>
+                            @if (flag == false)
+                            {
+                                <div class="form-group row">
+                                    <img src="@_imageCPUpdateVm.Path" onerror="this.src='./css/images/Others/logoFPT.png'" alt="product image" style="width:100px;" />
+                                </div>
+                            }
+                            <div class="col-md-10">
+                                <ImageUpload OnChange="AssignImageUrl" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group pt-2 col-md-6">
+                                <label for="name" class="col-md-4 col-form-label"><i class="fa-regular fa-clipboard"></i> Mô Tả:</label>
+                                <div class="col-md-10">
+                                    <InputText id="name" class="form-control" @bind-Value="_imageCPUpdateVm.Descriptions" />
+                                    <ValidationMessage For="@(() => _imageCPUpdateVm.Descriptions)" />
+                                </div>
+                            </div>
+                            <div class="form-group pt-2 col-md-6">
+                                <label for="name" class="col-md-4 col-form-label"><i class="fa-solid fa-check"></i> Trạng thái:</label>
+                                <div class="col-md-10">
+                                    <InputSelect @bind-Value="_imageCPUpdateVm.Status" class="form-control">
+                                        <option value="0">Chưa sử dụng</option>
+                                        <option value="1">Đang sử dụng</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            
+                        </div>
+                        <div class="form-group row">
+                            <label for="name" class="col-md-4 col-form-label"><i class="fas fa-light fa-file-lines"></i> Nội Dung Đề Thi:</label>
+                            <div class="col-md-10">
+                                <InputSelect class="form-control" @bind-Value="_imageCPUpdateVm.CoeId">
+                                    @if (_lstCoe != null)
+                                    {
+                                        @foreach (var item in _lstCoe)
+                                        {
+                                            <option value="@item.Id">@item.CoeCode - @item.Content</option>
+                                        }
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row pt-2">
+                        <div class="col-md-6 text-center">
+                            <button type="submit" class="btn btn-primary">Cập Nhập</button>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <a href="/ImageList" class="btn btn-danger">Quay Lại</a>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+            <div class="col-1">
+            </div>
+        </div>
+
+    </div>
+}
+else
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+
+
+@code{
+    private ImageCPUpdateVm _imageCPUpdateVm = new ImageCPUpdateVm();
+
+
+    [Inject] private IImageCPRepo _imageCPRepo { get; set; }
+    [Inject] private NavigationManager _navier { get; set; }
+
+    [Inject] private IContentOfExamCPRepo _contentOfExamCPRepo { get; set; }
+    private CoeListSearchVm _coeListSearchVm = new CoeListSearchVm();
+    private List<ContentOfExamCPDto> _lstCoe = new List<ContentOfExamCPDto>();
+    bool flag = false;
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        await Get();
+    }
+    private async Task Get()
+    {
+
+        var pagingResponse = await _contentOfExamCPRepo.GetCoeCPList(_coeListSearchVm);
+        _lstCoe = pagingResponse.Items;
+
+        var ImageCP = await _imageCPRepo.GetImageCPById(Id);
+        var updateVm = new ImageCPUpdateVm()
+            {
+                CoeId = ImageCP.CoeId,
+                Descriptions = ImageCP.Descriptions,
+                Path = ImageCP.Path,
+                Status = ImageCP.Status
+            };
+        _imageCPUpdateVm = updateVm;
+
+    }
+
+
+    private async Task Update()
+    {
+        var result = await _imageCPRepo.UpdateImageCP(Id, _imageCPUpdateVm);
+        if (result)
+        {
+            _navier.NavigateTo("/ImageList");
+        }
+
+    }
+    private void AssignImageUrl(string imgUrl)
+    {
+        _imageCPUpdateVm.Path = imgUrl;
+        flag = true;
+    }
+}
+
+

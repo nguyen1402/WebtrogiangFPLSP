@@ -1,0 +1,275 @@
+﻿@page "/quizup/{idspecialized}/{idsubject}"
+@using FPLSP.Components;
+@using FPLSP.Components.QuizUPComponents;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.QuizUp
+@using Microsoft.AspNetCore.Components
+@using Blazored.Toast.Services
+
+
+@if (quizUPs == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <h3>Danh sách Quiz</h3>
+
+
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="pl-16">
+                <QuizUPComponents OnSearch="SearchQuizUP"></QuizUPComponents>
+
+            </div>
+        </div>
+        <div class="col-lg-3">
+
+            <div class="pl-13">
+                <a type="button" class="btn btn-primary" href="/quizup/@idsubject/add"><i class="fa-solid fa-plus"></i> Thêm</a>
+                <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Chức Năng
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" @onclick="() => DeleteAll()">Xóa</a></li>
+                </ul>
+
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="table-responsive ">
+            <table class="table table-light table-bordered">
+                <thead>
+                    <tr>
+                        <th width="5%">
+                            @if (quizUPs.Count > 0)
+                            {
+                                <input type="checkbox" @bind="@Check" @onchange="EventArgs => { CheckAllExpense( EventArgs.Value); } " @bind:event="oninput">
+                            }
+                        </th>
+                        <th width="10%">
+                            Tên Quiz
+                        </th>
+                        <th width="10%">
+                            Tiêu đề
+                        </th>
+                        <th  width="20%">
+                            Mô tả
+                        </th>
+
+                        <th  width="10%">Ngày bắt đầu</th>
+                        <th  width="10%">
+                           Ngày kết thúc
+                        </th >
+                        <th  width="10%">
+                           Số lượt tối đa
+                        </th>
+                        <th width="10%">
+                            Trạng thái
+                        </th >
+                        <th class="col-lg-15">Tính năng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in quizUPs)
+                    {
+                        if (item.IsDeleted == false)
+                        {
+                            <tr>
+                                <td width="10"><input type="checkbox" checked=@item.IsChecked @onchange="()=>CheckManual(item.Id,item.IsChecked)"></td>
+                                <td>@item.QuizName</td>
+                                <td>@item.QuizTitle</td>
+                                <td>@item.Descriptions</td>
+                                <td>@item.StartDay.ToString("dd-MM-yyyy")</td>
+                                <td>@item.EndDay.ToString("dd-MM-yyyy")</td>
+                                <td>@item.MaxTurn</td>
+                                @if (@item.Status == 0)
+                                {
+                                    <td>
+                                        Đang hoạt động
+                                    </td>
+                                }
+                                else
+                                {
+                                    <td>
+                                        Đã dừng hoạt động
+                                    </td>
+                                }
+                                <td>
+                                    <div class="d-flex justify-content-center mb-2">
+                                         <a class="btn btn-info " type="button" title="Bộ câu hỏi" @onclick="()=>RedirectQuizQuestion(idspecialized,idsubject,item.Id)">
+                            <i class="bi bi-question-circle"></i>
+                            </a>
+                                        <div class="pr-1">
+                                                      <a class="btn btn-primary " type="button" title="Sửa" id="show-emp"
+                       @onclick="() => RedirectToUpdate(item.Id)">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                                        </div>
+                                        <div class=" pl-1">
+                                            <a class="btn btn-danger " type="button" title="Xóa" @onclick="()=>OnDelete(item.Id)">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+            <div class="d-flex justify-content-center mb-2">
+                <div class="row">
+                    <div class="col-11 align-self-center">
+                        <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <Comfirmation ConfirmationMessage="Bạn muốn xóa Quiz?"
+              ConfirmationTitle="Xóa Quiz"
+              ConfirmationChanged="OnConfirmationDelete " @ref="DeleteConfirmation"></Comfirmation>
+}
+@code
+{
+    [Parameter]
+    public string idsubject { get; set; }
+    [Parameter]
+    public string idspecialized { get; set; }
+    [Inject] private IQuizUPRepo _quizUpRepo { get; set; }
+    private List<QuizUpDto> quizUPs;
+    ListQuizUpSearch listQuizUp = new ListQuizUpSearch();
+    [Inject] private IToastService _toastService { get; set; }
+    [Inject] private NavigationManager navigationManager { get; set; }
+    public MetaData MetaData { get; set; } = new MetaData();
+    protected Comfirmation DeleteConfirmation { get; set; }
+    public string Id { get; set; }
+    public List<Guid> lstId { get; set; } = new List<Guid>();
+    public bool Check { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTasks();
+    }
+    private void RedirectToUpdate(Guid id)
+    {
+
+        var url = Path.Combine("/quizupUpdate/", id.ToString());
+        navigationManager.NavigateTo(url);
+    }
+    void CheckManual(Guid reportId, bool check)
+    {
+        if (check == true)
+        {
+            foreach (var x in quizUPs.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in quizUPs.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    private void RedirectQuizQuestion(string idspecialized, string idsubject, Guid id)
+    {
+
+        var url = Path.Combine("/quizQuesstionQuizUP/" + idspecialized + "/" + idsubject + "/" + id.ToString());
+        navigationManager.NavigateTo(url);
+    }
+    public async Task OnDelete(Guid id)
+    {
+        Id = id.ToString();
+        DeleteConfirmation.show();
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            quizUPs.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            quizUPs.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+    void DeleteAll()
+    {
+        lstId = quizUPs.Where(c => c.IsChecked == true).Select(c => c.Id).ToList();
+        DeleteConfirmation.show();
+    }
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (deleteconfirmed && Id == null && lstId.Count == 0)
+        {
+            _toastService.ShowError("Bạn chưa chọn đối tượng để xóa");
+            await GetTasks();
+        }
+        else if (deleteconfirmed && Id != null)
+        {
+            var result = await _quizUpRepo.Delete(Id);
+            if (result)
+            {
+                _toastService.ShowSuccess("Xóa thành công");
+                await GetTasks();
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+                await GetTasks();
+            }
+        }
+        else if (deleteconfirmed && lstId != null)
+        {
+
+            var result = await _quizUpRepo.DeleteAll(lstId);
+            if (result)
+            {
+                _toastService.ShowSuccess("Xóa thành công");
+                await GetTasks();
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+
+                await GetTasks();
+            }
+        }
+        Id = null;
+        lstId = null;
+        Check = false;
+
+
+    }
+    private async Task GetTasks()
+    {
+
+        try
+        {
+            var pagingResponse = await _quizUpRepo.GetPageList(listQuizUp, idsubject);
+            quizUPs = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            return;
+        }
+
+    }
+    private async Task SelectedPage(int page)
+    {
+        listQuizUp.PageNumber = page;
+        await GetTasks();
+    }
+    public async Task SearchQuizUP(ListQuizUpSearch listQuizUpSearch)
+    {
+        listQuizUp = listQuizUpSearch;
+        await GetTasks();
+    }
+}

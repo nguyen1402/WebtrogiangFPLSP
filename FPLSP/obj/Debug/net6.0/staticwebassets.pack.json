@@ -1,0 +1,673 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\obj\\Debug\\net6.0\\scopedcss\\projectbundle\\FPLSP.bundle.scp.css",
+      "PackagePath": "staticwebassets\\FPLSP.bundle.scp.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\CabinProject\\hethanbackground.png",
+      "PackagePath": "staticwebassets\\Image\\CabinProject\\hethanbackground.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\Others\\FPT_Polytechnic.png",
+      "PackagePath": "staticwebassets\\Image\\Others\\FPT_Polytechnic.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\Others\\Free Vector _ Geometric pattern with lines and dots.jpg",
+      "PackagePath": "staticwebassets\\Image\\Others\\Free Vector _ Geometric pattern with lines and dots.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\Others\\Modern Background.png",
+      "PackagePath": "staticwebassets\\Image\\Others\\Modern Background.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\Others\\back-grec.jpg",
+      "PackagePath": "staticwebassets\\Image\\Others\\back-grec.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\Others\\background.jpg",
+      "PackagePath": "staticwebassets\\Image\\Others\\background.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\Others\\bg-3.jpg",
+      "PackagePath": "staticwebassets\\Image\\Others\\bg-3.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\Others\\download (1).jpg",
+      "PackagePath": "staticwebassets\\Image\\Others\\download (1).jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\Others\\download.jpg",
+      "PackagePath": "staticwebassets\\Image\\Others\\download.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\Others\\final.png",
+      "PackagePath": "staticwebassets\\Image\\Others\\final.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\Others\\footer-bg.png",
+      "PackagePath": "staticwebassets\\Image\\Others\\footer-bg.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\Others\\google.png",
+      "PackagePath": "staticwebassets\\Image\\Others\\google.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\Others\\header_Profile.jpg",
+      "PackagePath": "staticwebassets\\Image\\Others\\header_Profile.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\Others\\portal.jpg",
+      "PackagePath": "staticwebassets\\Image\\Others\\portal.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\Others\\vector.jpg",
+      "PackagePath": "staticwebassets\\Image\\Others\\vector.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\StudentCP\\12 kí tự ví ronin.jpg",
+      "PackagePath": "staticwebassets\\Image\\StudentCP\\12 kí tự ví ronin.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\StudentCP\\Login.jpg",
+      "PackagePath": "staticwebassets\\Image\\StudentCP\\Login.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\StudentCP\\Login1.jpg",
+      "PackagePath": "staticwebassets\\Image\\StudentCP\\Login1.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\Image\\StudentCP\\Untitled.jpg",
+      "PackagePath": "staticwebassets\\Image\\StudentCP\\Untitled.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\OpenSans-Regular.ttf",
+      "PackagePath": "staticwebassets\\OpenSans-Regular.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\ViewSendEmail\\ViewSendEmail.html",
+      "PackagePath": "staticwebassets\\ViewSendEmail\\ViewSendEmail.html"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\Steper.css",
+      "PackagePath": "staticwebassets\\css\\Steper.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\UserImages\\felling cay chan dung.png",
+      "PackagePath": "staticwebassets\\css\\UserImages\\felling cay chan dung.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\UserImages\\images.png",
+      "PackagePath": "staticwebassets\\css\\UserImages\\images.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\css\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\css\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\footer.css",
+      "PackagePath": "staticwebassets\\css\\footer.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\Class.png",
+      "PackagePath": "staticwebassets\\css\\images\\Class.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\ClassImage.png",
+      "PackagePath": "staticwebassets\\css\\images\\ClassImage.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\DetailClass.png",
+      "PackagePath": "staticwebassets\\css\\images\\DetailClass.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\LecturerCP\\GV1.png",
+      "PackagePath": "staticwebassets\\css\\images\\LecturerCP\\GV1.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\LecturerCP\\GV2.png",
+      "PackagePath": "staticwebassets\\css\\images\\LecturerCP\\GV2.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\LecturerCP\\GV3.png",
+      "PackagePath": "staticwebassets\\css\\images\\LecturerCP\\GV3.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\LecturerCP\\GV4.png",
+      "PackagePath": "staticwebassets\\css\\images\\LecturerCP\\GV4.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\LecturerCP\\GV5.png",
+      "PackagePath": "staticwebassets\\css\\images\\LecturerCP\\GV5.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\LecturerCP\\GV6.png",
+      "PackagePath": "staticwebassets\\css\\images\\LecturerCP\\GV6.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\LecturerCP\\GV7.png",
+      "PackagePath": "staticwebassets\\css\\images\\LecturerCP\\GV7.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\LecturerCP\\GV8.png",
+      "PackagePath": "staticwebassets\\css\\images\\LecturerCP\\GV8.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\LecturerCP\\GV9.png",
+      "PackagePath": "staticwebassets\\css\\images\\LecturerCP\\GV9.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\LecturerCP\\defaultAVT.png",
+      "PackagePath": "staticwebassets\\css\\images\\LecturerCP\\defaultAVT.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\Others\\FPT_Polytechnic.png",
+      "PackagePath": "staticwebassets\\css\\images\\Others\\FPT_Polytechnic.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\Others\\Info.png",
+      "PackagePath": "staticwebassets\\css\\images\\Others\\Info.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\Others\\Kho_tailieu.png",
+      "PackagePath": "staticwebassets\\css\\images\\Others\\Kho_tailieu.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\Others\\QUizs.png",
+      "PackagePath": "staticwebassets\\css\\images\\Others\\QUizs.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\Others\\background.jpg",
+      "PackagePath": "staticwebassets\\css\\images\\Others\\background.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\Others\\error404.jpg",
+      "PackagePath": "staticwebassets\\css\\images\\Others\\error404.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\Others\\google.png",
+      "PackagePath": "staticwebassets\\css\\images\\Others\\google.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\Others\\homwork.png",
+      "PackagePath": "staticwebassets\\css\\images\\Others\\homwork.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\Others\\logoFPT.png",
+      "PackagePath": "staticwebassets\\css\\images\\Others\\logoFPT.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\TrainingFacilityCP\\CS0.png",
+      "PackagePath": "staticwebassets\\css\\images\\TrainingFacilityCP\\CS0.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\TrainingFacilityCP\\CS1.png",
+      "PackagePath": "staticwebassets\\css\\images\\TrainingFacilityCP\\CS1.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\TrainingFacilityCP\\CS2.png",
+      "PackagePath": "staticwebassets\\css\\images\\TrainingFacilityCP\\CS2.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\TrainingFacilityCP\\CS3.png",
+      "PackagePath": "staticwebassets\\css\\images\\TrainingFacilityCP\\CS3.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\TrainingFacilityCP\\CS4.png",
+      "PackagePath": "staticwebassets\\css\\images\\TrainingFacilityCP\\CS4.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\TrainingFacilityCP\\defaultTF.png",
+      "PackagePath": "staticwebassets\\css\\images\\TrainingFacilityCP\\defaultTF.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\ec429ff841cd8293dbdc.jpg",
+      "PackagePath": "staticwebassets\\css\\images\\ec429ff841cd8293dbdc.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\images\\footer-bg.png",
+      "PackagePath": "staticwebassets\\css\\images\\footer-bg.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\open-iconic\\FONT-LICENSE",
+      "PackagePath": "staticwebassets\\css\\open-iconic"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\open-iconic\\ICON-LICENSE",
+      "PackagePath": "staticwebassets\\css\\open-iconic"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\open-iconic\\README.md",
+      "PackagePath": "staticwebassets\\css\\open-iconic\\README.md"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\open-iconic\\font\\css\\open-iconic-bootstrap.min.css",
+      "PackagePath": "staticwebassets\\css\\open-iconic\\font\\css\\open-iconic-bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\open-iconic\\font\\fonts\\open-iconic.eot",
+      "PackagePath": "staticwebassets\\css\\open-iconic\\font\\fonts\\open-iconic.eot"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\open-iconic\\font\\fonts\\open-iconic.otf",
+      "PackagePath": "staticwebassets\\css\\open-iconic\\font\\fonts\\open-iconic.otf"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\open-iconic\\font\\fonts\\open-iconic.svg",
+      "PackagePath": "staticwebassets\\css\\open-iconic\\font\\fonts\\open-iconic.svg"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\open-iconic\\font\\fonts\\open-iconic.ttf",
+      "PackagePath": "staticwebassets\\css\\open-iconic\\font\\fonts\\open-iconic.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\open-iconic\\font\\fonts\\open-iconic.woff",
+      "PackagePath": "staticwebassets\\css\\open-iconic\\font\\fonts\\open-iconic.woff"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\css\\site.css",
+      "PackagePath": "staticwebassets\\css\\site.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\favicon.ico",
+      "PackagePath": "staticwebassets\\favicon.ico"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\files\\Biểu Mẫu Lịch Dạy Online.xlsx",
+      "PackagePath": "staticwebassets\\files\\Biểu Mẫu Lịch Dạy Online.xlsx"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\files\\Bảng Tiến Độ Hệ Thống.xlsx",
+      "PackagePath": "staticwebassets\\files\\Bảng Tiến Độ Hệ Thống.xlsx"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\files\\Danh Sách Thực Tập.xlsx",
+      "PackagePath": "staticwebassets\\files\\Danh Sách Thực Tập.xlsx"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\files\\Danh sách sinh viên kì 6.xlsx",
+      "PackagePath": "staticwebassets\\files\\Danh sách sinh viên kì 6.xlsx"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\files\\Email Github FPLSP.xlsx",
+      "PackagePath": "staticwebassets\\files\\Email Github FPLSP.xlsx"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\files\\File Sinh Viên Lớp IT16312.xlsx",
+      "PackagePath": "staticwebassets\\files\\File Sinh Viên Lớp IT16312.xlsx"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\files\\JangExcel.xlsx",
+      "PackagePath": "staticwebassets\\files\\JangExcel.xlsx"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\files\\TemplateTeachingSchedule.xlsx",
+      "PackagePath": "staticwebassets\\files\\TemplateTeachingSchedule.xlsx"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\js\\anchorLink.js",
+      "PackagePath": "staticwebassets\\js\\anchorLink.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\js\\site.js",
+      "PackagePath": "staticwebassets\\js\\site.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\LICENSE",
+      "PackagePath": "staticwebassets\\lib\\bootstrap"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.js.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.min.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.min.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.min.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.min.js.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\easing\\easing.js",
+      "PackagePath": "staticwebassets\\lib\\easing\\easing.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\easing\\easing.min.js",
+      "PackagePath": "staticwebassets\\lib\\easing\\easing.min.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\jquery-validation-unobtrusive\\LICENSE.txt",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation-unobtrusive\\LICENSE.txt"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.min.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.min.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\jquery-validation\\LICENSE.md",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation\\LICENSE.md"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\jquery-validation\\dist\\additional-methods.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\additional-methods.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\jquery-validation\\dist\\additional-methods.min.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\additional-methods.min.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\jquery-validation\\dist\\jquery.validate.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\jquery.validate.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\jquery-validation\\dist\\jquery.validate.min.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\jquery.validate.min.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\jquery\\LICENSE.txt",
+      "PackagePath": "staticwebassets\\lib\\jquery\\LICENSE.txt"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\jquery\\dist\\jquery.js",
+      "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\jquery\\dist\\jquery.min.js",
+      "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.min.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\jquery\\dist\\jquery.min.map",
+      "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.min.map"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\owlcarousel\\LICENSE",
+      "PackagePath": "staticwebassets\\lib\\owlcarousel"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\owlcarousel\\assets\\ajax-loader.gif",
+      "PackagePath": "staticwebassets\\lib\\owlcarousel\\assets\\ajax-loader.gif"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\owlcarousel\\assets\\owl.carousel.css",
+      "PackagePath": "staticwebassets\\lib\\owlcarousel\\assets\\owl.carousel.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\owlcarousel\\assets\\owl.carousel.min.css",
+      "PackagePath": "staticwebassets\\lib\\owlcarousel\\assets\\owl.carousel.min.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\owlcarousel\\assets\\owl.theme.default.css",
+      "PackagePath": "staticwebassets\\lib\\owlcarousel\\assets\\owl.theme.default.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\owlcarousel\\assets\\owl.theme.default.min.css",
+      "PackagePath": "staticwebassets\\lib\\owlcarousel\\assets\\owl.theme.default.min.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\owlcarousel\\assets\\owl.theme.green.css",
+      "PackagePath": "staticwebassets\\lib\\owlcarousel\\assets\\owl.theme.green.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\owlcarousel\\assets\\owl.theme.green.min.css",
+      "PackagePath": "staticwebassets\\lib\\owlcarousel\\assets\\owl.theme.green.min.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\owlcarousel\\assets\\owl.video.play.png",
+      "PackagePath": "staticwebassets\\lib\\owlcarousel\\assets\\owl.video.play.png"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\owlcarousel\\owl.carousel.js",
+      "PackagePath": "staticwebassets\\lib\\owlcarousel\\owl.carousel.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\owlcarousel\\owl.carousel.min.js",
+      "PackagePath": "staticwebassets\\lib\\owlcarousel\\owl.carousel.min.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\tempusdominus\\css\\tempusdominus-bootstrap-4.css",
+      "PackagePath": "staticwebassets\\lib\\tempusdominus\\css\\tempusdominus-bootstrap-4.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\tempusdominus\\css\\tempusdominus-bootstrap-4.min.css",
+      "PackagePath": "staticwebassets\\lib\\tempusdominus\\css\\tempusdominus-bootstrap-4.min.css"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\tempusdominus\\js\\moment-timezone.min.js",
+      "PackagePath": "staticwebassets\\lib\\tempusdominus\\js\\moment-timezone.min.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\tempusdominus\\js\\moment.min.js",
+      "PackagePath": "staticwebassets\\lib\\tempusdominus\\js\\moment.min.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\tempusdominus\\js\\tempusdominus-bootstrap-4.js",
+      "PackagePath": "staticwebassets\\lib\\tempusdominus\\js\\tempusdominus-bootstrap-4.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\tempusdominus\\js\\tempusdominus-bootstrap-4.min.js",
+      "PackagePath": "staticwebassets\\lib\\tempusdominus\\js\\tempusdominus-bootstrap-4.min.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\waypoints\\links.php",
+      "PackagePath": "staticwebassets\\lib\\waypoints\\links.php"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\lib\\waypoints\\waypoints.min.js",
+      "PackagePath": "staticwebassets\\lib\\waypoints\\waypoints.min.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\scripts\\JavaScriptFPLSP.js",
+      "PackagePath": "staticwebassets\\scripts\\JavaScriptFPLSP.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\scripts\\global.js",
+      "PackagePath": "staticwebassets\\scripts\\global.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\scripts\\main.js",
+      "PackagePath": "staticwebassets\\scripts\\main.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\scripts\\webcam.min.js",
+      "PackagePath": "staticwebassets\\scripts\\webcam.min.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\webcamjs\\Configuration.js",
+      "PackagePath": "staticwebassets\\webcamjs\\Configuration.js"
+    },
+    {
+      "Id": "C:\\Users\\Nguyen Bui\\source\\repos\\FPLSP3\\FPLSP\\wwwroot\\webcamjs\\webcam.min.js",
+      "PackagePath": "staticwebassets\\webcamjs\\webcam.min.js"
+    },
+    {
+      "Id": "obj\\Debug\\net6.0\\staticwebassets\\msbuild.FPLSP.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net6.0\\staticwebassets\\msbuild.build.FPLSP.props",
+      "PackagePath": "build\\FPLSP.props"
+    },
+    {
+      "Id": "obj\\Debug\\net6.0\\staticwebassets\\msbuild.buildMultiTargeting.FPLSP.props",
+      "PackagePath": "buildMultiTargeting\\FPLSP.props"
+    },
+    {
+      "Id": "obj\\Debug\\net6.0\\staticwebassets\\msbuild.buildTransitive.FPLSP.props",
+      "PackagePath": "buildTransitive\\FPLSP.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

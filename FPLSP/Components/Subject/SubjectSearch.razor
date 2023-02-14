@@ -1,0 +1,58 @@
+﻿@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Subject
+
+<EditForm Model="@SubjectListSearch" OnSubmit=@SearchForm>
+    <div class="row">
+        <div class="col-4">
+            <InputSelect @bind-Value="SubjectListSearch.Status" class="form-select">
+                <option value="">Tất cả</option>
+                <option value="0">Không hoạt động</option>
+                <option value="1">Đang hoạt động</option>
+            </InputSelect>
+        </div>
+
+        <div class="col-4 ps-0 pe-0">
+            <InputText placeholder="Nhập tên môn" class="form-control" @bind-Value="SubjectListSearch.Name"></InputText>
+        </div>
+        <div class="col-4">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+            <button class="btn btn-outline-success ms-2" @onclick="() => Undo()">Làm mới</button>
+        </div>
+
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public EventCallback<SubjectListSearch> OnSearch { set; get; }
+    private SubjectListSearch SubjectListSearch = new SubjectListSearch();
+    private SubjectCPSearch SubjectList = new SubjectCPSearch();
+
+    public List<SubjectDto> SubjectCPList { get; set; } = new List<SubjectDto>();
+    [Inject] public ISubjectClient _iSubjectClient { get; set; }
+    [Inject] public ISpecializedCPRepo _iSpecialized { get; set; }
+    public List<SpecializedDto> _lsSpecialized;
+    //public List<string> LsSubjectCode;
+    protected async override Task OnInitializedAsync()
+    {
+        _lsSpecialized = await _iSpecialized.GetAll();
+        var pagingResponse = await _iSubjectClient.GetSubjects(SubjectListSearch.SpecializedId, SubjectList);
+        SubjectCPList = pagingResponse.Items;
+    }
+
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(SubjectListSearch);
+
+    }
+    private async Task Undo()
+    {
+        SubjectListSearch.Name = "";
+        SubjectListSearch.Status = null;
+        SubjectListSearch.PageNumber = 1;
+        await OnSearch.InvokeAsync(SubjectListSearch);
+
+    }
+}

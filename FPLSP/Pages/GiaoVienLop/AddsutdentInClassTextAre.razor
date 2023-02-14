@@ -1,0 +1,99 @@
+﻿@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Entities.UserParts
+@using FPLSP.Server.Domain.Entities.UsesParts
+@using FPLSP.Server.Infrastructure.ViewModels
+@if (ShowConfirmation)
+{
+    <div class="modal fade show d-block" id="exampleModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">@ConfirmationTitle</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                        @onclick="() => OnConfirmationChange(false)">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    @if (testAre != null)
+                    {
+                        <EditForm Model="testAre">
+                            <InputTextArea rows="10" cols="50" @bind-Value="testAre"></InputTextArea>
+                        </EditForm>
+                    }
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-danger" data-dismiss="modal"
+                        @onclick="() => OnConfirmationChange(false)">
+                        Hủy
+                    </button>
+                    <button type="button" class="btn btn-outline-success"
+                        @onclick="() => { OnConfirmationChange(true); }">
+                        Thêm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+
+
+@code {
+    [Inject] NavigationManager _navigationManager { get; set; }
+
+
+    protected bool ShowConfirmation { get; set; }
+
+    [Parameter]
+    public string ConfirmationTitle { get; set; } = "Confirm Delete";
+
+    [Parameter]
+    public string ConfirmationMessage { get; set; } = "Are you sure you want to delete";
+
+    [Parameter]
+    public EventCallback<bool> ConfirmationChanged { get; set; }   
+
+    [Parameter]
+    public EventCallback<string> Confirmation { get; set; }
+
+    [Parameter]
+
+    public string testAre { get; set; } = "";
+
+    private bool isSuccess;
+    private string defaultLink;
+    protected async override Task OnInitializedAsync()
+    {
+        testAre = "";
+    }
+    public void show()
+    {
+        defaultLink = testAre;
+        ShowConfirmation = true;
+        StateHasChanged();
+    }
+
+    protected async Task OnConfirmationChange(bool value)
+    {
+
+        if (value)
+        {
+            ShowConfirmation = false;
+           
+            await Confirmation.InvokeAsync(testAre);
+            await ConfirmationChanged.InvokeAsync(value);
+        }
+        else
+        {
+            ShowConfirmation = false;
+            testAre = defaultLink;
+        }
+    }
+
+}
+
+

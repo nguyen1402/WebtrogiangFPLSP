@@ -1,0 +1,31 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels.VideoHistoryVm
+
+
+<EditForm Model="@VideoHistoryListSearch" OnSubmit=@SearchForm>
+    <div class="row pt-5">
+        <div class="col-lg-1"></div>
+
+        <div class="col-lg-8 ">
+            <InputText placeholder="Nhập tên, mã bài học..." class="form-control" @bind-Value="VideoHistoryListSearch.LessonContentName"></InputText>
+        </div>
+        <div class="pl-1 col-lg-1">
+            <button type="submit" class="btn btn-outline-secondary">🔍</button>
+        </div>
+        <br />
+        <br />
+        <br />
+        <h6 class="pl-7">Các chứ năng:</h6>
+    </div>
+</EditForm>
+@code {
+    [Parameter]
+    public EventCallback<VideoHistoryListSearch> OnSearch { get; set; }
+
+    private VideoHistoryListSearch VideoHistoryListSearch = new VideoHistoryListSearch();
+
+
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(VideoHistoryListSearch);
+    }
+}

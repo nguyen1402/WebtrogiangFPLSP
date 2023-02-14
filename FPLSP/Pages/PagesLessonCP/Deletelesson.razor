@@ -1,0 +1,73 @@
+﻿@page "/deletelesson/{id}/{iddl}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+<div class="row pt-3">
+    <h3>Xóa Bài Học</h3>
+
+@if (lesson != null)
+{
+    <EditForm Model="lesson" OnValidSubmit="Delete" class="card card-body bg-light mt-5">
+        <DataAnnotationsValidator />
+        <div class="form-group row">
+            <label for="name" class="row">
+                <p>
+                    <b style="color : red">You chắc chắn want delete to ?</b> môn học <b>@lesson.LessonCode - @lesson.LessonName</b>
+                     ???
+                </p>
+            </label>
+
+        </div>
+        <div class="row pt-2">
+            <div class="col-md-6 text-center">
+                <button type="submit" class="btn btn-danger">Xóa</button>
+            </div>
+            <div class="col-md-6 text-center">
+                <a @onclick= "() => Quaylai()" class="btn btn-primary">Quay Lại</a>
+            </div>
+        </div>
+    </EditForm>
+}
+</div>
+@code {
+    private LessonDto lesson;
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    [Inject]
+    public ILessonCPRepo _iLessonClient { get; set; }
+    public bool ShowAuthError { get; set; }
+    public string Error { get; set; }
+
+    [Parameter]
+    public string iddl { get; set; }
+    [Parameter]
+    public string id { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        lesson = await _iLessonClient.GetbyId(Guid.Parse(iddl));
+    }
+    private async Task Delete()
+    {
+        ShowAuthError = false;
+        var result = await _iLessonClient.Delete(Guid.Parse(iddl));
+        if (result != 1)
+        {
+            Error = "Lỗi";
+            var url = Path.Combine("/deletelesson", id, iddl);
+            ShowAuthError = true;
+            Navigation.NavigateTo(url);
+        }
+        else
+        {
+            var url = Path.Combine("/lesson", id);
+            Navigation.NavigateTo(url);
+        }
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/lesson", id);
+        Navigation.NavigateTo(url);
+    }
+}

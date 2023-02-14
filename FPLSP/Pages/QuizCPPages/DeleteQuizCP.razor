@@ -1,0 +1,76 @@
+﻿@page "/DeleteQuizCP/{Id}/{idsubject}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.QuizCPDtos
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<h3>Xóa Quiz</h3>
+
+@if (quiz != null)
+{
+    <div class="form-group">
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Tên Quiz: <b>@quiz.QuizName</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Email: <b>@quiz.Descriptions</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-3">
+                <EditForm Model="quiz" OnValidSubmit="Delete" class="card card-body bg-light mt-3">
+                    <DataAnnotationsValidator />
+                    <div class="form-group row">
+                        <label for="name" class="row">
+                            <p>
+                                <b style="color : red">Bạn có muốn xóa không ?</b>
+                            </p>
+                        </label>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-2 text-center">
+                            <button type="submit" class="btn btn-danger">Xóa</button>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <a class="btn btn-primary" @onclick="() => RedirectToMain()">Quay Lại</a>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                
+            </div>
+        </div>
+
+    </div>
+}
+@code {
+    public SubjectQuizCPDtos quiz;
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+    [Inject] public IQuizCPRepo _iQuizCPClient { get; set; }
+
+    [Parameter]
+    public string Id { get; set; }
+    [Parameter]
+    public string idsubject { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        quiz = await _iQuizCPClient.GetQuizById(Guid.Parse(Id));
+        quiz.StartDay = quiz.StartDay;
+        quiz.EndDay = quiz.EndDay;
+        quiz.Status = 1;
+    }
+    private async Task Delete()
+    {
+        //await _iQuizCPClient.UpdateQuizCP(Guid.Parse(Id),quiz);
+        var url = Path.Combine("/MainQuizsCP", idsubject.ToString());
+        Navigation.NavigateTo(url);
+    }
+    private async Task RedirectToMain()
+    {
+        var url = Path.Combine("/MainQuizsCP", idsubject.ToString());
+        Navigation.NavigateTo(url);
+    }
+}

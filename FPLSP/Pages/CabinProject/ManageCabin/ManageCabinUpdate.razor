@@ -1,0 +1,94 @@
+﻿@page "/managecabin/update/{IdDe}/{IdTrainDe}"
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories.Interfaces.CabinProject
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.Cabin
+<h3>Cập nhật Cabin</h3>
+<EditForm Model="cabinCreateViewModel" class="card card-body bg-light mt-6">
+    <DataAnnotationsValidator />
+    <div class="form-group">
+        <div class="row">
+            <div class="form-group pt-2 col-md-6 ">
+                <label class="form-label">Tên Cabin:</label>
+                <div class="text-danger">
+                    <InputText class="form-control" @bind-Value="cabinCreateViewModel.CabinName"></InputText>
+                    <ValidationMessage For="()=>cabinCreateViewModel.CabinName"></ValidationMessage>
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-6 ">
+                <label class="form-label">Tòa:</label>
+                <div class="text-danger">
+                    <InputText class="form-control" @bind-Value="cabinCreateViewModel.BuildingName"></InputText>
+                    <ValidationMessage For="()=>cabinCreateViewModel.BuildingName"></ValidationMessage>
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-6 ">
+                <label class="form-label">Trạng thái:</label>
+                <div class="text-danger">
+                    <InputSelect class="form-select" @bind-Value="cabinCreateViewModel.Status">
+                        <option value=0>Đang hoạt động</option>
+                        <option value=2>Bảo trì</option>
+                    </InputSelect>
+                    <ValidationMessage For="()=>cabinCreateViewModel.Status"></ValidationMessage>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="d-flex justify-content-center mb-2">
+                <div class="p-2">
+                    <button class="btn btn-primary" @onclick="()=> Update()">Cập nhật</button>
+                </div>
+                <div class="p-2">
+                    <button  class="btn btn-success" @onclick="()=> GetTasks()">Khôi phục</button>
+                </div>
+                <div class="p-2">
+                    <a href="/managecabin/@IdTrainDe" class="btn btn-outline-danger">Quay Lại</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</EditForm>
+@code {
+    CabinViewModel cabinCreateViewModel = new CabinViewModel();
+    CabinUpdateViewModel cabinUpdateViewModel = new CabinUpdateViewModel();
+    [Inject] private IToastService _toastService { get; set; }
+    [Inject] private NavigationManager navigationManager { get; set; }
+    [Inject] private ICabinRepo cabin { get; set; }
+    [Parameter] public string IdDe { get; set; }
+    [Parameter] public string IdTrainDe { get; set; }
+    public string Id { get; set; }
+    public string IdTrain { get; set; }
+    [Inject] private CryptoServices cryptoServices { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        IdDe = IdDe.Replace("cabin", "/");
+        IdTrainDe = IdTrainDe.Replace("cabin", "/");
+        Id = cryptoServices.Decrypt(IdDe);
+        IdTrain = cryptoServices.Decrypt(IdTrainDe);
+        await GetTasks();
+    }
+    private async Task GetTasks(){
+        cabinCreateViewModel = await cabin.GetCabinListById(Id);
+    }
+    private async Task Update()
+    {
+        var cb = await cabin.GetAllCabinAsync();
+        cb = cb.Where(x => x.Id != cabinCreateViewModel.Id).ToList();
+        if (cb.Where(x => x.CabinName == cabinCreateViewModel.CabinName && x.BuildingName == cabinCreateViewModel.BuildingName).Any())
+        {
+            _toastService.ShowError($"Cabin {cabinCreateViewModel.CabinName} đã tồn tại");
+            return;
+        }
+        cabinUpdateViewModel.CabinName = cabinCreateViewModel.CabinName;
+        cabinUpdateViewModel.BuildingName = cabinCreateViewModel.BuildingName;
+        cabinUpdateViewModel.IndexOfCabin = cabinCreateViewModel.IndexOfCabin;
+        cabinUpdateViewModel.Status = cabinCreateViewModel.Status;
+        cabinUpdateViewModel.CreateTime = cabinCreateViewModel.CreateTime;
+        var check = await cabin.UpdateCabin(Guid.Parse(Id), cabinUpdateViewModel);
+        if (check)
+        {
+            _toastService.ShowSuccess("Cập nhật thành công");
+            navigationManager.NavigateTo($"managecabin/{IdTrainDe}");
+        }
+    }
+}

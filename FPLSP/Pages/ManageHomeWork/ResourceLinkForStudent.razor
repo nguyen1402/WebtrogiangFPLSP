@@ -1,0 +1,249 @@
+﻿@page "/resoucrelinkforstudent/{joincodeNonDecrypt}/{idclassNonDecrypt}/{specializedIdNonDecrypt}/{idUserNonDecrypt}/{subjectIdNonDecrypt}"
+@using Blazored.LocalStorage
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Dtos.StudentStatisticVM;
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using FPLSP.Server.Domain.Entities.UserParts
+@using FPLSP.Server.Domain.Entities.UsesParts
+@using FPLSP.Server.Infrastructure.ViewModels
+@using FPLSP.Server.Infrastructure.ViewModels.LessonUP
+@using FPLSP.Server.Infrastructure.ViewModels.NewFeed
+@using FPLSP.Server.Infrastructure.ViewModels.SubmitHomeWorkVM
+@using Microsoft.AspNetCore.Identity
+@using System.Text.RegularExpressions
+@inject ILocalStorageService _localStorageService;
+@layout MainLayout
+
+
+<div class="row">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">Chuyên ngành: <a style="color:blue;box-shadow: 0 1px" @onclick="() => ResToSpec()"> @lstSpecAll.Where(c=>c.Id == Guid.Parse(specializedId)).Select(c=>c.SpecializationName).FirstOrDefault()</a></li>
+            <li class="breadcrumb-item">Môn :<a style="color:blue;box-shadow: 0 1px" @onclick="() => Mon()">@thongtinlop.NameMon</a></li>
+            <li class="breadcrumb-item">Lớp :<a style="color:blue;box-shadow: 0 1px" @onclick="() => RedirectToDetails()">@thongtinlop.NameClass</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Thêm tài liệu</li>
+        </ol>
+    </nav>
+</div>
+<div class="row pt-3">
+    <div class="col-md-4">
+        @if (@thongtinlop != null)
+        {
+                                                    <h4>
+                                                        Môn : <b>@thongtinlop.NameMon</b> - Lớp <b>@thongtinlop.NameClass</b>
+                                                    </h4>
+        }
+    </div>
+</div>
+
+<MudPaper Class="pa-16 ma-2" Outlined="true" Square="true">
+   @*<div class="row d-flex justify-content-center">
+        <div class="col-6 offset-3">
+            <h6 class="fst-italic fw-bold">Thêm Tài Liệu Kham Khảo Cho Lớp</h6>
+        </div>
+    </div>*@
+   @*<hr />*@
+    <div class="mb-3">
+        <label for="exampleFormControlInput1" class="form-label">Tiêu Đề <i class="fa-solid fa-tags"></i></label>
+        <input type="text" value="@_getTitle" @onchange="@((ChangeEventArgs args)=>GetMessOfTitle(args))" class="form-control" id="exampleFormControlInput1" placeholder="Tiêu Đề Tài Liệu Khảo">
+    </div>
+    <div class="mb-3">
+        <select class="form-select" style="margin-top: 10px;" aria-label="Default select example" @onchange="@((ChangeEventArgs args)=>SelectLesson(args))">
+            <option value="@Guid.Empty">Chọn Bài Học</option>
+            @foreach (var less in _lstlessUP.Where(c => c.SubjectId == Guid.Parse(subjectId)))
+            {
+                <option value="@less.Id">@less.LessonName</option>
+            }
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="exampleFormControlTextarea1" class="form-label">Nội Dung Kèm Link Tài Liệu Kham Khảo <i class="fa-solid fa-link"></i></label>
+        <textarea value="@data" @oninput="HandleOnChange" class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>
+    </div>
+    <div class="row d-flex  justify-content-center">
+        
+        <div class="gap-2 col-6 mx-auto">
+          
+                    <a class="btn btn-outline-success" @onclick="@MakeALink">Thêm Link Tài Nguyên <i class="fa-solid fa-link"></i></a>
+
+
+            <a class="btn btn-outline-danger" title="Quay lại" @onclick="() => RedirectToDetails()">Quay lại</a>
+                
+            </div>
+          
+        </div>
+
+  
+</MudPaper>
+@code {
+    private string pattern = @"^(http|https|ftp|)\://|[a-zA-Z0-9\-\.]+\.[a-zA-Z](:[a-zA-Z0-9]*)?/?([a-zA-Z0-9\-\._\?\,\'/\\\+&amp;%\$#\=~])*[^\.\,\)\(\s]$";
+    private CreateClassVM _Class = new CreateClassVM();
+    [Inject]
+    public ITaskRepositories<ClassUPViewModel> _taskRepositories { get; set; }
+    private string _getTitle;
+    public MetaData MetaData { get; set; } = new MetaData();
+    [Parameter]
+    public string joincodeNonDecrypt { get; set; }
+    [Parameter]
+    public string idUserNonDecrypt { get; set; }
+    [Parameter]
+    public string specializedIdNonDecrypt { get; set; }
+    [Parameter]
+    public string subjectIdNonDecrypt { get; set; }
+    [Parameter]
+    public string idclassNonDecrypt { get; set; }
+
+    public string joincode = "";
+
+    public string idUser = "";
+
+    public string specializedId = "";
+
+    public string subjectId = "";
+
+    public string idclass = "";
+
+    private List<LessonUPViewModel> _lstlessUP = new List<LessonUPViewModel>();
+    [Inject]
+    public ILessonUPRepo _IlessonUPRepo { get; set; }
+    private string data;
+    [Parameter] public string ChildData { get; set; }
+    //[Parameter] public string backurl { get; set; }
+
+    private Thongtinlop thongtinlop = new Thongtinlop();
+    [Inject] NavigationManager navigationManager { get; set; }
+    [Parameter]
+    public EventCallback<string> ChildDataChanged { get; set; }
+    [Inject] public ISenderNotification _ISender { get; set; }
+    private Guid _getIdLesson;
+    [Inject] public UserManager<UserSignIn> userManager { get; set; }
+    //
+    [Inject] public IToastService _toastService { get; set; }
+    private int encounter;
+    private string getEmail = "";
+    [Inject]
+    public IStudentUPRepo _iStudentUPRepo { get; set; }
+    [Inject]
+    public ISpecializedCPRepo _iSpecializedClient { get; set; }
+    
+    public List<SpecializedDto> lstSpecAll  = new List<SpecializedDto>();
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        idUser = _cryptoServices.Decrypt(idUserNonDecrypt.Replace("I0H", "/"));
+        subjectId = _cryptoServices.Decrypt(subjectIdNonDecrypt.Replace("I0H", "/"));
+        specializedId = _cryptoServices.Decrypt(specializedIdNonDecrypt.Replace("I0H", "/"));
+        joincode = _cryptoServices.Decrypt(joincodeNonDecrypt.Replace("I0H", "/"));
+        idclass = _cryptoServices.Decrypt(idclassNonDecrypt.Replace("I0H", "/"));
+
+        thongtinlop = await _iStudentUPRepo.Thongtinlop(Guid.Parse(idclass), Guid.Parse(subjectId));
+        lstSpecAll = await _iSpecializedClient.GetAll();
+        _Class = await _taskRepositories.GetClassById(joincode);
+        getEmail = await _localStorageService.GetItemAsync<string>("keyver");
+        _lstlessUP = await _IlessonUPRepo.GetAll();
+        for (var i = 0; i < 15; i++)
+        {
+            encounter = i;
+        }
+
+    }
+    protected override void OnParametersSet()
+    {
+        data = ChildData;
+        base.OnParametersSet();
+    }
+    public async Task SelectLesson(ChangeEventArgs args)
+    {
+        if (args.Value != Guid.Empty.ToString())
+        {
+            _getIdLesson = Guid.Parse(args.Value.ToString());
+        }
+    }
+    private async Task HandleOnChange(ChangeEventArgs args)
+    {
+        data = args.Value.ToString();
+
+        await ChildDataChanged.InvokeAsync(data);
+    }
+    private async Task GetMessOfTitle(ChangeEventArgs args){
+        _getTitle = args.Value.ToString();
+    }
+    private async Task MakeALink()
+    {
+        if (String.IsNullOrEmpty(_getTitle)){
+            _toastService.ShowError($"Bạn Chưa Điền Tiêu Đề Cho Lớp ! {_Class.ClassroomName}-{_Class.SubjectName}");
+            return;
+        }
+        if (String.IsNullOrEmpty(data))
+        {
+            _toastService.ShowError($"Bạn Chưa Điền Link Tài Nguyên Cho Lớp ! {_Class.ClassroomName}-{_Class.SubjectName}");
+            return;
+        }
+        Regex reg = new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        if (!reg.IsMatch(data))
+        {
+            _toastService.ShowError($"Link Không Phù Hợp");
+            return;
+        }
+        if (_getIdLesson==Guid.Empty)
+        {
+            _toastService.ShowError($"Bài Học Không Hợp Lệ !");
+            return;
+        }
+        NewFeedVM newFeedVM = new NewFeedVM()
+            {
+                Id = Guid.NewGuid(),
+                Title = _getTitle,
+                Content = data,
+                Image = "Resource",
+                Status = 0,
+                CratedTime = DateTime.Now,
+                EndDate = default,
+                Priority = 1,
+                IdLesson = _getIdLesson,
+                IsReaded = true,
+                IdClass = _Class.Id,
+                IdSubject = _Class.SubjectId,
+                IdTypeOfNewFeed = Guid.Parse("9A0CCC99-F28A-4608-8BD4-48EE2BD2E0FB"),
+                IdUser = idUser
+    };
+        var res=  await _ISender.SendAsync(newFeedVM);
+        if(res){
+            _getTitle = "";
+            data = "";
+            _toastService.ShowSuccess($"Đã đính kèm link kham khảo thành công ! {_Class.ClassroomName}-{_Class.SubjectName}");
+            await RedirectToDetails();
+        }
+        else
+        {
+            _toastService.ShowError($"Đính kèm Link Kham Khảo Thất Bại ! {_Class.ClassroomName}-{_Class.SubjectName}");
+        }
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine($"/news/{joincodeNonDecrypt}/{idUserNonDecrypt}/{subjectIdNonDecrypt}/{specializedIdNonDecrypt}/{idclassNonDecrypt}");
+        navigationManager.NavigateTo(url);
+    }
+    private async Task ResToSpec()
+    {
+        var url = Path.Combine($"/LectuterSpecializedSubjectls/{idUserNonDecrypt}/{specializedIdNonDecrypt}");
+        navigationManager.NavigateTo(url);
+    }
+    private async Task Mon()
+    {
+        var url = Path.Combine($"/Giaovien/{specializedIdNonDecrypt}/{idUserNonDecrypt}/{subjectIdNonDecrypt}");
+        navigationManager.NavigateTo(url);
+    }
+    private async Task RedirectToDetails()
+    {
+        var url = Path.Combine($"/ViewChiTitet/{idclassNonDecrypt}/{specializedIdNonDecrypt}/{idUserNonDecrypt}/{subjectIdNonDecrypt}");
+        navigationManager.NavigateTo(url);
+    }
+}
+    

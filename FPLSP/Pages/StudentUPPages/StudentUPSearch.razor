@@ -1,0 +1,64 @@
+﻿@using Microsoft.AspNetCore.Components
+@using FPLSP.Server.Infrastructure.ViewModels.StudentsUPVm
+@using FPLSP.Repositories.Interfaces
+
+@attribute [Authorize(Roles = "LecturerFPLSP")]
+<EditForm Model="@_studentUPListSearch" OnSubmit="@SearchForm">
+    @*<div class="row">
+        <div class="col-4">
+            <InputSelect class="form-select" @bind-Value="_studentUPListSearch.Status">
+                <option value="">Tất cả</option>
+                <option value="1">Đang hoạt động</option>
+                <option value="0">Ngưng hoạt động</option>
+                <option value="2">Chưa đăng nhập hệ thống</option>
+            </InputSelect>
+        </div>
+        <div class="col-4 ps-0 pe-0">
+            <InputText placeholder="Nhập tên sinh viên" class="form-control" @bind-Value="_studentUPListSearch.NameStudent"></InputText>
+        </div>
+        <div class="col-4">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+            <button class="btn btn-outline-primary me-2" stype="border:3px double Green" @onclick="() => Undo()">Làm mới</button>
+        </div>
+    </div>*@
+    <div class="row">
+        <div class="col-4">
+            <InputSelect class="form-select" @bind-Value="_studentUPListSearch.Status">
+                <option value="">Tất cả</option>
+                <option value="1">Đang hoạt động</option>
+                <option value="0">Ngưng hoạt động</option>
+                <option value="2">Chưa đăng nhập hệ thống</option>
+            </InputSelect>
+        </div>
+        <div class="col-lg-6">
+            <div class="input-group mb-3">
+                <InputText placeholder="Nhập tên sinh viên" class="form-control" @bind-Value="_studentUPListSearch.NameStudent"></InputText>
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-outline-secondary">🔍</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2">
+            <a @onclick="@Undo" class="btn btn-outline-success">Clear</a>
+        </div>
+    </div>
+</EditForm>
+
+@code
+{
+    [Parameter] public EventCallback<StudentUPListSearchVm> OnSearch { get; set; }
+
+    private StudentUPListSearchVm _studentUPListSearch = new StudentUPListSearchVm();
+    [Inject] public IStudentUPRepo _stu { get; set; }
+
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(_studentUPListSearch);
+    }
+    public async void Undo()
+    {
+        _studentUPListSearch = new StudentUPListSearchVm();
+        _studentUPListSearch.PageNumber = 1;
+        await OnSearch.InvokeAsync(_studentUPListSearch);
+    }
+}

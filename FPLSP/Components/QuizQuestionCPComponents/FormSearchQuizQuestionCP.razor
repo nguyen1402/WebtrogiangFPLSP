@@ -1,0 +1,52 @@
+﻿@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.KindOfQuestionCPDtos
+@using FPLSP.Server.Infrastructure.ViewModels.KìnOfQuestionCPVm
+@using FPLSP.Server.Infrastructure.ViewModels.QuizQuestionCPVm
+
+
+<EditForm Model="@_quizquestionCPListSearch" OnSubmit="@SearchForm">
+    <div class="row">
+        <div class="col-3">
+            <InputSelect id="name" class="form-control" @bind-Value="_quizquestionCPListSearch.KindoOfQuestionId">
+                <option value="">Tất cả</option>
+                @foreach (var item in ListKOQCP)
+                {
+                    <option value="@item.Id">@item.QuestionForm-@item.QuestionTypeName</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="col-4">
+            <InputText placeholder="Tên câu hỏi" class="form-control" @bind-Value="_quizquestionCPListSearch.QuizQuestionName"></InputText>
+        </div>
+        <div class="col-3">
+            <InputSelect id="name" class="form-control" @bind-Value="_quizquestionCPListSearch.Status">
+                <option value="">Tất cả</option>
+                <option value="0">Đang hoạt động</option>
+                <option value="1">Ngưng hoạt động</option>
+            </InputSelect>
+        </div>
+        <div class="col-2">
+            <button type="submit" class="btn btn-success">Tìm kiếm</button>
+        </div>
+    </div>
+
+</EditForm>
+@code{
+    [Parameter]
+        public EventCallback<ListQuizQuestionSearch> OnSearch { get; set; }
+
+        private ListQuizQuestionSearch _quizquestionCPListSearch = new ListQuizQuestionSearch();
+        public List<KindOfQuestionCPDtos> ListKOQCP { get; set; } = new List<KindOfQuestionCPDtos>();
+        [Inject] public IKindoOfQuestionCPRepo _koqCPClient { get; set; }
+
+        private ListKOQCPSearch KOQCPListSearch = new ListKOQCPSearch();
+        private async Task SearchForm(EditContext context)
+        {
+            await OnSearch.InvokeAsync(_quizquestionCPListSearch);
+        }
+        protected async override Task OnInitializedAsync()
+        {
+            var pagingResponse = await _koqCPClient.GetKOQList(KOQCPListSearch);
+            ListKOQCP = pagingResponse.Items;
+        }
+}

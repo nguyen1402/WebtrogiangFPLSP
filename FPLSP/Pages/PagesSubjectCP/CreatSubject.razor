@@ -1,0 +1,233 @@
+﻿@page "/createsubject/{idspecializedNonDecrypt}"
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Subject
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<div class="row">
+
+
+    <div class="row pt-3">
+        <h3>Tạo Mới Môn</h3>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/SpecializedCP/@_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H")/@_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")">Chuyên ngành</a></li>
+                <li class="breadcrumb-item"><a href="/subjects/@idspecializedNonDecrypt.ToString()">@namespecialized</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Tạo mới môn học</li>
+            </ol>
+        </nav>
+        @if (ShowAuthError)
+        {
+            <div class="alert alert-danger" role="alert">
+                @Error
+            </div>
+        }
+        <EditForm Model="subject" OnValidSubmit="Create" class="card card-body bg-light">
+            <DataAnnotationsValidator />
+            @*<div class="row text-danger"><ValidationSummary /></div>*@
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-2 pt-4">
+                        <div class="row">
+                            <img src="@subject.Image" width=195px height=232px style="object-fit:contain">
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="image" class="col-12 col-form-label">Hình Ảnh:</label>
+                                @if (@image != null)
+                                {
+                                    <div class="col-12">
+                                        <ImageUpload OnChange="AssignImageUrl" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="col-12">
+                                        <ImageUpload OnChange="AssignImageUrl" />
+                                    </div>
+                                }
+                                <div class="text-danger"><ValidationMessage For="@(() => subject.Image)" /></div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="col-10 pt-1">
+                   @*     sửa giao diện *@
+                        <div class="row">
+
+                            <div class="form-group pt-2 col-6">
+                                <label for="name" class="col-2 col-form-label">Số buổi:</label>
+                                <div class="col-12">
+                                    <InputNumber min=10 max=29 id="name" class="form-control" @bind-Value="subject.TotalOfSub" />
+
+                                    <div class="text-danger"><ValidationMessage For="@(() => subject.TotalOfSub)" /></div>
+                                </div>
+                            </div>
+                            <div class="form-group pt-2 col-6">
+                                <label for="name" class="col-3 col-form-label">Trạng thái:</label>
+                                <div class="col-12">
+                                    <InputSelect @bind-Value="subject.Status" class="form-select">
+                                        <option value="0">Không hoạt động</option>
+                                        <option value="1">Đang hoạt động</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="row">
+                            <div class="form-group pt-2 col-12">
+                                <label for="name" class="col-3 col-form-label">Môn chính/Môn mẫu:</label>
+                                <div class="col-12">
+                                    <InputSelect @bind-Value="subject.IsDemo" class="form-select">
+                                        <option value="false">Môn chính</option>
+                                        <option value="true">Môn mẫu</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="row">
+                                    <div class="col-3">
+                                    </div>
+                                    <div class="col-6 mt-2 pt-4" style="text-align:center">
+                                        <button type="submit" class="btn btn-primary me-2">Thêm Mới</button>
+                                        <button type="button" class="btn btn-outline-success me-2" @onclick="ClearForm">Làm Mới</button>
+                                        <a href="/subjects/@idspecializedNonDecrypt.ToString()" class="btn btn-outline-danger">Quay Lại</a>
+                                    </div>
+                                    <div class="col-3">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </EditForm>
+    </div>
+</div>
+<FPLSP.Components.Comfirmation ConfirmationMessage="Bạn có chắc muốn tạo thêm bài học cho môn này không ?"
+                               ConfirmationTitle="Tạo bài học"
+                               ConfirmationChanged="OnConfirmation" @ref="Confirmation"></FPLSP.Components.Comfirmation>
+
+
+@code {
+    [Parameter]
+    public int lever { get; set; }
+    [Parameter]
+    public string image { get; set; }
+    Uri uri;
+    string maxlevel = "";
+    string IdCoSo = "";
+    [Parameter]
+    public string idspecializedNonDecrypt { get; set; }
+    public string idspecialized = "";
+    private SubjectCreateVM subject = new SubjectCreateVM();
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    [Inject]
+    public ISubjectClient _iSubjectClient { get; set; }
+
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+
+    [Inject]
+    public ISpecializedCPRepo _iSpecialized { get; set; }
+
+    public List<SpecializedDto> _lsSpecialized;
+    public List<SpecializedDto> _lsSpecialized2;
+    public List<SpecializedDto> _lsSpecialized3;
+    [Inject] private IToastService _toastService { get; set; }
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+    public SpecializedDto specializedDto = new SpecializedDto();
+    string namespecialized { get; set; }
+    protected Comfirmation Confirmation { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (string.IsNullOrEmpty(uri.Query) == false)
+        {
+            var urifist = uri.Query.Split("?")[1];
+            maxlevel = _cryptoServices.Decrypt(urifist.Split("LDN01")[0].Replace("I0H", "/"));
+            IdCoSo = _cryptoServices.Decrypt(urifist.Split("LDN01")[1].Replace("I0H", "/"));
+        }
+        idspecialized = _cryptoServices.Decrypt(idspecializedNonDecrypt.Replace("I0H", "/"));
+        await GetTasks();
+    }
+    private async Task GetTasks()
+    {
+        specializedDto = await _iSpecialized.GetbyId(Guid.Empty, Guid.Parse(idspecialized));
+        namespecialized = specializedDto.SpecializationName;
+        subject.TotalOfSub = 20;
+    }
+
+    private async Task Create()
+    {
+        ShowAuthError = false;
+        subject.idspec = Guid.Parse(idspecialized);
+        subject.Id = Guid.NewGuid();
+        TimeSpan date = subject.EndDay - subject.StartDay;
+        TimeSpan day = DateTime.Now - subject.EndDay;
+        var allsubject = await _iSubjectClient.GetAllSubjectByIdSpecialzed(Guid.Parse(idspecialized));
+        var subjectcode = allsubject.Where(p => p.SubjectCode == subject.SubjectCode).ToList();
+        if (subjectcode.Count > 0)
+        {
+            _toastService.ShowError("Mã môn học đã được sử dụng");
+            Navigation.NavigateTo("/createsubject/" + idspecialized.ToString());
+        }
+        else
+        {
+            var result = await _iSubjectClient.CreateSubject(subject);
+
+            if (result != 1)
+            {
+                _toastService.ShowError("Lỗi");
+                Navigation.NavigateTo("/createsubject/" + idspecialized.ToString());
+
+            }
+            else
+            {
+                _toastService.ShowSuccess("Thêm thành công");
+                Confirmation.show();
+
+            }
+        }
+
+
+    }
+    private void AssignImageUrl(string imgUrl)
+    {
+        subject.Image = imgUrl;
+    }
+
+
+    private void ClearForm()
+    {
+        image = null;
+        subject.TotalOfSub = 20;
+        subject.SubjectName = null;
+        subject.SubjectCode = null;
+        subject.StartDay = DateTime.Now;
+        subject.EndDay = DateTime.Now;
+    }
+    public async Task OnConfirmation(bool confirmed)
+    {
+        if (confirmed)
+        {
+            var url = Path.Combine("/createlesson/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((subject.Id).ToString()).Replace("/", "I0H")) + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}";
+            Navigation.NavigateTo(url);
+        }
+        else
+        {
+            Navigation.NavigateTo("/subjects/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H"));
+        }
+    }
+}

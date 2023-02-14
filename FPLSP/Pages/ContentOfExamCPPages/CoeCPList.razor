@@ -1,0 +1,320 @@
+﻿@page "/CoeCPList"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.ContentOfExamsCP
+
+
+<main class="app-content">
+    <div class="app-title">
+        <ul class="app-breadcrumb breadcrumb side">
+            <li class="breadcrumb-item active"><a class="btn" href="CoeCPList"><b><h3>Danh sách Nôi Dung Đề Thi</h3></b></a></li>
+        </ul>
+        <div id="clock"></div>
+    </div>
+    <div class="row pt-3">
+        <div class="col-3 ps-0" style="text-align: left;">
+            <a class="btn btn-danger me-3" href="">Quay Lại</a>
+            <a class="btn btn-outline-primary me-3" href="/CoeCPCreate">Thêm nội dung </a>
+        </div>
+        <div class="col-7 pe-5" stype="text-aline:center">
+            <CoeCPSearch OnSearch="Search"></CoeCPSearch>
+        </div>
+        <div class="col-2 ps-3">
+            <div class="dropdown-center">
+                <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Chức Năng
+                </button>
+                <ul class="dropdown-menu">
+                    @*<li><a class="dropdown-item" @onclick="() => Undo()">Khôi Phục</a></li>*@
+                    <li><a class="dropdown-item" @onclick="() => DeleteAll()">Xóa</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    @*   <div class="col-sm-2">
+    <button class="btn btn-secondary" type="button" title="Nhập">
+    <i class="fas fa-file-upload"></i> Tải từ file
+    </button>
+    </div>
+
+    <div class="col-sm-2">
+    <button class="btn btn-secondary " type="button" title="In">
+    <i class="fas fa-print"></i> In dữ liệu
+    </button>
+    </div>
+    <div class="col-sm-2">
+    <button class="btn btn-secondary " type="button" title="Sao chép">
+    <i class="fas fa-copy"></i> Sao chép
+    </button>
+    </div>
+
+    <div class="col-sm-2">
+    <button class="btn btn-secondary" title="In"><i class="fas fa-file-excel"></i> Xuất Excel</button>
+    </div>
+
+    <div class="col-sm-2">
+    <button class="btn btn-danger " type="button" title="Xóa">
+    <i class="fas fa-trash-alt"></i> Xóa tất cả
+    </button>
+    </div>*@
+    @*   </div>*@
+
+    <div class="mt-2">
+        <table class="table table-hover align-middle table-bordered mt-3" style="text-align:center">
+            <thead class="text-center">
+                <tr>
+                    <th> <input type="checkbox" @bind="@Check" @onchange="EventArgs => {CheckAllExpense( EventArgs.Value);} " @bind:event="oninput" /></th>
+                    <th width="20%">Mã nội dung đề thi</th>
+                    <th width="10%">Mức độ</th>
+                    <th width="10%">Ngày Tạo</th>
+                    <th width="10%">Ngày Mở</th>
+                    <th width="10%">Ngày Đóng</th>
+                    <th width="10%">Số lượng câu hỏi</th>
+                    <th width="10%">Trạng thái đề thi</th>
+                    <th width="20%">Tính năng</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in _lstdto)
+                {
+                    <tr>
+                        <td> <input type="checkbox" checked=@item.IsChecked @onchange="()=>CheckManual(item.Id,item.IsChecked)"></td>
+                        <td>@item.CoeCode</td>
+                        <td>@item.Level</td>
+                        <td>@item.DateCreated.Day/@item.DateCreated.Month/@item.DateCreated.Year</td>
+                        <td>@item.DateStarted.Day/@item.DateStarted.Month/@item.DateStarted.Year</td>
+                        <td>@item.EndDate.Day/@item.EndDate.Month/@item.EndDate.Year</td>
+                        <td>@item.TotalOfQuestions</td>
+                        <td>@(@item.Status == 1 ? "Hoạt động" : "Không hoạt động")</td>
+                        <td class="text-center">
+                            <a class="btn btn-primary " type="button" title="Sửa" id="show-emp" href="/CoeCPUpdate/@item.Id">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a class="btn btn-danger " type="button" title="Xóa" @onclick="()=>Delete(item.Id)">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                            <a class="btn btn-info" type="button" title="Chi Tiết" href="/ExamLinkDetail/@item.Id">
+                                <i class="bi bi-book"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+    </div>
+    <div class="d-flex justify-content-center">
+        <tfoot>
+            <FPLSP.Components.Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></FPLSP.Components.Pagingation>
+        </tfoot>
+    </div>
+
+</main>
+
+<FPLSP.Components.Comfirmation ConfirmationMessage="Are you sure to Delete?"
+                               ConfirmationTitle="Delete Exam"
+                               ConfirmationChanged="OnConfirmationDelete" @ref="DeleteConfirmation"></FPLSP.Components.Comfirmation>
+
+@*
+
+<h3>Danh Sách Nội Dung Đề Thi</h3>
+<div class="col-md-2">
+    <a class="btn btn-outline-primary" href="/CoeCPCreate">Tạo Mới Đề Thi</a>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <CoeCPSearch OnSearch="Search"></CoeCPSearch>
+    </div>
+</div>
+<div class="row">
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Mã nội dung đề thi</th>
+                <th>Mức độ</th>
+                <th>Ngày Tạo</th>
+                <th>Ngày Mở</th>
+                <th>Ngày Đóng</th>
+                <th>Số lượng câu hỏi</th>
+                <th>Trạng thái đề thi</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in _lstdto)
+            {
+                @if (item.IsDeleted == true) continue;
+
+                <tr>
+                    <td>@item.CoeCode</td>
+                    <td>@item.Level</td>
+                    <td>@item.DateCreated</td>
+                    <td>@item.DateStarted</td>
+                    <td>@item.EndDate</td>
+                    <td>@item.TotalOfQuestions</td>
+                    <td>@(@item.Status == 1 ? "Hoạt động" : "Không hoạt động")</td>
+                    <td>
+                        <div class="col-1 pt-4">
+                            <div class="dropdown float-end">
+                                <a class="dropdown-toggle" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                                    <li><a class="dropdown-item" href="/CoeCPDetails/@item.Id">Chi Tiết</a></li>
+                                    <li><a class="dropdown-item" href="/CoeCPUpdate/@item.Id">Sửa</a></li>
+                                    <li><a class="dropdown-item" @onclick="()=>DeleteStuden(item.Id)">Xóa</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+
+            }
+        </tbody>
+        <tfoot>
+            <FPLSP.Components.Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></FPLSP.Components.Pagingation>
+        </tfoot>
+    </table>
+
+</div>
+<FPLSP.Components.Comfirmation ConfirmationMessage="Are you sure to Delete?"
+                               ConfirmationTitle="Delete Exam"
+                               ConfirmationChanged="OnConfirmationCreate " @ref="DeleteConfirmation"></FPLSP.Components.Comfirmation>*@
+                           
+  @code{
+    [Inject] private IContentOfExamCPRepo contentOfExamCPRepo { get; set; }
+    [Inject] public IToastService NotifiToastService { get; set; }
+    [Inject] private IExamCPServicesRepo examApiClient { get; set; }
+    [Inject] private NavigationManager _navier { get; set; }
+    private List<Guid> _lstIDRemoveRange;
+    private bool Check = false;
+    private CoeListSearchVm _listSearchVm = new CoeListSearchVm();
+    private List<ContentOfExamCPDto> _lstdto;
+
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    public Components.Comfirmation DeleteConfirmation { get; set; } = new Components.Comfirmation();
+
+    private Guid Id;
+
+    public CoeCPList()
+    {
+        _lstdto = new List<ContentOfExamCPDto>();
+        _lstIDRemoveRange = new List<Guid>();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetExams();
+    }
+
+    private async Task GetExams()
+    {
+        var pagingResponse = await contentOfExamCPRepo.GetCoeCPList(_listSearchVm);
+        _lstdto = pagingResponse.Items;
+        MetaData = pagingResponse.MetaData;
+    }
+    async void DeleteAll()
+    {
+        _lstIDRemoveRange = new List<Guid>();
+        _lstIDRemoveRange = _lstdto.Where(c => c.IsChecked == true).Select(c => c.Id).ToList();
+        DeleteConfirmation.show();
+        await GetExams();
+    }
+    private async Task SelectedPage(int page)
+    {
+        _listSearchVm.PageNumber = page;
+        await GetExams();
+    }
+    public async Task DeleteStuden(Guid id)
+    {
+        Id = id;
+        DeleteConfirmation.show();
+    }
+
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        //if (deleteconfirmed)
+        //{
+        //    await contentOfExamCPRepo.DeleteCoeCP(Id);
+        //    await GetExams();
+        //    _navier.NavigateTo($"/CoeCPList");
+        //}
+
+        if (deleteconfirmed && _lstIDRemoveRange.Count == 0)
+        {
+            NotifiToastService.ShowError("Bạn chưa chọn!");
+            await GetExams();
+            _navier.NavigateTo($"/CoeCPList");
+        }
+        else if (deleteconfirmed && _lstIDRemoveRange != null)
+        {
+            foreach (var VARIABLE in _lstIDRemoveRange)
+            {
+                var result = await contentOfExamCPRepo.DeleteCoeCP(VARIABLE);
+                ;
+                if (result)
+                {
+                    NotifiToastService.ShowSuccess("Xóa thành công");
+                }
+                else
+                {
+                    NotifiToastService.ShowError("Xóa thất bại");
+                }
+            }
+
+            await GetExams();
+            _navier.NavigateTo($"/CoeCPList");
+            _lstIDRemoveRange = new List<Guid>();
+        }
+        Check = false;
+    }
+    public async Task Delete(Guid id)
+    {
+        _lstIDRemoveRange = new List<Guid>();
+        _lstIDRemoveRange.Add(id);
+        DeleteConfirmation.show();
+        await GetExams();
+        Check = false;
+    }
+    void CheckManual(Guid reportId, bool check)
+    {
+
+        if (check == true)
+        {
+            foreach (var x in _lstdto.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in _lstdto.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    void CheckAllExpense(object checkValue)
+    {
+
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            _lstdto.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            _lstdto.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+    public async Task Search(CoeListSearchVm coeListSearchVm)
+    {
+        _listSearchVm = coeListSearchVm;
+        await GetExams();
+    }
+
+
+}

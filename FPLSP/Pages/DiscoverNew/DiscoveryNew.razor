@@ -1,0 +1,206 @@
+﻿@page "/discoverynew"
+@using System.Linq
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Entities.UsesParts
+@using FPLSP.Server.Infrastructure.ViewModels.SubjectsSpecializedVM
+@layout MainLayout2
+<style>
+    .form-select, .form-text {
+        width: 100%;
+        padding: 9px 20px 0 9px;
+        text-align: left;
+        border: 0;
+        outline: 0;
+        border-radius: 6px;
+        background-color: #fff;
+        font-size: 15px;
+        font-weight: 300;
+        color: #8D8D8D;
+        -webkit-transition: all 0.3s ease;
+        transition: all 0.3s ease;
+        margin-top: 16px;
+    }
+</style>
+<div class="pad">
+    @if (encounter != 14)
+    {
+        <LoadingIndicator></LoadingIndicator>
+    }
+
+
+    <div class="mt-3">
+        <div class="card">
+            <div class="card-header fs-6">
+                <div class="row">
+                    <div class="col-lg-6 offset-3 mt-3">
+                        <div class="row">
+                            <EditForm Model="_searchDTO">
+                                <InputSelect style="border-radius:20px" class="form-control form-control-sm form-select" @bind-Value="_specializedId">
+                                    <option value="">Chọn chuyên ngành</option>
+                                    @if (_lstSubSpec.Count != 0)
+                                    {
+                                        foreach (var group in _lstSubSpec.GroupBy(c => c.SpecializedId).ToList())
+                                        {
+                                            foreach (var x in group)
+                                            {
+                                                <option value="@x.SpecializedId">@x.SpecializationName</option>
+                                                break; //Lấy 1 giá trị
+                                            }
+                                        }
+                                    }
+                                </InputSelect>
+                            </EditForm>
+                        </div>
+                        @if (string.IsNullOrEmpty(_specializedId))
+                        {
+                            isDisable = true;
+                        }
+                        else
+                        {
+                            isDisable = false;
+                        }
+                        <div class="row">
+                            <div class="mb-3">
+                                <input disabled="@isDisable" autocomplete="on" class="form-control form-text" id="exampleFormControlInput1"
+                                       @oninput="((ChangeEventArgs e)=>ChangedSubjectName(e))"
+                                       list="txt" placeholder="Điền tên môn học cần tìm kiếm" />
+                            </div>
+                        </div>
+                        <div class="row d-flex justify-content-center">
+                            <datalist id="txt">
+                                @if (_lstSubSpec.Count != 0 && !string.IsNullOrEmpty(_specializedId))
+                                {
+                                    _searchedDTOList = _lstSubSpec.Where(c => c.SpecializedId == Guid.Parse(_specializedId)).ToList();
+
+                                    foreach (var item in _searchedDTOList)
+                                    {
+                                        <option value="@item.SubjectName"></option>
+                                    }
+                                }
+                            </datalist>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="row ml-16 mr-16 pl-16 pr-16">
+                    @if (_lstSpec.Count != 0)
+                    {
+                        <MudPaper Width="100%" Elevation="0">
+                            <MudTreeView T="string" ExpandOnClick="true" Hover="true">
+                                @foreach (var item in _lstSpec.Where(c => c.Level == 0).OrderBy(c => c.SpecializedCode).ToList())
+                                {
+                                    <MudTreeViewItem Value="@(item.SpecializationName)">
+                                        @foreach (var item1 in _lstSpec.Where(c => c.Level == 1 && c.SpecialityId == item.Id).OrderBy(c => c.SpecializedCode).ToList())
+                                        {
+                                            <MudTreeViewItem Value="@(item1.SpecializationName)">
+                                            @foreach (var item2 in _lstSpec.Where(c => c.Level == 2 && c.SpecialityId == item1.Id).OrderBy(c => c.SpecializedCode).ToList())
+                                            {
+                                                <MudTreeViewItem Value="@(item2.SpecializationName)">
+                                                @if (_lstSubSpec.Where(c => c.SpecializedId == item2.Id).ToList().Count != 0)
+                                                {
+                                                    foreach (var x in _lstSubSpec.Where(c => c.SpecializedId == item2.Id).OrderBy(c => c.SubjectName).ToList())
+                                                    {
+                                                        <div class="list-group-item d-flex align-items-center">
+                                                            <div class="flex-fill d-flex justify-content-start">
+                                                                <div class="text-dark font-weight-600"><strong>@x.SpecializationName</strong> - @x.SubjectName</div>
+                                                            </div>
+                                                            <a href="/detailsubjectup/@x.SubjectId" class="btn btn-outline-primary">View Course</a>
+                                                        </div>
+                                                    }
+                                                }
+                                            </MudTreeViewItem>
+                                            }
+                                            @if (_lstSubSpec.Where(c => c.SpecializedId == item1.Id).ToList().Count != 0)
+                                            {
+                                                @foreach (var x in _lstSubSpec.Where(c => c.SpecializedId == item1.Id).OrderBy(c => c.SubjectName).ToList())
+                                                {
+                                                    <div class="list-group-item d-flex align-items-center">
+                                                        <div class="flex-fill d-flex justify-content-start">
+                                                            <div class="text-dark font-weight-600"><strong>@x.SpecializationName</strong> - @x.SubjectName</div>
+                                                        </div>
+                                                        <a href="/detailsubjectup/@x.SubjectId" class="btn btn-outline-primary">View Course</a>
+                                                    </div>
+                                                }
+                                            }
+                                        </MudTreeViewItem>
+                                        }
+
+                                        @if (_lstSubSpec.Where(c => c.SpecializedId == item.Id).ToList().Count != 0)
+                                        {
+                                            @foreach (var x in _lstSubSpec.Where(c => c.SpecializedId == item.Id).OrderBy(c => c.SubjectName).ToList())
+                                            {
+                                                <div class="list-group-item d-flex align-items-center">
+                                                    <div class="flex-fill d-flex justify-content-start">
+                                                        <div class="text-dark font-weight-600"><strong>@x.SpecializationName</strong> - @x.SubjectName</div>
+                                                    </div>
+                                                    <a href="/detailsubjectup/@x.SubjectId" class="btn btn-outline-primary">View Course</a>
+                                                </div>
+                                            }
+                                        }
+                                    </MudTreeViewItem>
+                                }
+                            </MudTreeView>
+                        </MudPaper>
+                    }
+                </div>
+            </div>
+            <div class="card-footer text-muted">
+                <div class="row mt-3">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+     [Inject]
+        ISubjectsSpecializedUPRepo _subspecUPRepo { get; set; }
+        private List<SubjectsSpecializedDtos> _lstSubSpec = new List<SubjectsSpecializedDtos>();
+
+        [Inject]
+        ISubjectUPRepo _subUPRepo { get; set; }
+        private List<SubjectUP> _lstSub = new List<SubjectUP>();
+
+        [Inject]
+        NavigationManager navigationManager { get; set; }
+        [Inject]
+        ISpecializedUPRepo _specUPRepo { get; set; }
+        private List<SpecializedUP> _lstSpec = new List<SpecializedUP>();
+    private int encounter;
+
+        private SubjectsSpecializedCPListSearch _searchDTO = new SubjectsSpecializedCPListSearch();
+        private string _specializedId = null;
+        private Dictionary<SpecializedUP, List<SubjectsSpecializedDtos>> _lstSubOfSpec = new Dictionary<SpecializedUP, List<SubjectsSpecializedDtos>>();
+        private List<SubjectsSpecializedDtos> _searchedDTOList = new List<SubjectsSpecializedDtos>();
+        public MetaData MetaData { get; set; } = new MetaData();
+
+        private bool isDisable = true;
+        protected override async Task OnInitializedAsync()
+        {
+            _lstSpec = await _subspecUPRepo.GetAllSpecUP();
+
+            _lstSubOfSpec = await _subspecUPRepo.GetSubOfSpecGroupBy();
+            _lstSubSpec = await _subspecUPRepo.GetAllAsync();
+        for (var i = 0; i < 15; i++)
+        {
+            encounter = i;
+        }
+        }
+
+        private void ChangedSubjectName(ChangeEventArgs args)
+        {
+            if (_lstSubSpec.Any(c => c.SubjectName == Convert.ToString(args.Value)))
+            {
+                var searchedSub = _lstSubSpec.FirstOrDefault(c => c.SubjectName == Convert.ToString(args.Value));
+                NavigateToSubjectDetails(searchedSub.SubjectId);
+            }
+        }
+        private void NavigateToSubjectDetails(Guid subId)
+        {
+            string url = $"/detailsubjectup/{subId}";
+            navigationManager.NavigateTo(url);
+        }
+}

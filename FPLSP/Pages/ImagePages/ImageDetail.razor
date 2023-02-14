@@ -1,0 +1,100 @@
+﻿@page "/ImageDetail/{id:guid}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.ContentOfExamsCP
+
+<h3>Chi Tiết Hình Ảnh</h3>
+@if (_imageCPDto != null)
+{
+    <div class="row">
+        <div class="col-1">
+        </div>
+        <div class="d-flex justify-content-center col-10 ">
+            <EditForm Model="_imageCPDto" class="card card-body bg-light mt-5">
+                <DataAnnotationsValidator />
+                <div class="form-group row mt-2">
+                    <img src="@_imageCPDto.Path" alt="product image" style="width:100px;" />
+                </div>
+                <div class="row">
+                    <div class="form-group row mt-2 col-md-6">
+                        <label for="name" class="col-md-4 col-form-label"><i class="fa-regular fa-clipboard"></i> Mô tả:</label>
+                        <div class="col-md-10">
+                            <InputText id="name" class="form-control" @bind-Value="_imageCPDto.Descriptions" />
+                            <ValidationMessage For="@(() => _imageCPDto.Descriptions)" />
+                        </div>
+                    </div>
+
+                    <div class="form-group row mt-2 col-md-6">
+                        <label for="name" class="col-md-4 col-form-label"><i class="fa-solid fa-check"></i>Trạng Thái:</label>
+                        <div class="col-md-10">
+                            <InputSelect class="form-control" @bind-Value="_imageCPDto.Status">
+                                <option value="1">Đã sử dụng</option>
+                                <option value="0">Chưa sử dụng</option>
+                            </InputSelect>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-4 col-form-label"><i class="fas fa-light fa-file-lines"></i> Nội Dung Đề Thi:</label>
+                    <div class="col-md-10">
+                        <InputSelect class="form-control" @bind-Value="_imageCPDto.CoeId">
+                            @if (_lstCoe != null)
+                            {
+                                @foreach (var item in _lstCoe)
+                                {
+                                    <option value="@item.Id">@item.CoeCode - @item.Content</option>
+                                }
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+                <div class="row text-center mt-3">
+                    <a href="/ImageList" class="btn btn-danger">Quay Lại</a>
+                </div>
+            </EditForm>
+        </div>
+        <div class="col-1">
+        </div>
+    </div>
+
+
+}
+else
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+
+@code {
+    private ImageCPDto _imageCPDto = new ImageCPDto();
+    [Inject] private IContentOfExamCPRepo _contentOfExamCPRepo { get; set; }
+
+    [Inject] private IImageCPRepo _imageCPRepo { get; set; }
+    [Inject] private NavigationManager _navier { get; set; }
+
+    private List<ContentOfExamCPDto> _lstCoe = new List<ContentOfExamCPDto>();
+    private CoeListSearchVm _coeListSearchVm = new CoeListSearchVm();
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        await Get();
+    }
+    private async Task Get()
+    {
+
+        var pagingResponse = await _contentOfExamCPRepo.GetCoeCPList(_coeListSearchVm);
+        _lstCoe = pagingResponse.Items;
+        var examCp = await _imageCPRepo.GetImageCPById(Id);
+        var examDto = new ImageCPDto()
+            {
+                Path = examCp.Path,
+                Descriptions = examCp.Descriptions,
+                Status = examCp.Status,
+                CoeId = examCp.CoeId
+            };
+        _imageCPDto = examDto;
+    }
+
+                                    }

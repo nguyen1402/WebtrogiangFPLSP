@@ -1,0 +1,123 @@
+﻿@page "/quizupUpdate/{Id}"
+<h3>Cập nhật Quiz Ups </h3>
+@using FPLSP.Components;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.QuizUp
+@using Microsoft.AspNetCore.Components
+@using Blazored.Toast.Services
+@if (_quizUpVm == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+
+}
+else
+{
+    <EditForm Model="_quizUpVm" OnValidSubmit="Edit" class="card card-body bg-light mt-6">
+        <DataAnnotationsValidator />
+        <div class="form-group">
+            <div class="row">
+                <div class="form-group pt-2 col-md-6 ">
+                    <label class="form-label">Tên Quiz:</label>
+                    <div class="text-danger">
+                        <InputText class="form-control" @bind-Value="_quizUpVm.QuizName"></InputText>
+                        <ValidationMessage For="()=>_quizUpVm.QuizName"></ValidationMessage>
+                    </div>
+                </div>
+                <div class="form-group pt-2 col-md-6">
+                    <label for="ReportLevel" class="form-label">Tiêu đề :</label>
+                    <div class="text-danger">
+                        <InputText class="form-control" @bind-Value="_quizUpVm.QuizTitle">
+                        </InputText>
+                        <ValidationMessage For="()=>_quizUpVm.QuizTitle">"></ValidationMessage>
+                    </div>
+                </div>
+                <div class="form-group pt-2 col-md-6">
+                    <label for="Question" class="form-label">Ngày bắt đầu :</label>
+                    <div class="text-danger">
+                        <InputDate class="form-control" @bind-Value="_quizUpVm.StartDay"></InputDate>
+                        <ValidationMessage For="()=>_quizUpVm.StartDay">"></ValidationMessage>
+                    </div>
+                </div>
+                <div class="form-group pt-2 col-md-6">
+                    <label for="Question" class="form-label">Ngày kết thúc  :</label>
+                    <div class="text-danger">
+                        <InputDate class="form-control" @bind-Value="_quizUpVm.EndDay"></InputDate>
+                        <ValidationMessage For="()=>_quizUpVm.EndDay">"></ValidationMessage>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group pt-2 col-md-6">
+                    <label for="Answer" class="form-label">Mô tả:</label>
+                    <div class="text-danger">
+                        <InputText class="form-control" @bind-Value="_quizUpVm.Descriptions"></InputText>
+                        <ValidationMessage For="()=>_quizUpVm.Descriptions"></ValidationMessage>
+                    </div>
+                </div>
+                <div class="form-group pt-2 col-md-6">
+                    <label for="Describe" class="form-label">Lượt làm tối đa:</label>
+                    <div class="text-danger">
+                        <InputNumber class="form-control" @bind-Value="_quizUpVm.MaxTurn"></InputNumber>
+                        <ValidationMessage For="()=>_quizUpVm.MaxTurn"></ValidationMessage>
+                    </div>
+                </div>
+                   <div class="form-group pt-2 col-md-6">
+                <label for="Describe" class="form-label">Trạng thái:</label>
+                <div class="text-danger">
+                        <InputSelect class="form-select" @bind-Value="_quizUpVm.Status">
+                        <option value=0>Đang hoạt động</option>
+                        <option value=1>Đã dừng hoạt động</option>
+                    </InputSelect>
+                    <ValidationMessage For="()=>_quizUpVm.Status"></ValidationMessage>
+                </div>
+            </div>
+                <div class="d-flex justify-content-center mb-2">
+                    <div class="p-2">
+                        <button type="submit" class="btn btn-success">Cập nhật</button>
+                    </div>
+                    <div class="p-2">
+                        <a @onclick="()=> Resorte()" class="btn btn-outline-primary">Khôi phục</a>
+                    </div>
+                    <div class="p-2">
+                        <a href="/quizup/@_quizUpVm.SubjectId" class="btn btn-outline-danger">Quay Lại</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+}
+@code
+{
+    [Parameter] public string Id { set; get; }
+    [Inject] private IQuizUPRepo _quizUpRepo { get; set; }
+    [Inject] NavigationManager NavigationManager { get; set; }
+    private QuizUpEditVm _quizUpVm = new QuizUpEditVm();
+    [Inject] IToastService toastService { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        _quizUpVm = await _quizUpRepo.GetQuizUp(Id);
+    }
+    protected async Task Edit()
+    {
+        if (await _quizUpRepo.Update(Id, _quizUpVm))
+        {
+            NavigationManager.NavigateTo($"/quizup/{_quizUpVm.SubjectId}");
+            toastService.ShowSuccess("Cập nhật thành công");
+        }
+        else
+        {
+            toastService.ShowError("Cập nhật thất bại");
+        }
+
+    }
+    protected async Task Delete()
+    {
+        await _quizUpRepo.Delete(Id);
+        NavigationManager.NavigateTo($"/quizup/{_quizUpVm.SubjectId}");
+    }
+    private async Task Resorte()
+    {
+        _quizUpVm = await _quizUpRepo.GetQuizUp(Id);
+    }
+}
+

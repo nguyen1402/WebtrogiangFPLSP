@@ -1,0 +1,421 @@
+﻿@page "/detailslecturer/{id}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels
+@attribute [Authorize(Roles = "AdminCS")]
+<style>
+    body {
+    background-color: #ebeef4;
+    margin-top: 20px;
+}
+
+.nav-tabs {
+    border-bottom: 1px solid #c9d2e3;
+}
+
+.profile .profile-header {
+    position: relative;
+}
+
+    .profile .profile-header .profile-header-cover {
+        background: url(https://wallpapercave.com/wp/wp2901390.jpg);
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        height: 10.625rem;
+        position: relative; 
+    }
+
+media (max-width: 991.98px) {
+    .profile .profile-header .profile-header-cover {
+        height: 6.25rem;
+    }
+}
+
+.profile .profile-header .profile-header-cover:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.profile .profile-header .profile-header-content {
+    position: relative;
+    padding: 0 150px;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-align: flex-end;
+    align-items: flex-end;
+}
+
+media (max-width: 991.98px) {
+    .profile .profile-header .profile-header-content {
+        display: block;
+        padding: 0 20px;
+    }
+}
+
+.profile .profile-header .profile-header-content .profile-header-img {
+    width: 12.5rem;
+    height: 12.5rem;
+    overflow: hidden;
+    z-index: 10;
+    margin-top: -8.75rem;
+    padding: 0.1875rem;
+    background: #fff;
+    -webkit-border-radius: 9px;
+    border-radius: 9px;
+}
+
+media (max-width: 991.98px) {
+    .profile .profile-header .profile-header-content .profile-header-img {
+        width: 4.375rem;
+        height: 4.375rem;
+        margin: -3.75rem 0 0;
+    }
+}
+
+.profile .profile-header .profile-header-content .profile-header-img img {
+    max-width: 100%;
+    width: 100%;
+    -webkit-border-radius: 6px;
+    border-radius: 6px;
+}
+
+.profile .profile-header .profile-header-content .profile-header-tab {
+    position: relative;
+    margin-left: 135px;
+    -webkit-box-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+}
+media (max-width: 991.98px) {
+    .profile .profile-header .profile-header-content .profile-header-tab {
+        margin: -0.625rem -20px 0;
+        padding: 0 150px;
+        overflow: scroll;
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -ms-flex-wrap: nowrap;
+        flex-wrap: nowrap;
+    }
+}
+
+.profile .profile-header .profile-header-content .profile-header-tab .nav-item .nav-link {
+    padding: 0.8125rem 0.625rem 0.5625rem;
+    text-align: center;
+}
+
+media (max-width: 991.98px) {
+    .profile .profile-header .profile-header-content .profile-header-tab .nav-item .nav-link {
+        padding: 0.9375rem 0.625rem 0.3125rem;
+    }
+}
+
+.profile .profile-header .profile-header-content .profile-header-tab .nav-item .nav-link .nav-field {
+    font-weight: 600;
+    font-size: 0.8125rem;
+}
+
+media (max-width: 991.98px) {
+    .profile .profile-header .profile-header-content .profile-header-tab .nav-item .nav-link .nav-field {
+        font-size: 0.6875rem;
+        margin-bottom: -0.125rem;
+    }
+}
+
+.profile .profile-header .profile-header-content .profile-header-tab .nav-item .nav-link .nav-value {
+    font-size: 1.25rem;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+}
+
+media (max-width: 991.98px) {
+    .profile .profile-header .profile-header-content .profile-header-tab .nav-item .nav-link .nav-value {
+        font-size: 1.125rem;
+    }
+}
+
+media (max-width: 991.98px) {
+    .profile .profile-header .profile-header-content .profile-header-tab .nav-item .nav-link.active {
+        background: 0 0;
+    }
+}
+
+.profile .profile-header .profile-header-content .profile-header-tab .nav-item + .nav-item {
+    margin-left: 0.9375rem;
+}
+
+.profile .profile-container {
+    padding: 30px 50px;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+}
+
+media (max-width: 991.98px) {
+    .profile .profile-container {
+        padding: 20px 20px;
+    }
+}
+
+.profile .profile-container .profile-sidebar {
+    width: 25rem;
+}
+
+media (max-width: 991.98px) {
+    .profile .profile-container .profile-sidebar {
+        display: none;
+    }
+}
+
+.profile .profile-container .profile-content {
+    padding-left: 30px;
+    -webkit-box-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+}
+
+media (max-width: 991.98px) {
+    .profile .profile-container .profile-content {
+        padding-left: 0;
+    }
+}
+
+.profile .profile-img-list {
+    list-style-type: none;
+    margin: -0.0625rem -1.3125rem;
+    padding: 0;
+}
+
+    .profile .profile-img-list:after,
+    .profile .profile-img-list:before {
+        content: "";
+        display: table;
+        clear: both;
+    }
+
+    .profile .profile-img-list .profile-img-list-item {
+        float: left;
+        width: 25%;
+        padding: 0.0625rem;
+    }
+
+        .profile .profile-img-list .profile-img-list-item.main {
+            width: 50%;
+        }
+
+        .profile .profile-img-list .profile-img-list-item .profile-img-list-link {
+            display: block;
+            padding-top: 75%;
+            overflow: hidden;
+            position: relative;
+        }
+
+            .profile .profile-img-list .profile-img-list-item .profile-img-list-link .profile-img-content,
+            .profile .profile-img-list .profile-img-list-item .profile-img-list-link img {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                max-width: 100%;
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+            }
+
+                .profile .profile-img-list .profile-img-list-item .profile-img-list-link .profile-img-content:before,
+                .profile .profile-img-list .profile-img-list-item .profile-img-list-link img:before {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    border: 1px solid rgba(60, 78, 113, 0.15);
+                }
+
+        .profile .profile-img-list .profile-img-list-item.with-number .profile-img-number {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            color: #fff;
+            font-size: 1.625rem;
+            font-weight: 500;
+            line-height: 1.625rem;
+            margin-top: -0.8125rem;
+            text-align: center;
+        }
+
+</style>
+
+@if(lecturer == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+<div class="profile">
+    <div class="profile-header">
+        <div class="profile-header-cover"></div>
+        <div class="profile-header-content">
+            <div class="profile-header-img">
+                    <img src="./css/images/LecturerCP/@lecturer.ImageUrl" onerror="this.src='./css/images/Others/logoFPT.png'" alt="" />
+            </div>
+            <ul class="profile-header-tab nav nav-tabs nav-tabs-v2">
+                <li class="nav-item">
+                    <div class="nav-field">Years Of Experience</div>
+                        <div class="nav-value">@lecturer.YearsOfExperience</div>
+                </li>
+                <li class="nav-item"> 
+                    <div class="nav-field">Teaching Classes</div>
+                    <div class="nav-value">@_lstClass.Count</div> 
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="profile-container">
+        <div class="profile-sidebar">
+            <div class="desktop-sticky-top">
+                    <h4 style="text-align: center;">@lecturer.LecturersName</h4>
+                <p style="text-align: center;">
+                    @lecturer.Description
+                </p>
+                    <div class="mb-1">LecturerCode: @lecturer.LecturersCode</div>
+                    <div class="mb-1">Specialized: @(specializedListString == null ? "N/A" : specializedListString)</div>
+                <div class="mb-1">Gender: @(lecturer.Gender == true ? "Male" : "Female")</div>
+                <div class="mb-1">Date Of Birth: @lecturer.Dob.ToString("dd/MM/yyyy")</div>
+                <div class="mb-1">Email: @lecturer.Email</div>
+                <div class="mb-1">PhoneNumber: @lecturer.PhoneNumber</div>
+                <div class="mb-1">Address: @lecturer.Address</div>
+                <div class="mb-1">IdentityCard: @lecturer.IdentityCard</div>
+                    <div class="mb-1">IssuedOn: @lecturer.IssuedOn.ToString("dd/MM/yyyy")</div>
+                <div class="mb-1">Ethnic: @lecturer.Ethnic</div>
+                <div class="mb-1">HomeTown: @lecturer.HomeTown</div>
+                <hr class="mt-4 mb-4" />
+            </div>
+            <a href="/updatelecturer/@id"><button type="submit" class="btn btn-success">Edit</button></a>
+        </div>
+
+        <div class="profile-content">
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="tab-content p-0">
+                        <div class="tab-pane fade active show" id="profile-followers">
+                            <div class="list-group">
+                                @if(_lstClass.Count != 0)
+                                {
+                                    foreach (var item in _lstClass)
+                                    {
+                                        <div class="list-group-item d-flex align-items-center">
+                                            <div class="flex-fill pl-3 pr-3">
+                                                <div><div class="text-dark font-weight-600">@item.ClassroomName - @item.SubjectName</div></div>
+                                                <div class="text-muted fs-13px">@item.DateStarted - @item.EndDate</div>
+                                            </div>
+                                            <a href="/detailclass/@item.JoinCode" class="btn btn-outline-primary">View Class</a>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                        <h3 text-muted mb-1>Giảng Viên Chưa Dạy Lớp Nào</h3>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+}
+
+@code{
+        [Parameter]
+        public string id { get; set; }
+        private LecturersCPViewModel lecturer = new LecturersCPViewModel();
+        [Inject]
+        public ILecturersCPRepo _lecturerRepositories { get; set; }
+        [Inject]
+        public ISpecializedCPRepo _specializedCPRepo { get; set; }
+        [Inject]
+        public ILectuterSpecializedCPCilents _lectuterSpecializedCPCilents { get; set; }
+        private List<LectuterSpecializedCPDto> _lstLecturerSpecial = new List<LectuterSpecializedCPDto>();
+        private List<SpecializedDto> _lstSpecialized = new List<SpecializedDto>();
+        [Inject]
+        public ITaskRepositories<ClassUPViewModel> _taskRepositories { get; set; }
+        private List<ClassUPViewModel> _lstClass = new List<ClassUPViewModel>();
+        private PagingParameters _pagingParameters = new PagingParameters();
+
+        private ClassUPViewModel _classUPViewModel = new ClassUPViewModel();
+        private ClassSearchDTO _searchDTO = new ClassSearchDTO();
+        private int _counter;
+
+        private string specializedListString;
+        protected async override Task OnInitializedAsync()
+        {
+            _lstLecturerSpecial = await _lectuterSpecializedCPCilents.GetAllAsync();
+
+            lecturer = await _lecturerRepositories.GetLecturerListById(Guid.Parse(id));
+            lecturer.ListSpecialized = _lstLecturerSpecial.Where(x => x.Idlecturers == lecturer.Id).Select(x => x.Idspecialized).ToList();
+
+            if (lecturer.ListSpecialized != null)
+            {
+                specializedListString = await GetListSpecializedString();
+            }
+
+            await GetClassList(_searchDTO);
+        }
+        private async Task GetClassList(ClassSearchDTO classSearchDTO)
+        {
+            _counter = 0;
+            var pagingResponse = await _taskRepositories.GetListDataAsync(classSearchDTO);
+
+            _lstClass = pagingResponse.Items.Where(c => c.HomeroomLecturerEmail == lecturer.Email).ToList();
+        }
+
+        private async Task SelectedPage(int page)
+        {
+            _searchDTO.PageNumber = page;
+            await GetClassList(_searchDTO);
+        }
+        private async Task SearchBar(EditContext editContext)
+        {
+            await GetClassList(_searchDTO);
+        }
+
+        private async Task<string> GetListSpecializedString()
+        {
+            string specializedList = null;
+
+            foreach (var x in lecturer.ListSpecialized)
+            {
+                var specialized = await _specializedCPRepo.GetbyId(Guid.Empty, x);
+                string specializedString = specialized.SpecializationName;
+
+                Guid idspecializedBigger = Guid.Parse(specialized.IdSpeciality.ToString());
+                for (int i = 0; i < specialized.Level; i++)
+                {
+                    var specializedBigger = await _specializedCPRepo.GetbyId(Guid.Empty, idspecializedBigger);
+                    if (specializedBigger != null)
+                    {
+                        if (specializedBigger.IdSpeciality != null)
+                        {
+                            idspecializedBigger = Guid.Parse(Convert.ToString(specializedBigger.IdSpeciality));
+                        }
+                        specializedString = specializedBigger.SpecializationName + "-" + specializedString;
+                    }
+                }
+                specializedList = specializedList + specializedString + ", ";
+            }
+
+            return (specializedList == null ? null : specializedList.Substring(0, specializedList.Length - 2));
+        }}

@@ -1,0 +1,82 @@
+﻿@page "/createspecializedhepUP/{id}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.Specialized
+
+<div class="row pt-3">
+    <h2>Thêm chuyên ngành hẹp</h2>
+    @if (ShowAuthError)
+    {
+        <div class="alert alert-danger" role="alert">
+            @Error
+        </div>
+    }
+    <EditForm Model="model" OnValidSubmit="Create" class="card card-body bg-light mt-5">
+        <DataAnnotationsValidator />
+        <div class="form-group">
+            <div class="row">
+                <div class="form-group pt-2 col-md-6">
+                    <label for="name" class="col-md-2 col-form-label">Tên:</label>
+                    <div class="col-md-10">
+                        <InputText id="name" class="form-control" @bind-Value="model.SpecializationName" />
+                        <ValidationMessage For="@(() => model.SpecializationName)" />
+                    </div>
+                </div>
+                <div class="form-group pt-2 col-md-6">
+                    <label for="name" class="col-md-2 col-form-label">Trạng thái:</label>
+                    <div class="col-md-10">
+                        <InputSelect @bind-Value="model.Status" class="form-control">
+                            <option value="0">Chưa đủ sinh viên</option>
+                            <option value="1">Chờ đi vào hoạt động</option>
+                            <option value="2">Ngưng hoạt động</option>
+                            <option value="3">Đang hoạt động</option>
+                        </InputSelect>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row pt-2">
+            <div class="col-md-6 text-center">
+                <button type="submit" class="btn btn-primary">Tạo Mới</button>
+            </div>
+            <div class="col-md-6 text-center">
+                <a @onclick = "() => Quaylai()" class="btn btn-danger">Quay Lại</a>
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    
+        [Parameter]
+        public string Id { get; set; }
+        private SpecializedVM model = new SpecializedVM();
+        [Inject]
+        public NavigationManager Navigation { get; set; }
+
+        [Inject]
+        public ISpecializedUPRepo _specializedUPRepo { get; set; }
+        public bool ShowAuthError { get; set; }
+        [Parameter]
+        public string Error { get; set; }
+        private async Task Create()
+        {
+            ShowAuthError = false;
+            var result = await _specializedUPRepo.Create(Guid.Parse(Id), model);
+
+            if (result != 1)
+            {
+                Error = "Lỗi";
+                ShowAuthError = true;
+                Navigation.NavigateTo("/createspecializedhepUP/" + Id.ToString());
+            }
+            else
+            {
+                Navigation.NavigateTo("/specializedhepUP/" + Id.ToString());
+            }
+        }
+        private async Task Quaylai()
+        {
+            var url = Path.Combine("/specializedUP");
+            Navigation.NavigateTo(url);
+        }
+}

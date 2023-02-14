@@ -1,0 +1,152 @@
+﻿@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces.CabinProject
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject
+@if (ShowConfirmation)
+{
+    <div class="modal fade show d-block" id="exampleModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <EditForm Model="semesterBlockVM" class="card card-body bg-light mt-6">
+                        <DataAnnotationsValidator />
+                        <h6>Tạo mới Block, Kì Học</h6>
+                        <div class="form-group">
+                            <div class="row">
+                                <div class="form-group pt-2 col-md-6 ">
+                                    <label class="form-label">Kì học:</label>
+                                    <div class="text-danger">
+                                        <InputText class="form-control" @bind-Value="semesterBlockVM.NameofSemester"></InputText>
+                                        <ValidationMessage For="()=>semesterBlockVM.NameofSemester"></ValidationMessage>
+                                    </div>
+                                </div>
+                                <div class="form-group pt-2 col-md-6 ">
+                                    <label class="form-label">Block:</label>
+                                    <div class="text-danger">
+                                        <InputText class="form-control" @bind-Value="semesterBlockVM.NameofBlock"></InputText>
+                                        <ValidationMessage For="()=>semesterBlockVM.NameofBlock"></ValidationMessage>
+                                    </div>
+                                </div>
+
+                                <div class="form-group pt-2 col-md-6">
+                                    <label for="Question" class="form-label">Ngày bắt đầu :</label>
+                                    <div class="text-danger">
+                                        <InputDate class="form-control" @bind-Value="semesterBlockVM.StartTime"></InputDate>
+                                        <ValidationMessage For="()=>semesterBlockVM.StartTime">"></ValidationMessage>
+                                    </div>
+                                </div>
+                                <div class="form-group pt-2 col-md-6">
+                                    <label for="Question" class="form-label">Ngày kết thúc  :</label>
+                                    <div class="text-danger">
+                                        <InputDate class="form-control" @bind-Value="semesterBlockVM.EndTime"></InputDate>
+                                        <ValidationMessage For="()=>semesterBlockVM.EndTime">"></ValidationMessage>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="d-flex justify-content-center mb-2">
+                                    <div class="p-2">
+                                        <button @onclick="()=> Add()" class="btn btn-success">Tạo mới</button>
+                                    </div>
+                                    <div class="p-2">
+                                        <button class="btn btn-danger" @onclick="()=>OnConfirmationChange(false)">Hủy</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@code {
+    SemesterBlockVM semesterBlockVM = new SemesterBlockVM();
+    SemesterVM semesterVM = new SemesterVM();
+    BlockVM blockVM = new BlockVM();
+    [Inject] private ISemesterBlockRepo _semesterBlockRepo { get; set; }
+    [Inject] private ISemesterRepo _semesterRepo { get; set; }
+    [Inject] private IBlockRepo _blockRepo { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    [Inject] private NavigationManager navigationManager { get; set; }
+    public bool ShowConfirmation { get; set; }
+    [Parameter]
+    public EventCallback<bool> OnAdd { get; set; }
+
+    protected async Task OnConfirmationChange(bool value)
+    {
+        ShowConfirmation = false;
+        await OnAdd.InvokeAsync(value);
+
+    }
+    private async void Add()
+    {
+
+
+        var semester = await _semesterRepo.GetAll();
+        var lstblock = await _blockRepo.GetAll();
+        var semblock = await _semesterBlockRepo.GetAll();
+        var lstsemesterBlock = (from a in semblock
+                                join b in semester
+                                on a.IdSemester equals b.Id
+                                join c in lstblock
+                                on a.IdBlock equals c.Id
+                                select new
+                                {
+                                    b.NameofSemester,
+                                    c.NameOfBlock,
+                                    a.Status
+
+                                }).ToList();
+        var count = lstsemesterBlock.Where(x => x.NameofSemester == semesterBlockVM.NameofSemester && x.NameOfBlock == semesterBlockVM.NameofBlock && x.Status != 1 ).Count();
+        if (count > 0)
+        {
+            _toastService.ShowError($"Kì {semesterBlockVM.NameofSemester} - Block {semesterBlockVM.NameofBlock} đã tồn tại");
+            semesterBlockVM.NameofSemester = "";
+            semesterBlockVM.NameofBlock = "";
+            semesterBlockVM.StartTime = DateTime.Now;
+            semesterBlockVM.EndTime = DateTime.Now;
+            return;
+        }
+        //if (semesterBlockVM.NameofSemester == "" || semesterBlockVM.NameofBlock == "")
+        //{
+        //    if (semesterBlockVM.NameofSemester == "" || semesterBlockVM.NameofBlock == "")
+        //    {
+        //        _toastService.ShowError("Không được để trống tên kì");
+        //    }
+        //    if (semesterBlockVM.NameofBlock == "")
+        //    {
+        //        _toastService.ShowError("Không được để trống tên block");
+        //    }
+        //    return;
+        //}
+        //if (semesterBlockVM.StartTime > semesterBlockVM.EndTime)
+        //{
+        //    _toastService.ShowError("Ngày bắt đầu không được sớm hơn ngày kết thúc");
+        //    return;
+        //}
+            semesterVM.NameofSemester = semesterBlockVM.NameofSemester;
+            blockVM.NameOfBlock = semesterBlockVM.NameofBlock;
+            semesterVM.Id = Guid.NewGuid();
+            blockVM.Id = Guid.NewGuid();
+            await _semesterRepo.CreateSemester(semesterVM);
+            await _blockRepo.CreateBlock(blockVM);
+            semesterBlockVM.IdSemester = semesterVM.Id;
+            semesterBlockVM.IdBlock = blockVM.Id;
+            var check = await _semesterBlockRepo.CreateSemesterBlock(semesterBlockVM);
+            if (check)
+            {
+                semesterBlockVM.NameofSemester = "";
+                semesterBlockVM.NameofBlock = "";
+                semesterBlockVM.StartTime = DateTime.Now;
+                semesterBlockVM.EndTime = DateTime.Now;
+                _toastService.ShowSuccess("Thêm mới thành công");
+                await OnConfirmationChange(true);
+            }
+
+        }
+        public void show()
+        {
+            ShowConfirmation = true;
+            StateHasChanged();
+        }
+    }

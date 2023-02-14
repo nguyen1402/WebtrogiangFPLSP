@@ -1,0 +1,301 @@
+﻿@page "/StudentUPCreate"
+@using Microsoft.AspNetCore.Components
+@using FPLSP.Server.Infrastructure.ViewModels.StudentsUPVm
+@using FPLSP.Server.Domain.Entities.UserParts
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@attribute [Authorize(Roles = "LecturerFPLSP")]
+<div class="row pt-3">
+    <h3>Thêm Sinh Viên</h3>
+    @if (ShowAuthError)
+    {
+        <div class="alert alert-danger" role="alert">
+            @Error
+        </div>
+    }
+    <EditForm Model="student" OnValidSubmit="Create" class="card card-body bg-light mt-3">
+
+        <div class="text-danger"><DataAnnotationsValidator /></div>
+        <div class="form-group">
+            <div class="row">
+                <div class="col-2 pt-4">
+                    <div class="row">
+                        <img src="@student.ImageUrl" width=195px height=232px style="object-fit: contain">
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="image" class="col-12 col-form-label">Hình Ảnh:</label>
+                            @if (@imageurl != null)
+                            {
+                                <div class="col-12">
+                                    <ImageUpload OnChange="AssignImageUrl" />
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="col-12">
+                                    <ImageUpload OnChange="AssignImageUrl" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="col-10 pt-1">
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Mã Sinh Viên:</label>
+                            <div class="col-md-12">
+                                <input id="name" class="form-control" value="@_maxIds" disabled />
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Tên Sinh Viên:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="student.StudentName" />
+                                <div class="text-danger"><ValidationMessage For="@(() => student.StudentName)"></ValidationMessage></div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Ngày sinh:</label>
+                            <div class="col-md-12">
+                                <InputDate id="name" class="form-control" @bind-Value="student.DateOfBirth" />
+                                <div class="text-danger"><ValidationMessage For="@(() => student.DateOfBirth)" /></div>
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Giới tính:</label>
+                            <div class="col-md-12">
+                                <InputSelect @bind-Value="student.Gender" class="form-control">
+                                    <option value="false">Nam</option>
+                                    <option value="true">Nữ</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Số điện thoại:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="student.PhoneNumber" />
+                                <div class="text-danger"><ValidationMessage For="@(() => student.PhoneNumber)"></ValidationMessage></div>
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-2 col-form-label">Địa chỉ:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="student.Address" />
+                                <div class="text-danger">
+                                    <ValidationMessage For="@(() => student.Address)"></ValidationMessage>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-2 col-form-label">CCCD/CMT</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="student.IdentityCardNumber" />
+                                <div class="text-danger"> <ValidationMessage For="@(() => student.IdentityCardNumber)"></ValidationMessage></div>
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-3 col-form-label">Ngày cấp:</label>
+                            <div class="col-md-12">
+                                <InputDate id="name" class="form-control" @bind-Value="student.IssuedOn" />
+                                <div class="text-danger">
+                                    <ValidationMessage For="@(() => student.IssuedOn)"></ValidationMessage>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-2 col-form-label">Dân tộc:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="student.Ethnic" />
+                                <div class="text-danger">  <ValidationMessage For="@(() => student.Ethnic)"></ValidationMessage></div>
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-2 col-form-label">Quê quán:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="student.HomeTown" />
+                                <div class="text-danger"> <ValidationMessage For="@(() => student.HomeTown)"></ValidationMessage></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-2 col-form-label">Tên Cha:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="student.FathersName" />
+                                <div class="text-danger"><ValidationMessage For="@(() => student.FathersName)"></ValidationMessage></div>
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-2 col-form-label">Tên Mẹ:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="student.MotherName" />
+                                <div class="text-danger"> <ValidationMessage For="@(() => student.MotherName)"></ValidationMessage></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-2 col-form-label">Mô tả:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="student.Description" />
+                                <div class="text-danger">  <ValidationMessage For="@(() => student.Description)"></ValidationMessage></div>
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-2 col-form-label">Trạng thái:</label>
+                            <div class="col-md-12">
+                                <InputSelect @bind-Value="student.Status" class="form-select">
+                                    <option value="1"> Hoạt động</option>
+                                    <option value="0">Không Hoạt động</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="row">
+                                <div class="col-3"></div>
+                                <div class="col-6 mt-2 pt-4" style="text-align: center">
+                                    <button type="submit" class="btn btn-primary me-2">Tạo Mới</button>
+                                    <button type="button" class="btn btn-outline-success me-2" @onclick="() => ClearForm()">Clear Form</button>
+                                    <a href="/StudentUPList" class="btn btn-danger">Quay Lại</a>
+                                </div>
+                                <div class="col-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+</div>
+@code {
+
+    [Parameter]
+    public string _maxIds { get; set; }
+
+    public StudentUPCreateVm student = new StudentUPCreateVm();
+    public StudentUP StudentMaxId { get; set; } = new StudentUP();
+    public List<StudentUP> ListStudentUps { get; set; } = new List<StudentUP>();
+
+    [Inject] private IToastService _toastService { get; set; }
+    [Inject] public IStudentUPRepo _repo { get; set; }
+
+    [Inject] public NavigationManager navigation { get; set; }
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+    public string path { get; set; }
+    public string imageurl { get; set; } = "\\css\\images\\Others\\logoFPT.png";
+
+
+    public IReadOnlyList<IBrowserFile> selectedFiles;
+
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        student.ImageUrl = "\\css\\images\\Others\\logoFPT.png";
+        var temp = "00000";
+        StudentMaxId = await _repo.GetMaxIdStudentUP();
+        var value = Convert.ToString(Convert.ToInt32(StudentMaxId.StudentCode.Substring(2, StudentMaxId.StudentCode.Length - 2)) + 1);
+        if ((temp.Length - value.Length) <= 0)
+        {
+            temp = value;
+        }
+        else { temp = temp.Substring(0, temp.Length - value.Length) + value; }
+
+        _maxIds = "PH" + temp;
+        ListStudentUps = new List<StudentUP>();
+        ListStudentUps = await _repo.GetAllStudentUPAsync();
+    }
+    private async Task Create()
+    {
+        ShowAuthError = false;
+        if (Equals("\\css\\images\\Others\\logoFPT.png", student.ImageUrl))
+        {
+            _toastService.ShowError("Bạn chưa chọn ảnh");
+            navigation.NavigateTo("/StudentUPCreate");
+        }
+        else if (CheckMail(student.Email))
+        {
+            _toastService.ShowError("Email bị trùng");
+            ShowAuthError = true;
+            navigation.NavigateTo("/StudentUPCreate");
+        }
+        else if (CheckCMT(student.IdentityCardNumber))
+        {
+            _toastService.ShowError("CCCD bị trùng");
+            ShowAuthError = true;
+            navigation.NavigateTo("/StudentUPCreate");
+        }
+        else if (CheckPhoneNumber(student.PhoneNumber))
+        {
+            _toastService.ShowError("Số điện thoại bị trùng");
+            ShowAuthError = true;
+            navigation.NavigateTo("/StudentUPCreate");
+        }
+        else
+        {
+            var result = await _repo.CreateStudentUP(student);
+            if (result != 1)
+            {
+                _toastService.ShowError("Lỗi không thêm được Sinh viên");
+                ShowAuthError = true;
+                navigation.NavigateTo("/StudentUPCreate");
+            }
+            else
+            {
+                _toastService.ShowSuccess("Thêm Thành Công");
+                navigation.NavigateTo("/StudentUPList");
+            }
+        }
+    }
+    private void AssignImageUrl(string imgUrl) => student.ImageUrl = imgUrl;
+    public async void ClearForm()
+    {
+        student.StudentName = null;
+        student.Address = null;
+        student.DateOfBirth = DateTime.Today;
+        student.Description = null;
+        student.Email = null;
+        student.Ethnic = null;
+        student.FathersName = null;
+        student.IdentityCardNumber = null;
+        student.Gender = default;
+        student.ImageUrl = null;
+        student.MotherName = null;
+        student.PhoneNumber = null;
+        student.HomeTown = null;
+        student.Password = null;
+        student.IssuedOn = DateTime.Today;
+        student.Status = 0;
+        await OnInitializedAsync();
+    }
+
+    private bool CheckMail(string mail)
+    {
+        var checkExited = ListStudentUps.Any(c => Equals(mail, c.Email));
+        return checkExited;
+    }
+    private bool CheckCMT(string CCCD)
+    {
+        var checkExited = ListStudentUps.Any(c => Equals(CCCD, c.IdentityCardNumber));
+        return checkExited;
+    }
+    private bool CheckPhoneNumber(string phoneNumber)
+    {
+        var checkExited = ListStudentUps.Any(c => Equals(phoneNumber, c.PhoneNumber));
+        return checkExited;
+    }
+}

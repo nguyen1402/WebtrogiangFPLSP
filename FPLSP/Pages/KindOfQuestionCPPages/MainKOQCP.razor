@@ -1,0 +1,121 @@
+﻿@page "/MainKOQSCP"
+@using FPLSP.Components.KindOfQuestionCPComponents
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos.KindOfQuestionCPDtos
+@using FPLSP.Server.Infrastructure.ViewModels.KìnOfQuestionCPVm
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+
+<div class="row">
+    <div class="col-md-4">
+        <h2>Danh Sách Loại câu hỏi</h2>
+    </div>
+ 
+</div>
+<div class="row mt-3 mb-3">
+    <div class="col-md-3">
+        <a class="btn btn-outline-primary" href="/CreateKOQCP">Thêm Loại Câu Hỏi</a>
+    </div>
+    <div class="col-md-3"></div>
+    <div class="col-md-6">
+        <FormSearchKOQCP OnSearch="SearchKOQCP"></FormSearchKOQCP>
+    </div>
+       
+</div>
+<div class="row">
+    @if (ListKOQCP != null)
+    {
+        <table class="table table-hover align-middle mt-0">
+            <thead class="table-success">
+                <tr>
+                    <th>Tên loại câu hỏi</th>
+                    <th>Loại câu hỏi</th>
+                    <th>Chức năng</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in ListKOQCP)
+                {
+                    <tr>
+                        <td>@item.QuestionTypeName</td>
+                        <td>@item.QuestionForm</td>
+                        <td>
+                            <div class="dropdown">
+                                <a class="btn btn-secondary dropdown-toggle" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                                    <li><a class="dropdown-item" @onclick="() => RedirectToUpdate(item.Id)">Cập nhật</a></li>
+                                    <li><a class="dropdown-item" @onclick="() => RedirectToDelete(item.Id)">Xóa</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <span>
+            Loading......
+        </span>
+    }
+</div>
+<div class="row">
+    <div class="col-11 align-self-center">
+        <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+    </div>
+</div>
+@code {
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    public List<KindOfQuestionCPDtos> ListKOQCP { get; set; } = new List<KindOfQuestionCPDtos>();
+    private PagingParameters _koqParameters = new PagingParameters();
+    public MetaData MetaData { get; set; } = new MetaData();
+    public string Error { get; set; }
+    [Inject] public IKindoOfQuestionCPRepo _koqCPClient { get; set; }
+    private ListKOQCPSearch KOQCPListSearch = new ListKOQCPSearch();
+
+    protected async override Task OnInitializedAsync()
+    {
+        await GetTasks();
+    }
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _koqCPClient.GetKOQList(KOQCPListSearch);
+            ListKOQCP = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+    private void RedirectToUpdate(Guid id)
+    {
+
+        var url = Path.Combine("/UpdateKOQCP/", id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task RedirectToDelete(Guid id)
+    {
+        var url = Path.Combine("/DeleteKOQCP/", id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        KOQCPListSearch.PageNumber = page;
+        await GetTasks();
+    }
+    public async Task SearchKOQCP(ListKOQCPSearch koq)
+    {
+        KOQCPListSearch = koq;
+        await GetTasks();
+    }
+}

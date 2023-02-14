@@ -1,0 +1,438 @@
+﻿@page "/createclass"
+@using Blazored.Toast
+@using Blazored.Toast.Services
+@using FPLSP.Data
+@using FPLSP.Pages.SpecializeUPPages
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using FPLSP.Server.Domain.Entities.UserParts
+@using FPLSP.Server.Infrastructure.ViewModels
+@using System.Text.RegularExpressions
+
+<PageTitle>FPLSP | Elearning</PageTitle>
+
+@if
+(
+_lstLecSpec == null ||
+_lstSubSpec == null ||
+_lstSub == null ||
+_lstLec == null ||
+_lstSpec == null ||
+_lstStuForSearch == null
+)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <EditForm Model="@_classUp" id="createForm" OnValidSubmit="Created">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="row">
+            <div class=" col-lg-10 offset-1">
+                <div class="row">
+                    <div class="mb-3">
+                        <label for="exampleFormControlInput2" class="form-label">Tên lớp :</label>
+                        <InputText @bind-Value="@_classUp.ClassroomName" id="exampleFormControlInput2" class="form-control"></InputText>
+                        <ValidationMessage For="@(() => _classUp.ClassroomName)" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class=" col-lg-6">
+                        <div class="mb-3">
+                            <label for="exampleFormControlInput2" class="form-label">Mã lớp :</label>
+                            <InputText disabled=true @bind-Value="@_classUp.ClassroomCode" id="exampleFormControlInput2" class="form-control"></InputText>
+                            <ValidationMessage For="@(() => _classUp.ClassroomCode)" />
+                        </div>
+                      @*  <div class="mb-3">
+                            <label for="exampleFormControlInput3" class="form-label">Tòa nhà :</label>
+                            <InputText @bind-Value="@_classUp.Building" id="exampleFormControlInput3" placeholder="Ex: Toa P" class="form-control"></InputText>
+                            <ValidationMessage For="@(() => _classUp.Building)" />
+                        </div>*@
+                        <div class="mb-3">
+                            <label for="exampleFormControlInput4" class="form-label">Số lượng sinh viên :</label>
+                            <InputNumber @bind-Value="@_classUp.StudentAmount" id="exampleFormControlInput4" class="form-control"></InputNumber>
+                            <ValidationMessage For="@(() => _classUp.StudentAmount)" />
+                        </div>
+                        <div class="mb-3 mt-1">
+                            <label class="mb-2">Giảng viên :</label>
+                            @if (_lstLec != null)
+                            {
+                                <InputSelect class="form-select" @bind-Value="@_classUp.lecturersCPId">
+                                    <option value="@Guid.Empty" selected>Chọn Giảng Viên</option>
+                                    @foreach (var x in _lstLec)
+                                    {
+                                        <option value="@x.Id">@x.LecturersName </option>
+                                    }
+                                </InputSelect>
+                            }
+                            else
+                            {
+                                <InputSelect class="form-select" hidden @bind-Value="@_classUp.lecturersCPId">
+                                    <option selected>Chọn Giảng Viên</option>
+                                    <option value="@lecturer.Id">@lecturer.LecturersName </option>
+                                </InputSelect>
+                            }
+                        </div>
+                        @if (_classUp.lecturersCPId != Guid.Empty)
+                        {
+                            // lấy list Spec của Lec
+                            _lstSpec = _lstSpecDefault;
+                            var _lstSpecID = _lstLecSpec.Where(x => x.Idlecturers == _classUp.lecturersCPId).Select(c => c.Idspecialized).ToList();
+                            _lstSpec = _lstSpec.Where(x => _lstSpecID.Contains(x.Id)).ToList();
+                        }
+                        <div class="mb-3 mt-1">
+                            <label class="mb-2">Chuyên Ngành :</label>
+                            <InputSelect disable="@(_classUp.lecturersCPId == Guid.Empty)" class="form-select" @bind-Value="_classUp.specializedUPId">
+                                <option value="@Guid.Empty" selected>Chọn Chuyên Ngành</option>
+                                @if (_lstSpec != null)
+                                {
+                                    @foreach (var x in _lstSpec)
+                                    {
+                                        <option value="@x.Id">@x.SpecializationName</option>
+                                    }
+                                }
+                            </InputSelect>
+                            <span hidden="@(_classUp.lecturersCPId != Guid.Empty)">Chọn Giảng Viên Trước Khi Chọn Chuyên Ngành</span>
+                        </div>
+                    </div>
+                    <div class=" col-lg-6">
+                        @if (_classUp.specializedUPId != Guid.Empty)
+                        {
+                            // lấy list Sub của Spec
+                            _lstSub = _lstSubDefault;
+                            var _lstSubID = _lstSubSpec.Where(x => x.SpecializedId == _classUp.specializedUPId).Select(c => c.SubjectId).ToList();
+                            _lstSub = _lstSub.Where(c => _lstSubID.Contains(Guid.Parse(c.Id.ToString()))).ToList();
+                        }
+                        <div class="mb-3 mt-1">
+                            <label class="mb-1">Môn học :</label>
+                            <InputSelect disable="@(_classUp.specializedUPId == Guid.Empty)" class="form-control" @bind-Value="@_classUp.SubjectId">
+                                <option value="@Guid.Empty" selected>Chọn Môn Học</option>
+                                @if (_lstSub != null)
+
+                                    @foreach (var x in _lstSub)
+                                    {
+                                        <option value="@x.Id">@x.SubjectName </option>
+                                    }
+                                }
+                            </InputSelect>
+                            <span hidden="@(_classUp.specializedUPId != Guid.Empty)">Chọn Chuyên Ngành Trước Khi Chọn Môn Học</span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="exampleFormControlInput10" class="form-label">Mã Tham Gia :</label>
+                            <InputText disabled=true @bind-Value="@_classUp.JoinCode" id="exampleFormControlInput10" class="form-control"></InputText>
+                            <ValidationMessage For="@(() => _classUp.JoinCode)" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="exampleFormControlInput6" class="form-label">Ngày Tạo :</label>
+                            <InputDate @bind-Value="@_classUp.DateCreated" disable id="exampleFormControlInput6" class="form-control"></InputDate>
+                            <ValidationMessage For="@(() => _classUp.DateCreated)" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="exampleFormControlInput7" class="form-label">Ngày Bắt Đầu :</label>
+                            <InputDate @bind-Value="@_classUp.DateStarted" id="exampleFormControlInput7" class="form-control"></InputDate>
+                            <ValidationMessage For="@(() => _classUp.DateStarted)" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="exampleFormControlInput8" class="form-label">Ngày Kết Thúc :</label>
+                            <InputDate @bind-Value="@_classUp.EndDate" id="exampleFormControlInput8" class="form-control"></InputDate>
+                            <ValidationMessage For="@(() => _classUp.EndDate)" />
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-center">
+                    <label for="exampleFormControlInput5" class="form-label">Trạng Thái :</label>
+                    <InputRadioGroup @bind-Value="@_classUp.Status">
+                        @foreach (var x in @_preStatuses)
+                        {
+                            <div class="form-check form-check-inline px-5">
+                                <InputRadio class="form-check-input" id="@x.Id" Value="@x.Id" />
+                                <span for="@x.Id">@x.StatusName</span>
+                            </div>
+                        }
+                    </InputRadioGroup>
+                    <ValidationMessage For="@(() => _classUp.Status)" />
+                </div>
+            </div>
+            <hr />
+            <div class="my-3">
+                <div class="row">
+                    <div class="col-lg-4"></div>
+                    <div class="col-lg-2">
+                        <button class="btn btn-info" form="createForm" type="submit">Tạo Lớp</button>
+                    </div>
+                    <div class="col-lg-1"></div>
+                    <div class="col-lg-2">
+                        <button class="btn btn-warning" type="button" @onclick="@Clear">Làm mới</button>
+                    </div>
+                    <div class="col-lg-4"></div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+
+    <div class="row">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+            </ol>
+        </nav>
+    </div>
+    <div class="row pt-3">
+       <div class="col-6"></div>
+        <div class="col-6">
+            <ClassSearch OnSearch="SearchTask"></ClassSearch>
+        </div>
+    </div>
+    <div class="row mt-2">
+        @if (_lstClassUps.Count > 0)
+        {
+            <table class="table">
+                <thead class="text-center">
+                    <tr>
+                      
+                        <th scope="col">Tên lớp</th>
+                      
+                        <th scope="col">Tên Môn </th>
+                        <th scope="col">Tên Giảng Viên </th>
+                        <th scope="col">Email Giảng Viên </th>
+                        <th scope="col">Trạng Thái </th>
+                    </tr>
+                </thead>
+                <tbody class="text-center">
+                    @foreach (var sj in _lstClassUps)
+                    {
+                        <tr>
+                            <td class="align-middle">
+                                @sj.ClassroomName
+                            </td>
+                           
+                            <td class="align-middle">
+                                @sj.SubjectName
+                            </td>
+                            <td class="align-middle">
+                                @sj.HomeroomLecturer
+                            </td>
+                            <td class="align-middle">
+                                @sj.HomeroomLecturerEmail
+                            </td>
+
+                            <td class="align-middle">
+                                @(sj.Status == 0 ? "Đang Hoạt Động" : (sj.Status == 1 ? "Dừng Hoạt Động" : (sj.Status == 2 ? "Chưa Đủ Sinh Viên" : "Chưa Có Môn Học")))
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            @if (encounter != 14)
+            {
+                <LoadingIndicator></LoadingIndicator>
+            }
+            else
+            {
+                <h5 class="text-center" style=" font-family:auto; font-size: 25px;">Danh sách lớp trống</h5>
+            }
+        }
+    </div>
+    <div class="footer text-muted">
+        <div class="row mt-3">
+
+            <span>
+                <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+            </span>
+
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string userEmail { get; set; }
+    public LecturersCP lecturer = new LecturersCP();
+    [Inject] IToastService _toast { get; set; }
+    [Inject] NavigationManager _navigationManager { get; set; }
+    [Inject]
+    public ITaskRepositories<ClassUPViewModel> _taskRepositories { get; set; }
+    [Inject]
+    public ILecturersCPRepo _lecturersCPRepo { get; set; }
+
+    private CreateClassVM _classUp;
+    private SpecializedUP _specializedUP;
+    private ClassSearchDTO _classSearchDTO = new ClassSearchDTO();
+    private List<StudentViewModel> _lstStudents;
+    private List<ExcelErrors> _lstErrr = new List<ExcelErrors>();
+    private bool IsDisabled = false;
+    //ElementReference MyList { get; set; }
+    public MetaData MetaData { get; set; } = new MetaData();
+    private List<ClassUp> ClassUPList;
+    private string bindtextClass;
+    private string bindtextStu;
+
+    private ClassUPViewModel _classUPViewModel = new ClassUPViewModel();
+    //
+    private List<StudentViewModel> _lstStuForSearch = new List<StudentViewModel>();
+    [Inject]
+    public ISubjectsSpecializedUPRepo _subSpecUPRepo { get; set; }
+    [Inject]
+    public ILectuterSpecializedCPCilents _iLecSpecializedCPRepo { get; set; }
+    [Inject]
+    public ISubjectUPRepo _iSubjectUPRepo { get; set; }
+    [Inject]
+    public ISpecializedUPRepo _iSpecializedUPRepo { get; set; }
+
+    private List<LecturersCP> _lstLec;
+    private List<SpecializedDto> _lstSpec;
+    private List<SubjectDto> _lstSub;
+
+    private List<LecturersCP> _lstLecDefault;
+    private List<SpecializedDto> _lstSpecDefault;
+    private List<SubjectDto> _lstSubDefault;
+
+    private List<LectuterSpecializedCPDto> _lstLecSpec;
+    private List<SubjectsSpecializedDtos> _lstSubSpec;
+
+    protected PopUpConfirm DeleConfirmation { set; get; }
+    public CreateClass()
+    {
+        ClassUPList = new List<ClassUp>();
+
+        _preStatuses = new List<PreStatus>()
+            {
+                new PreStatus(){Id=0,StatusName="Đang Hoạt Động"},
+                new PreStatus(){Id=1,StatusName="Dừng Hoạt Động"},
+                new PreStatus(){Id=2,StatusName="Chưa Đủ Sinh Viên"},
+                new PreStatus(){Id=3 ,StatusName="Chưa Có Môn Học"},
+            };
+
+        _specializedUP = new SpecializedUP();
+
+        _lstStudents = new List<StudentViewModel>();
+        _classUp = new CreateClassVM();
+
+        _Statuses = new PreStatus();
+    }
+
+    public class PreStatus
+    {
+        public int Id { get; set; }
+        public string StatusName { get; set; }
+    }
+    private List<PreStatus> _preStatuses = new List<PreStatus>();
+    private PreStatus _Statuses = new PreStatus();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTasks();
+        _lstLecSpec = await _iLecSpecializedCPRepo.GetAllAsync();
+        _lstSubSpec = await _subSpecUPRepo.GetAllAsync();
+        _classUp = await _taskRepositories.GetClassModel();
+
+        _lstLec = await _lecturersCPRepo.GetAllLecturerAsync();
+        _lstSpec = await _iSpecializedUPRepo.GetAll();
+        _lstSub = await _iSubjectUPRepo.GetAllSubjectAsync();
+
+        _lstLecDefault = await _lecturersCPRepo.GetAllLecturerAsync();
+        _lstSpecDefault = await _iSpecializedUPRepo.GetAll();
+        _lstSubDefault = await _iSubjectUPRepo.GetAllSubjectAsync();
+
+        _lstStuForSearch = await _taskRepositories.GetAllStudent();
+
+        foreach (var x in _preStatuses)
+        {
+            _Statuses.Id = x.Id;
+            _Statuses.StatusName = x.StatusName;
+        }
+    }
+
+    private async Task Created(EditContext editContext)
+    {
+
+        foreach (var x in _lstStudents.Where(c => c.IsChecked == true))
+        {
+            _classUp.ListStudent.Add(x.Id);
+        }
+        _classUp.subjectUP = new List<Guid?>() { _classUp.SubjectId };
+
+        if (_classUp.lecturersCPId == Guid.Empty) _classUp.lecturersCPId = null;
+        if (_classUp.specializedUPId == Guid.Empty) _classUp.lecturersCPId = null;
+        if (_classUp.SubjectId == Guid.Empty) _classUp.lecturersCPId = null;
+
+        var res = await _taskRepositories.AddAsync(_classUp);
+        if (res)
+        {
+            _toast.ShowSuccess($"Add Successfully {_classUp.ClassroomName}");
+            _classUp = await _taskRepositories.GetClassModel();
+        }
+        else
+        {
+            _toast.ShowError($"Add Failed {_classUp.ClassroomName}");
+            return;
+        }
+
+        await OnInitializedAsync();
+    }
+
+    private async Task Clear()
+    {
+        _classUp = await _taskRepositories.GetClassModel();
+    }
+}
+
+@code {
+    [Inject] private IToastService _toastService { get; set; }
+
+    private int encounter;
+    private ClassSearchDTO _parameters = new ClassSearchDTO();
+    public string Error { get; set; }
+    public List<ClassUPViewModel> _lstClassUps { get; set; } = new List<ClassUPViewModel>();
+
+    public async Task SearchTask(ClassSearchDTO classSearchDTO)
+    {
+        _parameters = classSearchDTO;
+        await GetTasks();
+    }
+
+    private async Task GetTasks()
+    {
+        try
+        {
+            for (var i = 0; i < 15; i++)
+            {
+                encounter = i;
+            }
+            var pagingResponse = await _taskRepositories.GetAllClass();
+
+            if (_parameters.ClassroomName != null)
+            {
+                pagingResponse = pagingResponse.Where(x => x.ClassroomName.ToLower().Contains(_parameters.ClassroomName.ToLower())).ToList();
+            }
+            pagingResponse = pagingResponse.Where(c => Regex.IsMatch(c.ClassroomName, @"[a-zA-Z]+[\d]+")).ToList();
+            var lstoderby = pagingResponse.OrderByDescending(c => Convert.ToInt32(Regex.Match(c.ClassroomName, @"\d+").Value)).ToList();
+            var data = lstoderby.Skip((_parameters.PageNumber - 1) * _parameters.PageSize).Take(_parameters.PageSize).ToList();
+            var lstpage = new PageList<ClassUPViewModel>(data,
+                lstoderby.Count(),
+                _parameters.PageNumber,
+                _parameters.PageSize);
+            _lstClassUps = lstpage.Items;
+         
+            MetaData = lstpage.MetaData;
+
+
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _parameters.PageNumber = page;
+        await GetTasks();
+    }
+}

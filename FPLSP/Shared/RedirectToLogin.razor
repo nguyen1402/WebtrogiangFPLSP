@@ -1,0 +1,10 @@
+﻿@page "/checker"
+
+@code {
+         [Inject] public NavigationManager Navigation { get; set; }
+
+		protected override async Task OnInitializedAsync()
+		{
+			Navigation.NavigateTo($"/login?redirectUri={Uri.EscapeDataString(Navigation.Uri)}", true);
+		}
+}

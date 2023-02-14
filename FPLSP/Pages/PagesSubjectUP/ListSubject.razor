@@ -1,0 +1,249 @@
+﻿@page "/listsubjects/{idspecializedUP}"
+@using Blazored.Toast.Services
+@using FPLSP.Components
+@using FPLSP.Components.SubjectUP
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Entities.UsesParts
+@using FPLSP.Server.Infrastructure.ViewModels.Subject
+
+@if (SubjectUPList == null)
+{
+    <span>
+        <LoadingIndicator></LoadingIndicator>
+    </span>
+}
+else
+{
+    <div class="col-md-5">
+        <h3>Các môn học thuộc @SpecializedName.SpecializationName</h3>
+    </div>
+    <div class="row">
+        <div class="col-lg-2">
+            <EditForm Model="SubjectListSearch">
+                <InputSelect class="form-select" ValueExpression="@(()=>SubjectListSearch.SubjectCode)" Value="@SubjectListSearch.SubjectCode" ValueChanged="@((string? value)=> SearchCode(value))">
+                    <option value="">Mã Môn</option>
+                    @foreach (var item in SubListSearchCode)
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </InputSelect>
+            </EditForm>
+        </div>
+        <div class="col-lg-8">
+            <SubjectUPSearch OnSearch="SearchTask"></SubjectUPSearch>
+        </div>
+        <div class="col-lg-2">
+
+            <div class="pl-13">
+                <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Chức Năng
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" @onclick="() => DeleteAll()">Ngưng hoạt động</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="mt-3">
+        <div class="card text-center">
+            <div class="card-header fs-6">
+                <h3>
+                    Số Môn Học Hiện Tại : @SubjectUPList.Count()
+                    <a class="btn btn-outline-success rounded-circle p-1" type="button" data-toggle="tooltip" data-placement="top" title="Create New" href="/createsubjectup/@idspecializedUP">
+                        <i class="fa-solid fa-plus" style="width: 20px; height: 20px;"></i>
+                    </a>
+                </h3>
+                <div class="row">
+                    <div class="col-lg-6 offset-3">
+                        @if (SubjectUPList.Count > 0)
+                        {
+                            <input type="checkbox" @bind="Check" class="form-check-input"
+                           @onchange="EventArgs => { CheckAllExpense( EventArgs.Value); }" value="" id="flexCheckDefault" @bind:event="oninput">
+                            <label class="form-check-label" for="flexCheckDefault">
+                                Select All
+                            </label>
+                            <span class="px-3" cl>Số Lượng Môn Học Đã Chọn Là :@SubjectUPList.Where(c=>c.IsChecked==true).Count()</span>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+
+                <div class="row">
+
+                    @foreach (var item in SubjectUPList)
+                    {
+                        <div class="col-lg-3 mb-5 single-product-item">
+                            <div class="card border-2 border-info">
+                                <div class="row ">
+                                    <div class="card-body text-center">
+                                        <div class="row">
+                                            <div class="col-lg-10">
+                                            </div>
+                                            <div class="col-lg-2">
+                                                <div class="form-check">
+                                                    <input type="checkbox" class="form-check-input" @bind="item.IsChecked"
+                                                   @onclick="() => CheckManual(item.Id,item.IsChecked)" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <img src="@item.Image" alt="avatar" onerror="this.src='./css/images/Others/logoFPT.png'" class="rounded-circle" style="height: 178px; width: 178px; object-fit: cover;" />
+                                        <h5 class="my-3">@item.SubjectCode - @item.SubjectName</h5>
+                                        <p class="text-muted mb-1">Thời gian từ: @item.StartDay.ToString("dd/MM/yyy") đến @item.EndDay.ToString("dd/MM/yyy")</p>
+                                        <p class="text-muted mb-1">Số lượng buổi học: @item.TotalOfSub</p>
+                                        <p class="text-muted mb-4">Trạng Thái : @(item.Status == 0 ? "Chưa bắt đầu" : item.Status == 1 ? "Đang giảng dạy" : item.Status == 2 ? "Hết hạn" : "Ngưng hoạt động")</p>
+                                        <div class="d-flex justify-content-center mb-2">
+                                            <div class="p-1"> <a type="button" class="btn btn-success " href="/updatesubjectup/{@item.Id}/@idspecializedUP">Cập nhật</a> </div>
+                                            <div class="p-1"> <a type="button" class="btn btn-warning " href="/lessonUP/@item.Id">Bài học</a> </div>
+                                            <div class="p-1"> <a type="button" class="btn btn-danger " href="/quizup">Quiz</a></div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+
+                </div>
+                <div class="card-footer text-muted">
+                    <div class="row mt-3">
+
+                        <span>
+                            <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+                        </span>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <Comfirmation ConfirmationMessage="Bạn muốn ngưng hoạt động môn học?"
+              ConfirmationTitle="Ngưng hoạt động môn học"
+              ConfirmationChanged="OnConfirmationDelete " @ref="DeleteConfirmation"></Comfirmation>
+}
+@code{
+    [Inject] public ISubjectUPRepo _subjectUPRepo { get; set; }
+    [Inject] public ISpecializedUPRepo _specializedUPRepo { get; set; }
+    [Inject] public ISubjectsSpecializedUPRepo _subjectsSpecializedUP { get; set; }
+    [Inject] public IToastService _toastService { get; set; }
+    public List<SubjectDto> SubjectUPList { get; set; } = new List<SubjectDto>();
+    public List<string> SubListSearchCode { get; set; } = new List<string>();
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    private SubjectListSearch SubjectListSearch = new SubjectListSearch();
+
+    private List<Guid> _listRemove = new List<Guid>();
+
+    [Parameter]
+    public string idspecializedUP { get; set; }
+    public SpecializedUP SpecializedName = new SpecializedUP();
+    protected Comfirmation DeleteConfirmation { get; set; }
+
+    public bool Check { get; set; } = false;
+    protected async override Task OnInitializedAsync()
+    {
+        SpecializedName = await _specializedUPRepo.GetByIdSpec(Guid.Parse(idspecializedUP));
+        var spesub = await _subjectsSpecializedUP.GetAllAsync();
+        var resutl = spesub.Where(c => c.SpecializedId == Guid.Parse(idspecializedUP)).Select(c => c.SubjectId).ToList();
+        var lstsbj = await _subjectUPRepo.GetAllSubjectAsync();
+        SubListSearchCode = lstsbj.Where(c => resutl.Contains(c.Id)).Select(c => c.SubjectCode).ToList();
+        await GetTasks();
+    }
+    async Task SearchCode(string code)
+    {
+        SubjectListSearch.SubjectCode = code;
+        await SearchTask(SubjectListSearch);
+    }
+    public async Task SearchTask(SubjectListSearch subjectListSearch)
+    {
+        SubjectListSearch = subjectListSearch;
+        await GetTasks();
+    }
+
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _subjectUPRepo.GetSubjects(Guid.Parse(idspecializedUP), SubjectListSearch);
+            SubjectUPList = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            _toastService.ShowError("Đã xảy ra lỗi, thử lại sau");
+        }
+
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        Check = false;
+        SubjectListSearch.PageNumber = page;
+        await GetTasks();
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            SubjectUPList.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            SubjectUPList.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+
+    void CheckManual(Guid reportId, bool check)
+    {
+        if (check == true)
+        {
+            foreach (var x in SubjectUPList.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in SubjectUPList.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    void DeleteAll()
+    {
+        _listRemove = SubjectUPList.Where(c => c.IsChecked == true).Select(c => c.Id).ToList();
+        DeleteConfirmation.show();
+    }
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (deleteconfirmed && _listRemove != null)
+        {
+            var result = await _subjectUPRepo.DeleteListSubject(_listRemove);
+            if (result)
+            {
+                if (_listRemove.Count > 0)
+                {
+                    _toastService.ShowSuccess($"Ngưng hoạt động {_listRemove.Count} môn học thành công");
+                    await GetTasks();
+                }
+                else
+                {
+                    _toastService.ShowError($"Bạn chưa chọn môn học muốn ngưng hoạt động");
+                    await GetTasks();
+                }
+            }
+            else
+            {
+                _toastService.ShowError("Ngưng hoạt động thất bại");
+                await GetTasks();
+            }
+        }
+        _listRemove = null;
+        Check = false;
+    }
+}
+

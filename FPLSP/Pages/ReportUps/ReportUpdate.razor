@@ -1,0 +1,144 @@
+﻿@page "/reportupdate/{ReportId}/{classUPId}"
+@using FPLSP.Components;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels
+@using FPLSP.Server.Infrastructure.ViewModels.ReportClassUP
+@using Microsoft.AspNetCore.Components
+@using Microsoft.EntityFrameworkCore
+@using Blazored.Toast.Services
+
+
+@if (ReportVm == null || classCode == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <h3>Cập nhật báo cáo</h3>
+    <EditForm Model="ReportVm" OnValidSubmit="Update" class="card card-body bg-light mt-6">
+        <DataAnnotationsValidator />
+        <div class="form-group">
+            <div class="row">
+                <div class="form-group pt-2 col-md-6">
+                    <label for="Question" class="form-label">Lớp học:</label>
+                    <div class="text-danger">
+                        <InputText class="form-control" @bind-Value="@classCode" disabled=true></InputText>
+                    </div>
+                </div>
+                <div class="form-group pt-2 col-md-6">
+                    <label for="ReportAmount" class="form-label">Số lượt đánh giá:</label>
+                    <div class="text-danger">
+                        <InputNumber min="1" class="form-control" @bind-Value="ReportVm.ReportAmount"></InputNumber>
+                        <ValidationMessage For="()=>ReportVm.ReportAmount"></ValidationMessage>
+                    </div>
+                </div>
+                <div class="form-group pt-2 col-md-6">
+                    <label for="ReportLevel" class="form-label">Đánh giá:</label>
+                    <div class="text-danger">
+                        <InputSelect class="form-select" @bind-Value="ReportVm.ReportLevel">
+                            <option value="0">Thấp</option>
+                            <option value="1">Trung bình</option>
+                            <option value="2">Cao</option>
+                        </InputSelect>
+                    </div>
+                </div>
+                <div class="form-group pt-2 col-md-6">
+                    <label for="Question" class="form-label">Câu hỏi:</label>
+                    <div class="text-danger">
+                        <InputText class="form-control" @bind-Value="ReportVm.Question"></InputText>
+                        <ValidationMessage For="()=>ReportVm.Question"></ValidationMessage>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group pt-2 col-md-6">
+                    <label for="Answer" class="form-label">Câu trả lời:</label>
+                    <div class="text-danger">
+                        <InputText class="form-control" @bind-Value="ReportVm.Answer"></InputText>
+                        <ValidationMessage For="()=>ReportVm.Answer"></ValidationMessage>
+                    </div>
+                </div>
+                <div class="form-group pt-2 col-md-6">
+                    <label for="Describe" class="form-label">Mô tả:</label>
+                    <div class="text-danger">
+                        <InputText class="form-control" @bind-Value="ReportVm.Describe"></InputText>
+                        <ValidationMessage For="()=>ReportVm.Describe"></ValidationMessage>
+                    </div>
+                </div>
+                <div class="form-group pt-2 col-md-6">
+                    <label for="Note" class="form-label">Ghi chú:</label>
+                    <div class="text-danger">
+                        <InputTextArea class="form-control" @bind-Value="ReportVm.Note"></InputTextArea>
+                        <ValidationMessage For="()=>ReportVm.Note"></ValidationMessage>
+                    </div>
+                </div>
+                <div class="form-group pt-2 col-md-6">
+                    <label for="ReportLevel" class="form-label">Trạng thái:</label>
+                    <div class="text-danger">
+                        <InputSelect class="form-control" @bind-Value="ReportVm.Status">
+                            <option value="0">Đang đánh giá</option>
+                            <option value="1">Đã đánh giá </option>
+                        </InputSelect>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-center mb-2">
+                <div class="p-2">
+                    <button type="submit" class="btn btn-success">Cập nhật</button>
+                </div>
+                <div class="p-2">
+                    <a @onclick="()=> Resorte()" class="btn btn-outline-primary">Khôi phục</a>
+                </div>
+                <div class="p-2">
+                    <a href="/reportlist/@classUPId" class="btn btn-outline-danger">Quay Lại</a>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+}
+@code
+{
+    [Inject] private IReportClassUPRepo _reportClassUPRepo { get; set; }
+    [Inject] private ITaskRepositories<ClassUPViewModel> _taskRepositories { get; set; }
+    [Inject] private IToastService ToastService { get; set; }
+    [Inject] private NavigationManager NavigationManager { get; set; }
+    private string classCode { get; set; }
+    [Parameter]
+    public string ReportId { get; set; }
+    [Parameter]
+    public string classUPId { get; set; }
+
+    private ReportUPViewModel ReportVm = new ReportUPViewModel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var allClass = await _taskRepositories.GetAllClass();
+        classCode = allClass.FirstOrDefault(c => Equals(Guid.Parse(classUPId), c.Id)).ClassroomName + " - " + allClass.FirstOrDefault(c => Equals(Guid.Parse(classUPId), c.Id)).ClassroomName;
+        ReportVm = await _reportClassUPRepo.GetByIdReport(ReportId);
+    }
+
+    private async Task Update(EditContext context)
+    {
+        try
+        {
+            var result = await _reportClassUPRepo.UpdateReportClassUP(ReportVm);
+            if (result)
+            {
+                NavigationManager.NavigateTo($"reportlist/{classUPId}");
+                ToastService.ShowSuccess("Cập nhật thành công");
+            }
+            else
+            {
+                ToastService.ShowError("Cập nhật thất bại, kiểm tra lại");
+            }
+        }
+        catch (Exception)
+        {
+            ToastService.ShowError("Đã xảy ra lỗi, thử lại sau");
+        }
+    }
+    private async Task Resorte()
+    {
+        ReportVm = await _reportClassUPRepo.GetByIdReport(ReportId);
+    }
+}

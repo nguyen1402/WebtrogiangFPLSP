@@ -1,0 +1,338 @@
+﻿@page "/lecturercp/{trainingFacilityID}"
+@using Blazored.LocalStorage
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels
+@using FPLSP.Server.Infrastructure.ViewModels.LecturerCPVm
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+@inject ILocalStorageService _localStorageService;
+<h3>GIẢNG VIÊN</h3>
+@if (@userRole.ListRoles.Any(c=>c == "AdminCore"))
+{
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/listtf?@_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H" )LDN01@_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H" )">Cơ sở</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Giảng viên</li>
+        </ol>
+    </nav>
+}
+<div class="row pt-3">
+    <div class="col-3 ps-0">
+        @if (@userRole.ListRoles.FirstOrDefault() == "AdminCore")
+        {
+            <a class="btn btn-outline-danger me-3" href="/listtf">Quay Lại</a>
+        }
+        <a class="btn btn-outline-primary me-3" @onclick="() => RedirectToCreate()">Thêm Giảng Viên</a>
+    </div>
+    <div class="col-7 pe-5 text-right">
+        <LecturerCPListSearch OnSearch="SearchLecturerCP"></LecturerCPListSearch>
+    </div>
+    <div class="col-2 ps-3">
+        <div class="dropdown-center">
+            <button class="btn btn-info ps-4 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Chức Năng
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" @onclick="() => DeleteAll()">Xóa</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+@if (_lstLecturerCPs == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <div class="row">
+
+        @if (_lstLecturerCPs.Count == 0)
+        {
+            <span>Danh sách giảng viên rỗng</span>
+        }
+        else
+        {
+            <table class="table table-hover align-middle table-bordered mt-3" style="text-align:center">
+                <thead class="table-success">
+                    <tr>
+                        <th><input type="checkbox" @bind="@Check" @onchange="EventArgs => { CheckAllExpense( EventArgs.Value); } " @bind:event="oninput"></th>
+                        <th>Ảnh</th>
+                        <th>Tên Giảng Viên</th>
+                        <th>Email</th>
+                        <th>Số điện thoại</th>
+                        <th>Chuyên ngành</th>
+                        <th>Chức năng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in _lstLecturerCPs)
+                    {
+                        <tr>
+                            <td><input type="checkbox" checked=@item.IsChecked @onchange="()=>CheckManual(item.Id,item.IsChecked)"></td>
+                            <td><img src="@item.ImageUrl" onerror="this.src='./css/images/Others/logoFPT.png'" alt="@item.ImageUrl" height=100px width=100px style="object-fit:contain"></td>
+                            <td>@item.LecturersName</td>
+                            <td>@item.Email</td>
+                            <td>@item.PhoneNumber</td>
+                            <td>
+                                @foreach (var x in lstLspec.Where(x => x.Idlecturers == item.Id).ToList())
+                                {
+                                    @x.SpecializationName
+
+                                    <br>
+                                }
+                            </td>
+
+                            @*@if (@item.Status == 1)
+                                {
+                                <td>Không hoạt động</td>
+                                }
+                                else
+                                {
+                                <td>Hoạt động</td>
+                                }*@
+
+                            <td class="text-center">
+                                <a class="btn btn-primary " type="button" title="Sửa" id="show-emp"
+                       @onclick="() => RedirectToUpdate(item.Id)">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a class="btn btn-danger " type="button" title="Xóa" @onclick="()=>OnDelete(item.Id)">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        <Comfirmation ConfirmationMessage="Bạn có chắc muốn xóa Giảng Viên không?"
+                  ConfirmationTitle="Xóa"
+                  @ref="DeleteConfirmation"
+                  ConfirmationChanged="OnConfirmationDelete"></Comfirmation>
+    </div>
+    <div class="footer text-muted">
+        <div class="row mt-3">
+
+            <span>
+                <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+            </span>
+
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public string trainingFacilityID { get; set; }
+    public List<LecturersCPViewModel> _lstLecturerCPs { get; set; } = new List<LecturersCPViewModel>();
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    [Inject]
+    public ILecturersCPRepo _LecturerCPRepo { get; set; }
+
+    private LecturersCPListSearch _LecturerCPSearch = new LecturersCPListSearch();
+    public string Error { get; set; }
+    [Inject]
+    public ISpecializedCPRepo _iSpecialized { get; set; }
+
+    protected Comfirmation DeleteConfirmation { get; set; }
+
+    private int stt = 0;
+
+    private List<Guid> _removeLecturer = new List<Guid>();
+
+    private bool Check = false;
+    [Inject] private IToastService _toastService { get; set; }
+    private string deleteID { get; set; }
+    [Inject]
+    public ILectuterSpecializedCPCilents _lectuterSpecializedRepo { get; set; }
+
+    public List<LectuterSpecializedCPDto> lstLspec = new List<LectuterSpecializedCPDto>();
+    private string UserNameDisPlay;
+    private string fistusername;
+    [Inject] public IUserIdentityRepo _UserIdentityRepo { get; set; }
+    private string UserName = "";
+    private UserInListRoles userRole = new UserInListRoles();
+    Uri uri;
+    string maxlevel = "";
+    string IdCoSo = "";
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        //fistusername = await _localStorageService.GetItemAsStringAsync("userlogin");
+        //UserNameDisPlay = fistusername.Split("@")[0];
+        //UserNameDisPlay = UserNameDisPlay.Replace('"', ' ');
+        //UserNameDisPlay = UserNameDisPlay.Replace('/', ' ');
+        //UserNameDisPlay = UserNameDisPlay.Replace(" ", "");
+        //UserName = UserNameDisPlay + "@fpt.edu.vn";
+        //userRole = await _UserIdentityRepo.GetRoleUser(UserName);
+        uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (string.IsNullOrEmpty(uri.Query) == false)
+        {
+            var urifist = uri.Query.Split("?")[1];
+            maxlevel = _cryptoServices.Decrypt(urifist.Split("LDN01")[0].Replace("I0H", "/"));
+            IdCoSo = _cryptoServices.Decrypt(urifist.Split("LDN01")[1].Replace("I0H", "/"));
+        }
+
+        lstLspec = await _lectuterSpecializedRepo.GetAllAsync();
+        await GetLecturers();
+    }
+
+    public async Task SearchLecturerCP(LecturersCPListSearch LecturerCPSearch)
+    {
+        _LecturerCPSearch = LecturerCPSearch;
+        await GetLecturers();
+    }
+
+    public void OnDelete(Guid id)
+    {
+        deleteID = id.ToString();
+        DeleteConfirmation.show();
+    }
+
+    public async Task OnConfirmDelete(bool deleteConfirmed)
+    {
+        if (deleteConfirmed)
+        {
+            var result = await _LecturerCPRepo.DeleteLecturer(Guid.Parse(deleteID));
+            if (result)
+            {
+                await GetLecturers();
+            }
+        }
+    }
+
+    private async Task GetLecturers()
+    {
+        try
+        {
+            _LecturerCPSearch.TrainingFacilityID = Guid.Parse(trainingFacilityID);
+            var pagingResponse = await _LecturerCPRepo.GetLecturerListPagingAsync(_LecturerCPSearch);
+            _lstLecturerCPs = pagingResponse.Items;
+            _lstLecturerCPs = _lstLecturerCPs.OrderBy(x => x.LecturersCode).ToList();
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _LecturerCPSearch.PageNumber = page;
+        Check = false;
+        await GetLecturers();
+    }
+
+    private void RedirectToCreate()
+    {
+        NavigationManager.NavigateTo($"/createLecturerCP/{trainingFacilityID}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+    }
+    private void RedirectToUpdate(Guid id)
+    {
+
+        var url = Path.Combine($"/updateLecturerCP/{id.ToString()}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        NavigationManager.NavigateTo(url);
+    }
+    void CheckManual(Guid reportId, bool check)
+    {
+        stt = 0;
+        if (check == true)
+        {
+            foreach (var x in _lstLecturerCPs.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in _lstLecturerCPs.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    void DeleteAll()
+    {
+        stt = 0;
+        _removeLecturer = _lstLecturerCPs.Where(c => c.IsChecked == true).Select(c => c.Id).ToList();
+        DeleteConfirmation.show();
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        stt = 0;
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            _lstLecturerCPs.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            _lstLecturerCPs.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+
+        stt = 0;
+        if (deleteconfirmed && deleteID == null && _removeLecturer.Count == 0)
+        {
+            _toastService.ShowError("Bạn chưa chọn đối tượng để thay đổi");
+            await GetLecturers();
+            NavigationManager.NavigateTo($"/lecturercp/{trainingFacilityID}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        }
+        else if (deleteconfirmed && deleteID != null)
+        {
+            var result = await _LecturerCPRepo.DeleteLecturer(Guid.Parse(deleteID));
+            if (result == true)
+            {
+                _toastService.ShowSuccess("Xóa thành công");
+                deleteID = null;
+                await GetLecturers();
+                NavigationManager.NavigateTo($"/lecturercp/{trainingFacilityID}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+                deleteID = null;
+                await GetLecturers();
+                NavigationManager.NavigateTo($"/lecturercp/{trainingFacilityID}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+            }
+        }
+        else if (deleteconfirmed && _removeLecturer != null)
+        {
+
+            var result = await _LecturerCPRepo.RemoveListLecturer(_removeLecturer);
+            if (result)
+            {
+                _toastService.ShowSuccess("Xóa thành công");
+                deleteID = null;
+                _removeLecturer = null;
+                await GetLecturers();
+                NavigationManager.NavigateTo($"/lecturercp/{trainingFacilityID}");
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+                deleteID = null;
+                _removeLecturer = null;
+                await GetLecturers();
+                NavigationManager.NavigateTo($"/lecturercp/{trainingFacilityID}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+            }
+        }
+        else
+        {
+            deleteID = null;
+            _removeLecturer = null;
+        }
+        Check = false;
+    }
+}

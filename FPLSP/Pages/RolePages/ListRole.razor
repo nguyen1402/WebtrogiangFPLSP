@@ -1,0 +1,147 @@
+﻿@page "/listrole"
+
+@using Blazored.Toast.Services
+@using FPLSP.Components;
+@using FPLSP.Repositories.Interfaces
+@using Microsoft.AspNetCore.Identity
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+@if (_lstRole.Count() < _counter || _lstRole == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+<div class="mt-3">
+    @if (_lstRole.Count() == 0)
+    {
+        <span>Danh sách chức vụ rỗng</span>
+
+    }
+    else
+    {
+        <div class="card text-center">
+            <div class="card-header fs-6">
+                <h3>
+                    Số Chức Vụ Hiện Tại : @_lstRole.Count()
+                    <button class="btn btn-success rounded-circle p-1" type="button" data-toggle="tooltip" data-placement="top" title="Create New" @onclick="NavigateToCreateRole">
+                        <i class="fa-solid fa-plus" style="width: 20px; height: 20px;"></i>
+                    </button>
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    @foreach (var item in _lstRole)
+                    {
+                        <div class="col-lg-3 mb-5 single-product-item">
+                            <div class="card border-2 border-info">
+                                <div class="row ">
+                                    <div class="card-body text-center">
+                                        <img src="./css/images/Others/logoFPT.png" alt="Image" class="img-rounded" style="height: 178px; width: 178px; object-fit: cover;">
+                                        <div>
+                                            <span class=" card-title fs-6 text-wrap ">@item.Name</span>
+                                        </div>
+                                        <div>
+                                            <span class=" card-title fs-6 text-wrap ">@item.NormalizedName</span>
+                                        </div>
+                                        <hr>
+
+
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div class="col-lg-3 ">
+                                <button class="btn btn-info btn-square-md rounded-0 p-1" type="button" data-toggle="tooltip" data-placement="top" title="Details">
+                                    <i class="fa-solid fa-info" style="width: 20px; height: 20px;"></i>
+                                </button>
+                                <button class="btn btn-warning btn-square-md rounded-0 p-1" type="button" data-toggle="tooltip" data-placement="top" title="Edit" @onclick="@(() => { NavigateToUpdateRole(item); })" @onclick:preventDefault>
+                                    <i class="fa-solid fa-pen" style="width: 20px; height: 20px;"></i>
+                                </button>
+                                <button class="btn btn-danger btn-square-md rounded-0 p-1" type="button" data-toggle="tooltip" data-placement="top" title="Delete" @onclick="@(() => { Delete(item.Id); })">
+                                    <i class="fa-solid fa-trash-can" style="width: 20px; height: 20px;"></i>
+                                </button>
+                            </div>
+                        </div>
+
+
+
+                    }
+                </div>
+            </div>
+            <div class="card-footer text-muted">
+            </div>
+
+        </div>
+    }
+</div>
+<Comfirmation ConfirmationMessage="Are you sure to delete ?"
+              ConfirmationTitle="Delete Role "
+              @ref="DeleConfirmation"
+              ConfirmationChanged="OnConfirmationDelete">
+
+</Comfirmation>
+
+
+@code {
+
+    [Inject]
+    public IRoleUserIdentityRepo _roleUserIdentityRepo { get; set; }
+    private List<IdentityRole> _lstRole;
+    [Inject] IToastService _toast { get; set; }
+    private int _counter;
+
+    private string _getId;
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+
+    protected Comfirmation DeleConfirmation { set; get; }
+    [CascadingParameter]
+    private Error _error { get; set; }
+
+    public ListRole()
+    {
+        _lstRole = new List<IdentityRole>();
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetRoleList();
+    }
+    private async Task GetRoleList()
+    {
+
+
+        _lstRole = await _roleUserIdentityRepo.GetAllRolesAsync();
+    }
+
+    private async void NavigateToCreateRole()
+    {
+        NavigationManager.NavigateTo("createrole");
+    }
+    private async void Delete(string getId)
+    {
+        _getId = getId;
+        DeleConfirmation.show();
+    }
+    private async void NavigateToUpdateRole(IdentityRole identityRole)
+    {
+        NavigationManager.NavigateTo($"updaterole/{identityRole.Id}");
+    }
+    private async void OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (deleteconfirmed)
+        {
+            var result = await _roleUserIdentityRepo.RemoveRoles(_getId);
+            if (result)
+            {
+                _toast.ShowSuccess($"Delete Successfully");
+                NavigationManager.NavigateTo("/listrole", true);
+            }
+            else
+            {
+                _toast.ShowError($"Delete Failed");
+                NavigationManager.NavigateTo($"/listrole", true);
+            }
+        }
+        //NavigationManager.NavigateTo("listrole", true);
+    }
+}

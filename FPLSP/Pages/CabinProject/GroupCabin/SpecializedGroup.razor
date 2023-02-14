@@ -1,0 +1,66 @@
+﻿@page "/specializedgroup"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Specialized
+@attribute [Authorize(Roles = "DirectorOfTraining")]
+@if (_lstSpecializedUP == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <div class="row">
+
+        <div id="unique_id_scroll_section" class="ma-0" style="overflow: auto;">
+            <MudPaper Elevation="0" Class="d-flex flex-column justify-space-between py-6">
+                <MudTabs Outlined="true" Position="MudBlazor.Position.Left" Rounded="true" Border="true" Elevation="4"
+                     AlwaysShowScrollButtons="true"
+                     Class="mt-8" PanelClass="ml-2" Color="@Color.Info">
+                    @foreach (var item in _lstAll)
+                    {
+                        <MudTabPanel Text="@item.SpecializationName">
+
+                            <MudText Style="height:100%;width:100%"><GroupCabinAdd idSpec="@item.Id.ToString()"></GroupCabinAdd></MudText>
+                        </MudTabPanel>
+                    }
+                </MudTabs>
+            </MudPaper>
+        </div>
+    </div>
+}
+@code {
+    [Inject]
+    public ISpecializedUPRepo _specializedUPRepo { get; set; }
+    private List<SpecializedDto> _lstSpecializedUP = new List<SpecializedDto>();
+    private List<SpecializedDto> _lstAll = new List<SpecializedDto>();
+    public MetaData MetaData { get; set; } = new MetaData();
+    public SpecializedListSearch _specializedListSearch { get; set; } = new SpecializedListSearch();
+    protected override async Task OnInitializedAsync()
+    {
+        _lstAll = await _specializedUPRepo.GetAll();
+        _lstAll = _lstAll.Where(x => x.Level == 0 && x.Status == 0 && x.IdSpeciality == null).ToList();
+        await GetSpecializedUPList();
+    }
+    private async Task GetSpecializedUPList()
+    {
+        try
+        {
+            var pagingResponse = await _specializedUPRepo.Gets(Guid.Empty, _specializedListSearch);
+            _lstSpecializedUP = pagingResponse.Items;
+            _lstSpecializedUP = _lstSpecializedUP.OrderBy(x => x.SpecializedCode).ToList();
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+
+
+        }
+    }
+    private async Task SelectedPage(int page)
+    {
+        _specializedListSearch.PageNumber = page;
+        await GetSpecializedUPList();
+    }
+
+}

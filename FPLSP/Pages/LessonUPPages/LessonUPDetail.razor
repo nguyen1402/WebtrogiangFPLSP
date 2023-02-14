@@ -1,0 +1,55 @@
+﻿@page "/lessonUPDetail/{Id}/{idsubjectUP}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.LessonUP
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<h3>Chi tiết bài học UP</h3>
+
+@if (lessonUP == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <table class="table">
+        <tr>
+            <th>Tên bài học</th>
+            <th>Mã bài học</th>
+            <th>Mô tả</th>
+            <th>Hoàn thành</th>
+            <th>Trạng thái</th>
+            <th>Tên môn học</th>
+        </tr>
+        <tr>
+            <td>@lessonUP.LessonName</td>
+            <td>@lessonUP.LessonCode</td>
+            <td>@lessonUP.Descriptions</td>
+            <td>@(@lessonUP.IsCompleted?"Đã hoàn thành":"Chưa hoàn thành")</td>
+            <td>@(@lessonUP.Status==1?"Hoạt động":"Không hoạt động")</td>
+            <td>
+                @if (@lessonUP.SubjectId != null) @_lstsubjectDtos.FirstOrDefault(x=>x.Id==@lessonUP.SubjectId).SubjectName
+            </td>
+        </tr>
+    </table>
+}
+
+<div class="col-md-6 text-center" style="margin-top: 25px">
+    <a href="/lessonUP/@idsubjectUP" class="btn btn-danger">Quay lại</a>
+</div>
+@code {
+    [Parameter]
+    public string Id { get; set; }
+    [Parameter]
+    public string idsubjectUP { get; set; }
+    [Inject] ILessonUPRepo LessonUPRepo { get; set; }
+    [Inject] private ISubjectUPRepo _subjectUPRepo { get; set; }
+    private List<SubjectDto> _lstsubjectDtos { get; set; }
+
+    private LessonUPViewModel lessonUP { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        _lstsubjectDtos = await _subjectUPRepo.GetAllSubjectAsync();
+        lessonUP = await LessonUPRepo.GetById(Id);
+    }
+}

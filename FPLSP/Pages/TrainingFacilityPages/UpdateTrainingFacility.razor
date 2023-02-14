@@ -1,0 +1,269 @@
+﻿@page "/updatetf/{id}"
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels
+@using FPLSP.Server.Infrastructure.ViewModels.TrainingFacilitiesCPVm
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<h3>CẬP NHẬT CƠ SỞ</h3>
+@if (tfInput == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <EditForm Model="@tfInput" OnValidSubmit="@Update" class="card card-body bg-light mt-5" id="update-form">
+        <DataAnnotationsValidator />
+        <div class="form-group">
+            <div class="row">
+                <div class="col-2 pt-4">
+                    <div class="row">
+                        <img src="./css/images/TrainingFacilityCP/@tfInput.ImageUrl" onerror="this.src='./css/images/Others/logoFPT.png'" width=195px height=232px style="object-fit:contain">
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="image" class="col-12 col-form-label">Hình Ảnh:</label>
+                            @if (@image != null)
+                            {
+                                <div class="col-12">
+                                    <ImageUpload OnChange="AssignImageUrl" />
+                                    <div class="text-danger"><ValidationMessage For="@(() => tfInput.ImageUrl)" /></div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="col-12">
+                                    <ImageUpload OnChange="AssignImageUrl" />
+                                    <div class="text-danger"><ValidationMessage For="@(() => tfInput.ImageUrl)" /></div>
+                                </div>
+                            }
+
+                        </div>
+                    </div>
+
+                </div>
+                <div class="col-10 pt-1">
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Mã Cơ Sở:</label>
+                            <div class="col-md-12">
+                                <input id="name" class="form-control" value="@tfInput.TrainingFacilitiesCode" disabled />
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Tên Cơ Sở:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="@tfInput.TrainingInstitutionName" />
+                                <div class="text-danger"><ValidationMessage For="@(() => tfInput.TrainingInstitutionName)" /></div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Cơ Sở:</label>
+                            <div class="col-md-12">
+                                <InputNumber id="name" class="form-control" @bind-Value="@tfInput.TrainingInstitution" />
+                                <div class="text-danger"><ValidationMessage For="@(() => tfInput.TrainingInstitution)" /></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Trạng thái:</label>
+                            <div class="col-md-12">
+                                <InputSelect @bind-Value="tfInput.Status" class="form-select">
+                                    <option value="1">Không Hoạt động</option>
+                                    <option value="0">Hoạt động</option>
+                                </InputSelect>
+                                <div class="text-danger"><ValidationMessage For="@(() => tfInput.Status)" /></div>
+                            </div>
+                        </div>
+                    </div>
+                    @*<div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                        <label for="name" class="col-md-4 col-form-label">Ảnh:</label>
+                        <div class="mb-3">
+                        <InputFile enctype="multipart/form-data" OnChange="@((InputFileChangeEventArgs args) => OnFileSelected(args))">Upload</InputFile>
+                        <ValidationMessage For="@(() => tfInput.ImageUrl)" />
+                        @if (checkImg)
+                        {
+                        <img src="/css/images/TrainingFacilityCP/@tfInput.ImageUrl" alt="@tfInput.ImageUrl" height=80px width=auto style="margin-left: 20px;margin-top: 30px;">
+                        }
+                        </div>
+                        </div>
+
+                        </div>*@
+                </div>
+            </div>
+        </div>
+
+        <div class="row pt-4">
+            <div class="col-md-12 text-center">
+                <button type="submit" class="btn btn-primary" form="update-form">Cập Nhật</button>
+                <button type="button" class="btn btn-outline-success ms-2" @onclick="Undo">Khôi Phục</button>
+                <a class="btn btn-outline-danger ms-2" href="/listtf?@_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H" )LDN01@_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H" )">Quay Lại</a>
+            </div>
+        </div>
+    </EditForm>
+}
+
+@code {
+
+    [Parameter]
+    public string image { get; set; }
+    private TrainingFacilitiesCPRequest tfInput = new TrainingFacilitiesCPRequest();
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    [Inject]
+    public ITrainingFacilitiesCPRepo _tfRepositories { get; set; }
+
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+
+    [Parameter]
+
+    public string id { get; set; }
+    public string imgPath { get; set; } = "";
+    public bool checkImg { get; set; } = false;
+
+    [Inject]
+    public IToastService ToastService { get; set; }
+    public TrainingFacilitiesCPViewModel tfInputVm { get; set; } = new TrainingFacilitiesCPViewModel();
+    Uri uri;
+    string maxlevel = "";
+    string IdCoSo = "";
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (string.IsNullOrEmpty(uri.Query) == false)
+        {
+            var urifist = uri.Query.Split("?")[1];
+            maxlevel = _cryptoServices.Decrypt(urifist.Split("LDN01")[0].Replace("I0H", "/"));
+            IdCoSo = _cryptoServices.Decrypt(urifist.Split("LDN01")[1].Replace("I0H", "/"));
+        }
+      
+        tfInputVm = await _tfRepositories.GetTrainingFacilityListById(Guid.Parse(id));
+        tfInput.TrainingFacilitiesCode = tfInputVm.TrainingFacilitiesCode;
+        tfInput.TrainingInstitution = tfInputVm.TrainingInstitution;
+        tfInput.TrainingInstitutionName = tfInputVm.TrainingInstitutionName;
+        tfInput.Status = tfInputVm.Status;
+        tfInput.ImageUrl = tfInputVm.ImageUrl;
+
+        //imgPath = $"{_hostingEnvironment.WebRootPath}\\css\\images\\TrainingFacilityCP\\{tfInput.ImageUrl}";
+        imgPath = $"\\css\\images\\TrainingFacilityCP\\{tfInput.ImageUrl}";
+        checkImg = File.Exists(imgPath);
+    }
+
+    private async Task Update()
+    {
+        bool check = true;
+        foreach (char c in tfInput.TrainingInstitutionName)
+        {
+            if (!Char.IsLetter(c) && c.ToString() != " ")
+                check = false;
+        }
+        if (check)
+        {
+            if (tfInput.TrainingInstitution != tfInputVm.TrainingInstitution || tfInput.TrainingInstitutionName != tfInputVm.TrainingInstitutionName)
+            {
+                var lstTF = await _tfRepositories.GetTrainingFacilitiesAsync();
+                var temp = lstTF.FirstOrDefault(x => x.TrainingInstitution == tfInput.TrainingInstitution && x.TrainingInstitutionName == tfInput.TrainingInstitutionName);
+
+                if (temp != null)
+                {
+                    ToastService.ShowError("Cơ sở đã tồn tại", "Error");
+                    Navigation.NavigateTo($"/updatetf/{id}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+                }
+                else
+                {
+                    ShowAuthError = false;
+                    var result = await _tfRepositories.UpdateTrainingFacility(Guid.Parse(id), tfInput);
+
+                    if (result != true)
+                    {
+                        ToastService.ShowError("Cập nhật cơ sở đào tạo thất bại", "Error");
+                        Navigation.NavigateTo($"/updatetf/{id}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+                    }
+                    else
+                    {
+                        ToastService.ShowSuccess("Cập nhật cơ sở đào tạo thành công", "Success");
+                        Navigation.NavigateTo($"/listtf?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace(" / ", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace(" / ", "I0H")}");
+                        this.StateHasChanged();
+                    }
+                }
+            }
+            else
+            {
+                ShowAuthError = false;
+                var result = await _tfRepositories.UpdateTrainingFacility(Guid.Parse(id), tfInput);
+
+                if (result != true)
+                {
+                    ToastService.ShowError("Cập nhật cơ sở đào tạo thất bại", "Error");
+                    Navigation.NavigateTo($"/updatetf/{id}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+                }
+                else
+                {
+                    ToastService.ShowSuccess("Cập nhật cơ sở đào tạo thành công", "Success");
+                    Navigation.NavigateTo($"/listtf?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace(" / ", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace(" / ", "I0H")}");
+                    this.StateHasChanged();
+                }
+            }
+        }
+        else
+        {
+            ToastService.ShowError("Tên không được chứa số và ký tự đặc biệt", "Error");
+        }
+    }
+
+    private async Task Undo()
+    {
+        image = tfInput.ImageUrl;
+        var tfInputvm = await _tfRepositories.GetTrainingFacilityListById(Guid.Parse(id));
+        tfInput.TrainingFacilitiesCode = tfInputvm.TrainingFacilitiesCode;
+        tfInput.TrainingInstitution = tfInputvm.TrainingInstitution;
+        tfInput.TrainingInstitutionName = tfInputvm.TrainingInstitutionName;
+        tfInput.Status = tfInputvm.Status;
+        tfInput.ImageUrl = tfInputvm.ImageUrl;
+    }
+
+    private async Task Create()
+    {
+        var result = await _tfRepositories.CreateTrainingFacility(tfInput);
+
+        if (result != true)
+        {
+            Navigation.NavigateTo($"/createtf?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/listtf?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace(" / ", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace(" / ", "I0H")}");
+            this.StateHasChanged();
+        }
+
+    }
+    private async void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        if (e.File.Name.ToLower().Contains(".png") || e.File.Name.ToLower().Contains(".jpg") || e.File.Name.ToLower().Contains(".gif"))
+        {
+            var selectedFiles = e.File;
+            tfInput.ImageUrl = await _tfRepositories.LoadingImageUrl(selectedFiles, tfInput.TrainingFacilitiesCode);
+            this.StateHasChanged();
+        }
+        else
+        {
+            tfInput.ImageUrl = e.File.Name;
+            ToastService.ShowError("Ảnh không hợp lệ", "Error");
+            this.StateHasChanged();
+        }
+    }
+    private void AssignImageUrl(string imgUrl)
+    {
+        imgUrl = imgUrl.Replace("https://localhost:5001/StaticFiles\\Images\\", "");
+        tfInput.ImageUrl = imgUrl;
+    }
+}

@@ -1,0 +1,329 @@
+﻿@page "/managecabin/{IdTrain}"
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Repositories.Interfaces.CabinProject
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.BookingRequest
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.Cabin
+@inject IDialogService DialogService
+@attribute [Authorize(Roles = "DirectorOfTraining")]
+<h3>Quản lý Cabin</h3>
+
+@if (lstcabinViewModel == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <div class="row">
+        <div class="col-lg-9">
+            <ManageCabinSearch OnSearch="SearchCabin"></ManageCabinSearch>
+            <div class="pl-16">
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="pl-13 d-flex justify-content-end mr-6 ">
+                <a type="button" class="btn btn-primary" @onclick="()=> OpenDialog()"><i class="fa-solid fa-plus"></i> Thêm</a>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="table-responsive ">
+            <table class="table table-light table-bordered">
+                <thead>
+                    <tr>
+
+                        <th width="17%">
+                            Tên Cabin
+                        </th>
+                        <th width="17%">
+                            Tòa
+                        </th>
+                        <th width="4%">Ngày tạo</th>
+                        <th width="2%">
+                            Trạng thái
+                        </th>
+                        <th width="1%">Tính năng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in lstcabinViewModel)
+                    {
+                        <tr>
+                            <td>
+                                @item.CabinName
+                            </td>
+                            <td>
+                                @item.BuildingName
+                            </td>
+                            <td>
+                                @item.CreateTime.ToString("dd/MM/yyyy")
+                            </td>
+
+                            <td>
+                                @*<MudSwitch @bind-Checked="item.Checked" Color="Color.Success" UnCheckedColor="Color.Error"></MudSwitch>*@
+                                @if (item.Checked == (bool)true)
+                                {
+
+                                    <label class="toggle toggle-alternative">
+                                        <input type="checkbox" id="checkboxB" class="checkbox" checked="checked" @onclick="()=> ChangeStatus(item.Id,true)" />
+                                        <span class="toggle-text"></span>
+                                        <span class="toggle-handle"></span>
+                                    </label>
+
+                                }
+                                else
+                                {
+
+                                    <label class="toggle toggle-alternative">
+                                        <input type="checkbox" id="checkboxB" class="checkbox" @onclick="()=> ChangeStatus(item.Id,false)" />
+                                        <span class="toggle-text"></span>
+                                        <span class="toggle-handle"></span>
+                                    </label>
+
+                                }
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-center mb-2">
+
+                                    <div class="pr-1">
+                                        <a class="btn btn-primary " type="button" title="Sửa" href="/managecabin/update/@cryptoServices.Encrypt(item.Id.ToString()).Replace("/","cabin")/@cryptoServices.Encrypt(IdTrain.ToString()).Replace("/","cabin")" id="show-emp">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                    <div class=" pl-1">
+                                        <a class="btn btn-danger " type="button" @onclick="()=> Delete(item.Id)" title="Xóa">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+
+                    }
+                </tbody>
+            </table>
+            <div class="d-flex justify-content-center mb-2">
+                <div class="row">
+                    <div class="col-11 align-self-center">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="d-flex justify-content-center mb-2">
+        <div class="row">
+            <div class="col-11 align-self-center">
+                <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+            </div>
+        </div>
+    </div>
+
+    <RemoveCabin ConfirmationMessage="Xóa Cabin đã được chọn"
+              ConfirmationTitle="Xác nhận"
+              ConfirmationChanged="OnConfirmationDelete " @ref="DeleteConfirmation"></RemoveCabin>
+    <ManageCabinAdd OnAdd="OnConfirmAdd" IdTrain="@cryptoServices.Encrypt(IdTrain.ToString()).Replace("/","cabin")" @ref="manageCabinAdd"></ManageCabinAdd>
+}
+@code {
+
+    [Inject] private ICabinRepo cabin { get; set; }
+    [Inject] private IGroupCabinRepo groupCabinRepo { get; set; }
+    [Inject] private IBookingRequestRepo _bookingRequestRepo { get; set; }
+    [Inject] private IBookingCabinApiClient _bookingCabinApiClient { get; set; }
+    [Inject] private ILecturersCPRepo lecturersCPRepo { get; set; }
+    [Inject] IShiftOfCabinApiClient shiftOfCabinApiClient { get; set; }
+    [Inject] private CryptoServices cryptoServices { get; set; }
+    List<CabinViewModel> lstcabinViewModel = new List<CabinViewModel>();
+    CabinSearchViewModel cabinSearchViewModel = new CabinSearchViewModel();
+    public MetaData MetaData { get; set; } = new MetaData();
+    protected RemoveCabin DeleteConfirmation { get; set; }
+    protected ManageCabinAdd manageCabinAdd { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    Guid Id;
+    string nameLec { get; set; }
+    [Parameter] public string IdTrain { get; set; }
+    private void OpenDialog()
+    {
+        manageCabinAdd.show();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        IdTrain = cryptoServices.Decrypt(IdTrain.ToString());
+        await GetTasks();
+    }
+    private async Task GetTasks()
+    {
+        var lstCabin = await cabin.GetCabinListSearch(cabinSearchViewModel);
+        lstcabinViewModel = lstCabin.Items.Where(x => x.IdTrainingFacility == Guid.Parse(IdTrain)).OrderByDescending(x => x.IndexOfCabin).ToList();
+        MetaData = lstCabin.MetaData;
+        foreach (var item in lstcabinViewModel)
+        {
+            if (item.Status == 0)
+            {
+                item.Checked = true;
+            }
+            else if (item.Status == 2)
+            {
+                item.Checked = false;
+            }
+        }
+    }
+    private async Task ChangeStatus(Guid id, bool? Checked)
+    {
+
+        var changeStatusCabin = lstcabinViewModel.FirstOrDefault(x => x.Id == id);
+        if (changeStatusCabin != null)
+        {
+            if ((bool)Checked)
+            {
+                CabinUpdateViewModel cabinUpdateViewModel = new CabinUpdateViewModel()
+                    {
+                        CabinName = changeStatusCabin.CabinName,
+                        BuildingName = changeStatusCabin.BuildingName,
+                        IndexOfCabin = changeStatusCabin.IndexOfCabin,
+                        CreateTime = changeStatusCabin.CreateTime,
+                        Status = 2
+
+                    };
+                var check = await cabin.UpdateCabin(id, cabinUpdateViewModel);
+                if (check)
+                {
+                    _toastService.ShowSuccess("Thay đổi trạng thái thành công");
+                    await GetTasks();
+                }
+            }
+            else
+            {
+                CabinUpdateViewModel cabinUpdateViewModel = new CabinUpdateViewModel()
+                    {
+                        CabinName = changeStatusCabin.CabinName,
+                        BuildingName = changeStatusCabin.BuildingName,
+                        IndexOfCabin = changeStatusCabin.IndexOfCabin,
+                        CreateTime = changeStatusCabin.CreateTime,
+                        Status = 0
+
+                    };
+                var check = await cabin.UpdateCabin(id, cabinUpdateViewModel);
+                if (check)
+                {
+                    _toastService.ShowSuccess("Thay đổi trạng thái thành công");
+                    await GetTasks();
+                }
+            }
+
+        }
+
+
+    }
+    private async Task SelectedPage(int page)
+    {
+        cabinSearchViewModel.PageNumber = page;
+        await GetTasks();
+    }
+    private async Task Delete(Guid id)
+    {
+        Id = id;     
+        await DeleteConfirmation.show(id);
+    }
+    private async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (deleteconfirmed)
+        {
+
+            var check = await cabin.DeleteCabin(Id);
+            var grcb = await groupCabinRepo.GetAllGroupCabinAsync();
+            grcb = grcb.Where(x => x.IdCabin == Id).ToList();
+            var bkcb = await _bookingCabinApiClient.GetAll();
+            bkcb = bkcb.Where(x => x.IdCabin == Id).ToList();
+            //var bkrq = await bookingRequestRepo.GetAllBookingRequestAsync();
+            //bkrq = bkrq.Where(x => x.IdCabin == Id).ToList();
+            //foreach (var item in bkrq)
+            //{
+            //    await bookingRequestRepo.DeleteBookingRequest(item.Id);
+            //}
+
+            foreach (var item in bkcb)
+            {
+
+                var listShiftDefault = await shiftOfCabinApiClient.GetAll();
+                var shift = listShiftDefault.FirstOrDefault(c => c.Id == item.IdShift);
+                var StartShift = shift.StartTime;
+                var EndShift = shift.EndTime;
+                await _bookingCabinApiClient.Delete(item.Id, item.IdCabin, item.SubjectId, item.ClassId, item.IdShift);
+                var listBookingCabin = await _bookingCabinApiClient.GetAll();
+
+                var obj = listBookingCabin.FirstOrDefault(c => c.Status != 1 && c.SubjectId == item.SubjectId && c.ClassId == item.ClassId && c.IdShift == item.IdShift && c.IdLectuter == item.IdLectuter && c.IdCabin == item.IdCabin && c.DateCreated == item.DateCreated);
+                var resBooking = obj == null ? true : await _bookingCabinApiClient.Delete(obj.Id, Guid.Parse(item.IdCabin.ToString()), Guid.Parse(item.SubjectId.ToString()), Guid.Parse(item.ClassId.ToString()), Guid.Parse(item.IdShift.ToString()));
+                var resRequest = false;
+
+                // tạo booking request
+                if (resBooking)
+                {
+
+                    var StartTimeOfBR = new DateTime(item.DateCreated.Year, item.DateCreated.Month, item.DateCreated.Day, StartShift.Hours, StartShift.Minutes, StartShift.Seconds);
+                    var EndTimeOfBR = new DateTime(item.DateCreated.Year, item.DateCreated.Month, item.DateCreated.Day, EndShift.Hours, EndShift.Minutes, EndShift.Seconds);
+
+                    var booking = new BookingRequestCreateViewModel
+                        {
+                            ContentOfRequest = "Đã bị hủy cabin",
+                            IdLectuter = Guid.Parse(item.IdLectuter.ToString()),
+                            SendingTime = DateTime.Now,
+                            SubjectId = Guid.Parse(item.SubjectId.ToString()),
+                            ClassId = Guid.Parse(item.ClassId.ToString()),
+                            Status = 5,
+                            ContenOfFeedBack = "Hủy cabin vì: Cabin dừng hoạt động",
+                            StartTime = StartTimeOfBR,
+                            FeedBackTime = DateTime.Now,
+                            EndTime = EndTimeOfBR
+                        };
+
+                    var listBookingRequest = await _bookingRequestRepo.GetAllBookingRequestAsync();
+
+                    if (listBookingRequest.Any(c => c.IdLectuter == Guid.Parse(item.IdLectuter.ToString()) &&
+                        c.SubjectId == Guid.Parse(item.SubjectId.ToString()) &&
+                    c.ClassId == Guid.Parse(item.ClassId.ToString()) &&
+                    c.StartTime == StartTimeOfBR &&
+                    c.EndTime == EndTimeOfBR
+                    ))
+                    {
+                        booking.Status = 3;
+                    }
+                    resRequest = await _bookingRequestRepo.CreateBookingRequest(booking);
+                }
+
+            }
+       
+            foreach (var item in grcb)
+            {
+                await groupCabinRepo.DeleteGroupCabin(item.IdSpec, item.IdCabin);
+            }
+
+            if (check)
+            {
+                _toastService.ShowSuccess("Xóa thành công");
+                await GetTasks();
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+            }
+        }
+
+    }
+    private async Task OnConfirmAdd(bool check)
+    {
+        if (check)
+        {
+            await GetTasks();
+        }
+
+
+    }
+    public async Task SearchCabin(CabinSearchViewModel cabinViewModel)
+    {
+        cabinSearchViewModel = cabinViewModel;
+        await GetTasks();
+    }
+
+}

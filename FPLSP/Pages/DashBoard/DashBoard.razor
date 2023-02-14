@@ -1,0 +1,227 @@
+﻿@page "/admin-dashboard/{userRolesNonDecrypt}/{IdTrainingFacilityNonDecrypt}"
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.DashboardDtos
+@if (TrainingFacilitiesCollection == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <MudContainer Class="px-8" MaxWidth="MaxWidth.False" style="margin-bottom: 30px;">
+        <MudGrid>
+            <MudItem xs="12" sm="6" md="2">
+                <MudPaper Elevation="2" Class="pa-4 text-center" Style="height: 150px;">
+                    <h7 style="color:lightpink!important"><i class="fa-solid fa-users pr-5"></i></h7>
+                    <div>
+                        <p6 class="font-weight-bold "><b>Tổng sinh viên đã đăng nhập: @termsStudentUp_Quantity.Sum().ToString()</b></p6>
+                    </div>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudPaper Elevation="2" Class="pa-4 text-center" Style="height: 150px;">
+
+                    <h8><i class="fa-solid fa-users pr-5"></i></h8>
+                    <div>
+                        <p6 class="font-weight-bold"><b>Tổng sinh viên chưa đăng nhập: @GetAllStudentUPNotUser</b></p6>
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="2">
+                <MudPaper Elevation="2" Class="pa-4 text-center" Style="height: 150px;">
+                    <h7><i class="fa-solid fa-chalkboard-user"></i></h7>
+                    <div>
+                        <p6 class="font-weight-bold"><b>Tổng giảng viên đã đăng nhập: @termsLectureUp.Sum().ToString()</b></p6>
+                    </div>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudPaper Elevation="2" Class="pa-4 text-center" Style="height: 150px;">
+                    <h8><i class="fa-solid fa-chalkboard-user"></i></h8>
+                    <div>
+                        <p6 class="font-weight-bold"><b>Tổng giảng viên chưa đăng nhập: @GetAllLectureNotUser</b></p6>
+                    </div>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudPaper Elevation="2" Class="pa-4 text-center" Style="height: 150px;">
+                    <h9><i class="fa-solid fa-graduation-cap pr-5"></i></h9>
+                    <div>
+                        <p6 class="font-weight-bold"><b>Tổng lớp: @termsClassUp_Quantity.Sum().ToString()</b></p6>
+                    </div>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudPaper Elevation="2" Class="pa-4 text-center" Style="height: 150px;">
+                    <h2><i class="fa-solid fa-swatchbook"></i></h2>
+                    <div>
+                        <p6 class="font-weight-bold"><b>Tổng chuyên ngành: @GetAllSpec</b></p6>
+                    </div>
+                </MudPaper>
+            </MudItem>
+            <div class="col-sm-12 col-xl-12 mt-4">
+                <table class="table table-hover align-middle table-bordered mt-3" style="text-align:center">
+                    <thead style="background-color:#ff4500">
+                        <tr>
+                            <th scope="col"><p7 class="col-12"><b>Cơ sở</b></p7></th>
+                            <th scope="col"><p7 class="col-12"><b>Số lượng sinh viên</b></p7></th>
+                            <th scope="col"><p7 class="col-12"><b>Số lượng giảng viên</b></p7></th>
+                            <th scope="col"><p7 class="col-12"><b>Số lượng lớp </b></p7></th>
+                            <th scope="col"><p7 class="col-12"><b>Số lượng Chuyên ngành </b></p7></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        @foreach (var temp in TrainingFacilitiesCollection)
+                        {
+
+                            <tr>
+                                <td>@temp.TrainFaci_Name </td>
+                                <td>@temp.StudentUp_Quantity </td>
+                                <td>@temp.LectureUp_Quantity</td>
+                                <td>@temp.ClassUp_Quantity</td>
+                                <td>@temp.Spec_Quantity</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+        </MudGrid>
+        <div class="row mt-5 text-center">
+            <MudItem xs="4" sm="4" md="4">
+                <MudChart ChartType="ChartType.Donut" Width="300px" Height="300px" InputData="@termsLectureUp" InputLabels="@labelsTrainFaci_Name">
+                    <CustomGraphics>
+                        <text class="donut-inner-text" x="50%" y="35%" dominant-baseline="middle" text-anchor="middle" fill="black" font-family="Helvetica" font-size="2">Tổng </text>
+                        <text class="donut-inner-text" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="black" font-family="Helvetica" font-size="5">@termsLectureUp.Sum().ToString()</text>
+                    </CustomGraphics>
+                </MudChart>
+                <MudText Typo="Typo.h6"> <p6>Biểu đồ số giảng viên</p6> </MudText>
+            </MudItem>
+            <MudItem xs="4" sm="4" md="4">
+                <MudChart ChartType="ChartType.Donut" Width="300px" Height="300px" InputData="@termsStudentUp_Quantity" InputLabels="@labelsTrainFaci_Name">
+                    <CustomGraphics>
+                        <text class="donut-inner-text" x="50%" y="35%" dominant-baseline="middle" text-anchor="middle" fill="black" font-family="Helvetica" font-size="2">Tổng </text>
+                        <text class="donut-inner-text" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="black" font-family="Helvetica" font-size="5">@termsStudentUp_Quantity.Sum().ToString()</text>
+                    </CustomGraphics>
+                </MudChart>
+                <MudText Typo="Typo.h6"> <p6>Biểu đồ số sinh viên</p6> </MudText>
+            </MudItem>
+            <MudItem xs="4" sm="4" md="4">
+                <MudChart ChartType="ChartType.Donut" Width="300px" Height="300px" InputData="@termsClassUp_Quantity" InputLabels="@labelsTrainFaci_Name">
+                    <CustomGraphics>
+                        <text class="donut-inner-text" x="50%" y="35%" dominant-baseline="middle" text-anchor="middle" fill="black" font-family="Helvetica" font-size="2">Tổng </text>
+                        <text class="donut-inner-text" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="black" font-family="Helvetica" font-size="5">@termsClassUp_Quantity.Sum().ToString()</text>
+                    </CustomGraphics>
+                </MudChart>
+                <MudText Typo="Typo.h6"> <p6>Biểu đồ số lượng lớp</p6> </MudText>
+            </MudItem>
+        </div>
+    </MudContainer>
+
+
+
+}
+@code {
+    [Inject] public IDashboardClient dashboardClient { get; set; }
+    [Parameter]
+    public string userRolesNonDecrypt { get; set; }
+    [Parameter]
+    public string IdTrainingFacilityNonDecrypt { get; set; }
+
+    private string userRoles = "";
+    public string IdTrainingFacility = "";
+    public int ClassAllQuantity { get; set; }
+    public int GetAllLectureNotUser { get; set; }
+    public int GetAllStudentUPNotUser { get; set; }
+    public int GetAllSpec { get; set; }
+    public List<TrainingFacilitiesForDashBoardDto> TrainingFacilitiesCollection { get; set; }
+    public double[] termsLectureUp { get; set; } = new double[0];
+    public string[] labelsTrainFaci_Name { get; set; } = new string[0];
+    public double[] termsStudentUp_Quantity { get; set; } = new double[0];
+    public double[] termsClassUp_Quantity { get; set; } = new double[0];
+    public double[] termsSpec_Quantity { get; set; } = new double[0];
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    int Index;
+    protected async override Task OnInitializedAsync()
+    {
+        userRoles = _cryptoServices.Decrypt(userRolesNonDecrypt.Replace("I0H", "/"));
+        IdTrainingFacility = _cryptoServices.Decrypt(IdTrainingFacilityNonDecrypt.Replace("I0H", "/"));
+        TrainingFacilitiesCollection = new List<TrainingFacilitiesForDashBoardDto>();
+        Index = 0;
+        await Get();
+    }
+
+    private async Task Get()
+    {
+        var countstudent = await dashboardClient.GetAllStudentUPNotUser();
+        GetAllStudentUPNotUser = countstudent;
+        if (userRoles == "AdminCore" || userRoles == "7")
+        {
+            IdTrainingFacility = "00000000-0000-0000-0000-000000000000";
+
+        };
+        var countlecture = await dashboardClient.GetAllLectureNotUser(Guid.Parse(IdTrainingFacility));
+        GetAllLectureNotUser = countlecture;
+        TrainingFacilitiesCollection = await dashboardClient.GetInforTraningFacilitiesForDashboard();
+        if (userRoles == "AdminCS" || userRoles == "6")
+        {
+            TrainingFacilitiesCollection = TrainingFacilitiesCollection.Where(c => c.TrainFaci_Id == Guid.Parse(IdTrainingFacility)).ToList();
+            GetAllSpec = TrainingFacilitiesCollection.Where(c => c.TrainFaci_Id == Guid.Parse(IdTrainingFacility)).Select(c => c.Spec_Quantity).FirstOrDefault() ;
+        };
+        GetAllSpec = await dashboardClient.GetAllSpec();
+        termsLectureUp = new double[TrainingFacilitiesCollection.Count()];
+        labelsTrainFaci_Name = new string[TrainingFacilitiesCollection.Count()];
+        termsStudentUp_Quantity = new double[TrainingFacilitiesCollection.Count()];
+        termsClassUp_Quantity = new double[TrainingFacilitiesCollection.Count()];
+        termsSpec_Quantity = new double[TrainingFacilitiesCollection.Count()];
+        for (int runs = 0; runs < TrainingFacilitiesCollection.Count; runs++)
+        {
+            termsLectureUp[runs] = TrainingFacilitiesCollection[runs].LectureUp_Quantity;
+            termsStudentUp_Quantity[runs] = TrainingFacilitiesCollection[runs].StudentUp_Quantity;
+            termsClassUp_Quantity[runs] = TrainingFacilitiesCollection[runs].ClassUp_Quantity;
+            labelsTrainFaci_Name[runs] = TrainingFacilitiesCollection[runs].TrainFaci_Name;
+            termsSpec_Quantity[runs] = TrainingFacilitiesCollection[runs].Spec_Quantity;
+        }
+
+
+    }
+}
+<style>
+    p6 {
+        font-size: 18px;
+        background: -webkit-linear-gradient(#FF8C00, #ff4500);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    p7 {
+        font-size: 18px;
+        background: -webkit-linear-gradient(#FFFFE0, #EEEED1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    h7 {
+        font-size: 32px;
+        background: -webkit-linear-gradient(#37A2EC, #2E65B4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    h8 {
+        font-size: 32px;
+        background: -webkit-linear-gradient(#388E3C, #4CAF50);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    h9 {
+        font-size: 32px;
+        background: -webkit-linear-gradient(#D32F2F, #F44336);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+</style>

@@ -1,0 +1,70 @@
+﻿@using FPLSP.Server.Domain.Dtos.StudentStatisticVM
+@using FPLSP.Server.Infrastructure.ViewModels.StudentStatistics
+<EditForm Model="@lessonContentListSearch" OnSubmit=@SearchForm>
+    <div class="row">
+        @*<div class="col-lg-4">
+            <InputSelect class="form-select" ValueExpression="@(()=>lessonContentListSearch.trangthai)" Value="@lessonContentListSearch.trangthai" ValueChanged="@((string? value)=> SearchCode(value))">
+                <option value="">Lọc</option>
+                <option value="0">Chưa nộp bài</option>
+                <option value="1">Đã nộp bài</option>
+            </InputSelect>
+        </div>*@
+        <div class="col-lg-10">
+            <div class="input-group mb-3">
+                <InputText placeholder="Nhập mã sinh viên..." class="form-control" @bind-Value="lessonContentListSearch.Masv"></InputText>
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-outline-secondary">🔍</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2">
+            <a @onclick="@ClearSearch" class="btn btn-outline-success">Clear</a>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+
+    [Parameter]
+    public EventCallback<StudentStatisticListSearch> OnSearch { set; get; }
+
+
+    private StudentStatisticListSearch lessonContentListSearch = new StudentStatisticListSearch();
+    
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(lessonContentListSearch);
+
+    }
+    public async Task ClearSearch()
+    {
+        lessonContentListSearch = new StudentStatisticListSearch();
+        await SearchForm(null);
+    }
+    public async void SearchCode(string code)
+    {
+
+        lessonContentListSearch.trangthai = code;
+        await OnSearch.InvokeAsync(lessonContentListSearch);
+    }
+    private Timer _timer;
+
+    public string SearchTerm { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSearchChanged { get; set; }
+
+    private void SearchChanged()
+    {
+        if (_timer != null)
+            _timer.Dispose();
+
+        _timer = new Timer(OnTimerElapsed, null, 500, 0);
+    }
+
+    private void OnTimerElapsed(object sender)
+    {
+        OnSearchChanged.InvokeAsync(SearchTerm);
+        _timer.Dispose();
+    }
+}

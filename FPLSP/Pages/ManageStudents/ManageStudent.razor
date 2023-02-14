@@ -1,0 +1,111 @@
+﻿@page "/ManageStudent/{ClassId}"
+@using FPLSP.Data.ManageStudents
+@using FPLSP.Data.StudentsApiClient
+@using FPLSP.Server.Domain.Dtos
+@using Microsoft.AspNetCore.Components
+
+<h3>ManageStudent</h3>
+
+@if (_manageStudents == null)
+{
+    <FPLSP.Components.LoadingIndicator></FPLSP.Components.LoadingIndicator>
+}
+else
+{
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.1/css/all.min.css" integrity="sha256-2XFplPlrFClt0bIdPgpz8H7ojnk10H69xRqd9+uTShA=" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ti-icons@0.1.2/css/themify-icons.css">
+    <div class="container">
+        <div>
+            <a href="/Students/@_manageStudents.Select(c=>c.IdClass).FirstOrDefault().ToString()"> Add To Class</a>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-md-7 col-lg-4 mb-5 mb-lg-0 wow fadeIn">
+                <div class="card border-0 shadow">
+                    <img src="https://www.bootdey.com/img/Content/avatar/avatar6.png" onerror="this.src='./css/images/Others/logoFPT.png'" alt="...">
+                    <div class="card-body p-1-9 p-xl-5">
+                        <div class="mb-4">
+                            @if (@_manageStudents.Any(c => c.Status == 1))
+                            {
+                                <span class="badge rounded-pill bg-info">Open</span>
+                            }
+                            else
+                            {
+                                <span class="badge rounded-pill bg-dark">Close</span>
+                            }
+                            <h3 class="h4 mb-0">ClassName : @_manageStudents.Select(c=>c.ClassroomName).FirstOrDefault()</h3>
+                            <h3 class="h4 mb-0">SubjectName : @_manageStudents.Select(c=>c.SubjectName).FirstOrDefault()</h3>
+                            <span class="">ClassCode : @_manageStudents.Select(c=>c.ClassroomCode).FirstOrDefault()</span>
+                        </div>
+                        <ul class="list-unstyled mb-4">
+
+                            <li class="mb-3">@_manageStudents.Select(c=>c.StudentAmountInClass).FirstOrDefault() / @_manageStudents.Select(c=>c.StudentAmount).FirstOrDefault()</li>
+
+                            <li><i class="fas fa-map-marker-alt display-25 me-3 text-secondary"></i> Address: @_manageStudents.Select(c=>c.Address).FirstOrDefault()</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-8">
+                <div class="ps-lg-1-6 ps-xl-5">
+                    <div class="mb-5 wow fadeIn">
+                        <div class="text-start mb-1-6 wow fadeIn">
+                            <h2 class="h1 mb-0 text-primary">List Students In Class</h2>
+                        </div>
+                        <div>
+                            <table class="table table-borderless">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            StudentCode
+                                        </th>
+                                        <th>
+                                            StudentName
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in _manageStudents)
+                                    {
+                                        <tr>
+                                            <td>@item.StudentCode</td>
+                                            <td>@item.StudentName</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string ClassId { get; set; }
+    [Inject] private IManageStudentApiClient ManageStudentApiClient { get; set; }
+    [Inject] private IStudentsApiClient studentsApiClient { get; set; }
+
+    [Inject] private NavigationManager _navier { get; set; }
+
+
+    private List<ManageStudentUpDto> _manageStudents;
+
+
+
+    public ManageStudent()
+    {
+        _manageStudents = new List<ManageStudentUpDto>();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        _manageStudents = await ManageStudentApiClient.GetStudentUpDto(Guid.Parse(ClassId));
+    }
+
+    //public async Task OpenListStudents()
+    //{
+    //    await studentsApiClient.GetStudentUpDto();
+    //    _navier.NavigateTo($"/Students?{ClassId}");
+    //}
+}

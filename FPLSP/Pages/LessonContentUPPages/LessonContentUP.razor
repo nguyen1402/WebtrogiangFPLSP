@@ -1,0 +1,270 @@
+﻿@page "/lessonContentUP/{idsubjectUP}/{Id}"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.LessonContentUP
+@using FPLSP.Server.Infrastructure.ViewModels.LessonUP
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<div class="row pt-3">
+    <div style="width:12%">
+        <a class="btn btn-outline-danger me-3" @onclick="() => RedirectToLesson()">Quay Lại</a>
+    </div>
+    <div class="col-9 pe-5">
+        <LessonContentUPSearch OnSearch="SearchLessonContentUP"></LessonContentUPSearch>
+    </div>
+    <div class="col-1 ps-3">
+        <div class="dropdown-center">
+            <button class="btn btn-info ps-4 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Chức Năng
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item">Đang phát triển...</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+<br />
+@if (_lstLessonContentUPs == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    @*<th><input type="checkbox" @bind="@Check" @onchange="EventArgs => { CheckAllExpense( EventArgs.Value); } " @bind:event="oninput"></th>*@
+    <div class="row">
+        <div class="col-8">
+            @foreach (var sj in _lstLessonContentUPs)
+            {
+                <div class="accordion" id="accordionPanelsStayOpenExample">
+                    <div class="accordion-item row">
+
+                        <div class=" col-lg-12">
+                            <h3 class="accordion-header " id="panelsStayOpen-headingTwo">
+                                @* <td><input type="checkbox" checked=@sj.IsChecked @onchange="()=>CheckManual(sj.Id,sj.IsChecked)"></td>*@
+                                <button class="accordion-button collapsed col-lg-12 " type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-@sj.LessonContentCode.Replace(" ", "")" aria-expanded="false" aria-controls="panelsStayOpen-collapseTwo" style="height:50px">
+                                    <h3> <div class="fa-solid fa-book pr-2"></div></h3> <h5>@sj.LessonContentCode - @sj.LessonContentName</h5>
+                                </button>
+                            </h3>
+                            <div id="panelsStayOpen-@sj.LessonContentCode.Replace(" ", "")" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingTwo">
+                                <div class="accordion-body">
+                                    <a class="accordion-body" style="color:black;" href="getvideoUP/@idsubjectUP/@id/@sj.Id/@sj.ResuorceLinkId/@sj.LessonContentCode/@sj.LessonContentName">
+                                        <i class="fa-brands fa-youtube pr-2"> </i>@sj.LessonContentCode
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        @*<div class="col-md-1 p-3  ">
+                <div class="dropdown float-end">
+                <h3>
+                <a class="fa-solid fa-gears" style="color:black;" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false"> </a>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                <li><a class="dropdown-item" @onclick="() => RedirectToUpdate(sj.Id)">Cập nhật</a></li>
+                <li><a class="dropdown-item" @onclick="() => OnDelete(sj.Id)">Xóa nội dung</a></li>
+                </ul>
+                </h3>
+                </div>
+                </div>*@
+                    </div>
+                </div>
+
+                <hr />
+            }
+        </div>
+        <div class="col-4">
+            <MudCard>
+                <div class="d-flex justify-content-center mb-2">
+                    <MudImage Src="@subject.Image" Width="332" Height="250" Alt="Swedish Farm House" Elevation="25" ObjectFit="@ImageFit" Class="rounded-lg ma-4" />
+                </div>
+
+
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Môn học: <b>@subject.SubjectName</b> - Mã: <b>@subject.SubjectCode</b> </MudText>
+                    <MudText Typo="Typo.body1">Bài học: @lesson.LessonName</MudText>
+                    <MudText Typo="Typo.body1" class="pb-2">Mô tả: @lesson.Descriptions</MudText>
+                    <MudText Typo="Typo.body2">Ngày bắt đầu môn: @subject.StartDay.ToString("dd-MM-yyyy")</MudText>
+                    <MudText Typo="Typo.body2">Ngày kết thúc môn: @subject.EndDay.ToString("dd-MM-yyyy")</MudText>
+                </MudCardContent>
+            </MudCard>
+        </div>
+        <div class="d-flex justify-content-center">
+
+            <tfoot>
+                <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+            </tfoot>
+        </div>
+
+
+    </div>
+}
+<Comfirmation ConfirmationMessage="Bạn có chắc muốn xóa không?"
+              ConfirmationTitle="Xóa bài học"
+              @ref="DeleteConfirmation"
+              ConfirmationChanged="OnConfirmationDelete"></Comfirmation>
+
+@code {
+    [Inject] private ILessonContentUPRepo _LessonContentUPRepo { get; set; }
+    [Inject] public NavigationManager NavigationManager { get; set; }
+    [Inject] private ILessonUPRepo _lessonUPRepo { get; set; }
+    [Inject] public ISubjectUPRepo _subjectUPRepo { get; set; }
+    //[Inject] private IResourceLinkUPRepo _resourceLinkUPRepo { get; set; }
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    private List<LessonContentUPViewModel> _lstLessonContentUPs = new List<LessonContentUPViewModel>();
+    private List<Guid> removeListLesson = new List<Guid>();
+    private LessonUPViewModel lesson { get; set; } = new LessonUPViewModel();
+    private SubjectDto subject { get; set; } = new SubjectDto();
+    private LessonContentUPListSearch _LessonContentUPSearch = new LessonContentUPListSearch();
+    private bool Check = false;
+    [Inject] private IToastService _toastService { get; set; }
+    [Parameter]
+    public string idsubjectUP { get; set; }
+    [Parameter]
+    public string id { get; set; }
+
+    [CascadingParameter]
+    private Error Error { get; set; }
+
+    private string deleteID { get; set; }
+    ObjectFit ImageFit = ObjectFit.Cover;
+    protected Comfirmation DeleteConfirmation { get; set; } = new Comfirmation();
+
+    protected override async Task OnInitializedAsync()
+    {
+        subject = await _subjectUPRepo.GetSubjectbyId(Guid.Parse(idsubjectUP));
+        lesson = await _lessonUPRepo.GetById(id);
+        await GetTasks();
+    }
+
+    public async Task SearchLessonContentUP(LessonContentUPListSearch LessonContentUPSearch)
+    {
+        _LessonContentUPSearch = LessonContentUPSearch;
+        await GetTasks();
+    }
+
+    public void OnDelete(Guid id)
+    {
+        deleteID = id.ToString();
+        DeleteConfirmation.show();
+    }
+    void CheckManual(Guid reportId, bool check)
+    {
+        if (check == true)
+        {
+            foreach (var x in _lstLessonContentUPs.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in _lstLessonContentUPs.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            _lstLessonContentUPs.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            _lstLessonContentUPs.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+    public async Task OnConfirmDelete(bool deleteConfirmed)
+    {
+        if (deleteConfirmed)
+        {
+            var result = await _LessonContentUPRepo.Delete(Guid.Parse(deleteID));
+            if (result)
+            {
+                await GetTasks();
+            }
+        }
+    }
+
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _LessonContentUPRepo.GetList(_LessonContentUPSearch);
+            _lstLessonContentUPs = pagingResponse.Items.Where(c => Equals(Guid.Parse(id), c.LessonId)).ToList();
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessError(ex);
+        }
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _LessonContentUPSearch.PageNumber = page;
+        await GetTasks();
+    }
+
+    private void RedirectToDetails(Guid id)
+    {
+
+        var url = Path.Combine($"/lessonContentUPDetail/{id.ToString()}?{idsubjectUP}");
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToUpdate(Guid id)
+    {
+
+        var url = Path.Combine($"/lessonContentUPUpdate/{idsubjectUP}/{id}");
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task RedirectToLesson()
+    {
+        var url = Path.Combine("/lessonUP/", idsubjectUP.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+
+        if (deleteconfirmed && deleteID == null && removeListLesson.Count == 0)
+        {
+            _toastService.ShowError("Bạn chưa chọn đối tượng để xóa");
+            await GetTasks();
+        }
+        else if (deleteconfirmed && deleteID != null)
+        {
+            var result = await _LessonContentUPRepo.Delete(Guid.Parse(deleteID));
+            if (result)
+            {
+                _toastService.ShowSuccess("Xóa thành công");
+                await GetTasks();
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+                await GetTasks();
+            }
+        }
+        else if (deleteconfirmed && removeListLesson != null)
+        {
+
+            var result = await _LessonContentUPRepo.RemoveAll(removeListLesson);
+            if (result)
+            {
+                _toastService.ShowSuccess("Xóa thành công");
+                await GetTasks();
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+
+                await GetTasks();
+            }
+        }
+        deleteID = null;
+        removeListLesson = null;
+        Check = false;
+    }
+}
+

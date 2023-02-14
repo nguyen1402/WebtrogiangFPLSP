@@ -1,0 +1,205 @@
+﻿@page "/UpdateQuizCP/{idspecializedNonDecrypt}/{idsubjectNonDecrypt}/{idquizNonDecrypt}"
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Dtos.QuizCPDtos
+@using FPLSP.Server.Infrastructure.ViewModels.QuizCPVm
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+<div class="row pt-3">
+    <h3>Cập Nhật</h3>
+        <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/SpecializedCP/@_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H")/@_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")">Chuyên ngành</a></li>
+            <li class="breadcrumb-item"><a href="/subjects/@_cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H")?@_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H")LDN01@_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")">@namespecialized</a></li>
+        <li class="breadcrumb-item"><a href="/MainQuizsCP/@_cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H" ) /@_cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H" )?@_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H")LDN01@_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")">Quizs</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Cập nhật Quiz</li>
+    </ol>
+</nav>
+    @if (ShowAuthError)
+    {
+        <div class="alert alert-danger" role="alert">
+            @Error
+        </div>
+    }
+    <EditForm Model="quiz" OnValidSubmit="Update" class="card card-body bg-light">
+        <DataAnnotationsValidator />
+        <div class="form-group">
+            <div class="row">
+                <div class="col-6">
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-12">
+                            <label for="name" class="col-md-4 col-form-label">Tên Quiz:</label>
+                            <div class="col-md-12">
+                                <input id="name" class="form-control" value="@quiz.QuizName" disabled />
+                                <div class="text-danger"><ValidationMessage For="@(() => quiz.QuizName)" /></div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-12">
+                            <label for="name" class="col-4 col-form-label">Ngày bắt đầu:</label>
+                            <div class="col-12">
+                                <InputDate id="name" class="form-control" @bind-Value="quiz.StartDay" />
+                                <div class="text-danger"><ValidationMessage For="@(() => quiz.StartDay)" /></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-12">
+                            <label for="name" class="col-md-4 col-form-label">Mô tả: </label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="quiz.Descriptions" />
+                                <div class="text-danger"><ValidationMessage For="@(() => quiz.Descriptions)" /></div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-12">
+                            <label for="name" class="col-md-6 col-form-label">Số lần làm tối đa: </label>
+                            <div class="col-md-12">
+                                <InputNumber min=1 class="form-control" @bind-Value="quiz.MaxTurn" />
+                                <div class="text-danger"><ValidationMessage For="@(() => quiz.MaxTurn)" /></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-12">
+                            <label for="name" class="col-4 col-form-label">Ngày kết thúc:</label>
+                            <div class="col-12">
+                                <InputDate id="name" class="form-control" @bind-Value="quiz.EndDay" />
+                                <div class="text-danger"><ValidationMessage For="@(() => quiz.EndDay)" /></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-12">
+                            <label for="name" class="col-md-4 col-form-label">Trạng thái: </label>
+                            <div class="col-md-12">
+                                <InputSelect @bind-Value="quiz.Status" class="form-select">
+                                    <option value="0">Không hoạt động</option>
+                                    <option value="1">Đang hoạt động</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-4"></div>
+            <div class="col-4" style="text-align:center">
+                <button type="submit" class="btn btn-primary me-2">Cập Nhật</button>
+                <button type="button" class="btn btn-outline-success me-2" @onclick="KhoiPhuc">Khôi phục</button>
+                <a @onclick="() => Quaylai()" class="btn btn-outline-danger">Quay Lại</a>
+            </div>
+            <div class="col-4"></div>
+
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Inject] public NavigationManager Navigation { get; set; }
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+    public UpdateQuizCPVm quiz { get; set; } = new UpdateQuizCPVm();
+    public SubjectQuizCPDtos undoquiz { get; set; } = new SubjectQuizCPDtos();
+    [Inject] public IQuizCPRepo _iQuizCPClient { get; set; }
+    [Parameter]
+    public string idsubjectNonDecrypt { get; set; }
+    public string idsubject;
+    [Parameter]
+    public string idspecializedNonDecrypt { get; set; }
+    public string idspecialized;
+    [Parameter]
+    public string idquizNonDecrypt { get; set; }
+    public string idquiz;
+    [Inject] private IToastService _toastService { get; set; }
+    private SubjectDto subject { get; set; } = new SubjectDto();
+    public SpecializedDto specializedDto { get; set; } = new SpecializedDto();
+    private string namespecialized { get; set; }
+    [Inject]
+    public ISpecializedCPRepo _iSpecialized { get; set; }
+    [Inject]
+    public ISubjectClient _iSubjectClient { get; set; }
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+
+    Uri uri;
+    string maxlevel = "";
+    string IdCoSo = "";
+    protected async override Task OnInitializedAsync()
+    {
+        uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (string.IsNullOrEmpty(uri.Query) == false)
+        {
+            var urifist = uri.Query.Split("?")[1];
+            maxlevel = _cryptoServices.Decrypt(urifist.Split("LDN01")[0].Replace("I0H", "/"));
+            IdCoSo = _cryptoServices.Decrypt(urifist.Split("LDN01")[1].Replace("I0H", "/"));
+        }
+        idsubject = _cryptoServices.Decrypt(idsubjectNonDecrypt.Replace("I0H", "/"));
+        idspecialized = _cryptoServices.Decrypt(idspecializedNonDecrypt.Replace("I0H", "/"));
+        idquiz = _cryptoServices.Decrypt(idquizNonDecrypt.Replace("I0H", "/"));
+        specializedDto = await _iSpecialized.GetbyId(Guid.Empty, Guid.Parse(idspecialized));
+        namespecialized = specializedDto.SpecializationName;
+        var objectquiz = await _iQuizCPClient.GetQuizById(Guid.Parse(idquiz));
+        quiz.QuizName = objectquiz.QuizName;
+        quiz.MaxTurn = objectquiz.MaxTurn;
+        quiz.Descriptions = objectquiz.Descriptions;
+        quiz.StartDay = objectquiz.StartDay;
+        quiz.EndDay = objectquiz.EndDay;
+        quiz.Status = objectquiz.Status;
+        undoquiz = objectquiz;
+    }
+    private async Task Update()
+    {
+
+        ShowAuthError = false;
+        var result = await _iQuizCPClient.UpdateQuizCP(Guid.Parse(idquiz), quiz);
+
+        if (result != 1)
+        {
+            Error = "Lỗi";
+            ShowAuthError = true;
+            var url = Path.Combine("/UpdateQuizCP/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idquiz).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+            Navigation.NavigateTo(url);
+        }
+        else
+        {
+            _toastService.ShowSuccess("Cập nhật thành công");
+            var url = Path.Combine("/MainQuizsCP/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+            Navigation.NavigateTo(url);
+
+        }
+
+
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/MainQuizsCP/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        Navigation.NavigateTo(url);
+    }
+    private async void KhoiPhuc()
+    {
+        quiz.QuizName = undoquiz.QuizName;
+        quiz.MaxTurn = undoquiz.MaxTurn;
+        quiz.Descriptions = undoquiz.Descriptions;
+        quiz.StartDay = undoquiz.StartDay;
+        quiz.EndDay = undoquiz.EndDay;
+        quiz.Status = undoquiz.Status;
+    }
+}
+
+
+
+
+
+

@@ -1,0 +1,94 @@
+﻿@page "/ExamDetail/{id:guid}"
+@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+
+<h3>Chi Tiết Đề Thi</h3>
+
+@if (_examCPDto != null)
+{
+    <div class="row">
+        <div class="col-1">
+        </div>
+        <div class="d-flex justify-content-center col-10 ">
+            <EditForm Model="_examCPDto" class="card card-body bg-light mt-5">
+                <DataAnnotationsValidator />
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-code"></i> Mã Đề Thi:</label>
+                    <div class="col-md-10">
+                        <InputText id="name" class="form-control" @bind-Value="_examCPDto.ExamCode" />
+                        <ValidationMessage For="@(() => _examCPDto.ExamCode)" />
+                    </div>
+                </div>
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-sharp fa-solid fa-address-card"></i> Tên Đề Thi:</label>
+                    <div class="col-md-10">
+                        <InputText id="name" class="form-control" @bind-Value="_examCPDto.ExamName" />
+                        <ValidationMessage For="@(() => _examCPDto.ExamName)" />
+                    </div>
+                </div>
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-check"></i> Trạng Thái:</label>
+                    <div class="col-md-10">
+                        <InputSelect class="form-control" @bind-Value="_examCPDto.Status">
+                            <option value="1">Mở</option>
+                            <option value="0">Đóng</option>
+                        </InputSelect>
+                    </div>
+                </div>
+
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-book"></i> Môn Học:</label>
+                    <div class="col-md-10">
+                        <InputSelect class="form-control" @bind-Value="_examCPDto.SubjectId">
+                            @if (subjectDtos != null)
+                            {
+                                @foreach (var item in subjectDtos)
+                                {
+                                    <option value="@item.Id">@item.SubjectName</option>
+                                }
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+            </EditForm>
+
+        </div>
+        <div class="col-1">
+        </div>
+    </div>
+
+}
+else
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+@code{
+    private ExamCPDto _examCPDto;
+    [Inject] private IExamCPServicesRepo _examApiClient { get; set; }
+    [Inject] private ISubjectClient subjectClient { get; set; }
+    [Inject] private NavigationManager _navier { get; set; }
+    private List<SubjectDto> subjectDtos;
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        await Get();
+    }
+    private async Task Get()
+    {
+
+        subjectDtos = await subjectClient.GetAllSubjectAsync();
+        var examCp = await _examApiClient.GetExamCPById(Id);
+        var examDto = new ExamCPDto()
+            {
+                ExamCode = examCp.ExamCode,
+                ExamName = examCp.ExamName,
+                Status = examCp.Status,
+                SubjectId = examCp.SubjectId
+            };
+        _examCPDto = examDto;
+    }
+}

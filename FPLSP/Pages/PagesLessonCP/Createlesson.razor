@@ -1,0 +1,227 @@
+﻿@page "/createlesson/{idspecNonDecrypt}/{idsubjectNonDecrypt}"
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Lesson
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<div class="row">
+    
+    <div class="col-12">
+        <div class="row pt-3">
+            <h3 class="ps-0">Thêm bài học môn : @subject.SubjectCode-@subject.SubjectName</h3>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/SpecializedCP/@_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H")/@_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")">Chuyên ngành</a></li>
+                    <li class="breadcrumb-item"><a href="/subjects/@_cryptoServices.Encrypt((@idspec).ToString()).Replace("/", "I0H")">@namespecialized</a></li>
+                    <li class="breadcrumb-item"><a href="/createsubject/@_cryptoServices.Encrypt((@idspec).ToString()).Replace("/", "I0H")">@subject.SubjectName</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Tạo mới bài học</li>
+                </ol>
+            </nav>
+            @if (ShowAuthError)
+            {
+                <div class="alert alert-danger" role="alert">
+                    @Error
+                </div>
+            }
+            <EditForm Model="lesson" OnValidSubmit="Create" class="card card-body bg-light mt-1">
+                <DataAnnotationsValidator />
+                <div class="form-group">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="row">
+                                <div class="form-group pt-2 col-12">
+                                    <label for="name" class="col-3 col-form-label">Bài:</label>
+                                    <div class="col-12">
+                                        <InputNumber min=1 id="name" class="form-control" @bind-Value="lesson.Index" />
+                                        <div class="text-danger"><ValidationMessage For="@(() => lesson.Index)" /></div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group pt-2 col-12">
+                                    <label for="name" class="col-2 col-form-label">Mô tả :</label>
+                                    <div class="col-12">
+                                        <InputText class="form-control" @bind-Value="lesson.Descriptions" />
+                                        <div class="text-danger"><ValidationMessage For="@(() => lesson.Descriptions)" /></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="row">
+                                <div class="form-group pt-2 col-12">
+                                    <label for="name" class="col-3 col-form-label">Tên bài học:</label>
+                                    <div class="col-12">
+                                        <InputText id="name" class="form-control" @bind-Value="lesson.LessonName" />
+                                        <div class="text-danger"><ValidationMessage For="@(() => lesson.LessonName)" /></div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group pt-2 col-12">
+                                    <label for="name" class="col-4 col-form-label">Trạng thái:</label>
+                                    <div class="col-12">
+                                        <InputSelect @bind-Value="lesson.Status" class="form-select">
+                                            <option value="0">Không hoạt động</option>
+                                            <option value="1">Đang hoạt động</option>
+                                        </InputSelect>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-2"></div>
+                    <div class="col-7" style="text-align:center">
+                        <button type="submit" class="btn btn-primary me-2">Thêm bài học</button>
+                        <button type="button" class="btn btn-outline-success me-2" @onclick="ClearForm">Làm Mới</button>
+                        <a @onclick="() => Quaylai()" class="btn btn-outline-danger">Quay Lại</a>
+                    </div>
+                    <div class="col-4"></div>
+
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+<FPLSP.Components.Comfirmation ConfirmationMessage="Bạn có chắc muốn tạo thêm nôi dung bài học cho bài học này không ?"
+                               ConfirmationTitle="Tạo nôi dung"
+                               ConfirmationChanged="OnConfirmation" @ref="Confirmation"></FPLSP.Components.Comfirmation>
+
+
+
+@code {
+        [Parameter]
+        public string idsubjectNonDecrypt { get; set; }
+
+        [Parameter]
+        public string idspecNonDecrypt { get; set; }
+    public string idsubject = "";
+
+    public string idspec = "";
+
+    private LessonCreateVM lesson = new LessonCreateVM();
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    [Inject]
+    public ILessonCPRepo _iLessonClient { get; set; }
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+
+    private SubjectDto subject { get; set; } = new SubjectDto();
+    [Inject]
+    public ISubjectClient _iSubjectClient { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    public SpecializedDto specializedDto { get; set; } = new SpecializedDto();
+    string namespecialized { get; set; }
+    [Inject]
+    public ISpecializedCPRepo _iSpecialized { get; set; }
+    [Inject]
+    public ILessonContentCPRepo _iLessonContentClient { get; set; }
+    private int a;
+    public List<LessonDto> ListLesson { get; set; } = new List<LessonDto>();
+    public List<LessonContentDto> ListLessonContent { get; set; } = new List<LessonContentDto>();
+    bool flag = true;
+    protected Comfirmation Confirmation { get; set; }
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+
+    Uri uri;
+    string maxlevel = "";
+    string IdCoSo = "";
+    protected async override Task OnInitializedAsync()
+    {
+        uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (string.IsNullOrEmpty(uri.Query) == false)
+        {
+            var urifist = uri.Query.Split("?")[1];
+            maxlevel = _cryptoServices.Decrypt(urifist.Split("LDN01")[0].Replace("I0H", "/"));
+            IdCoSo = _cryptoServices.Decrypt(urifist.Split("LDN01")[1].Replace("I0H", "/"));
+        }
+        idsubject = _cryptoServices.Decrypt(idsubjectNonDecrypt.Replace("I0H", "/"));
+        idspec = _cryptoServices.Decrypt(idspecNonDecrypt.Replace("I0H", "/"));
+        var countlesson = await _iLessonClient.GetAll(Guid.Parse(idsubject));
+        a = countlesson.Count();
+        specializedDto = await _iSpecialized.GetbyId(Guid.Empty, Guid.Parse(idspec));
+        namespecialized = specializedDto.SpecializationName;
+        lesson.Status = 1;
+        lesson.Index = countlesson.Count() + 1;
+        subject = await _iSubjectClient.GetSubjectbyId(Guid.Parse(idsubject));
+        ListLesson = await _iLessonClient.GetAll(Guid.Parse(idsubject));
+        ListLessonContent = await _iLessonContentClient.GetAllLessonContent();
+
+    }
+
+    private async Task RedirectToCreatLessonContent(string idLesson)
+    {
+        var url = Path.Combine("/createlessoncontent/", idspec, idsubject.ToString(), idLesson);
+        Navigation.NavigateTo(url);
+    }
+    private void RedirectToUpdate(Guid idLesson, Guid idLessonContent)
+    {
+        var url = Path.Combine("/leesoncontentupdate/" + idspec + "/" + idsubject + "/" + idLesson + "/" + idLessonContent.ToString());
+        Navigation.NavigateTo(url);
+    }
+    private async Task RedirectToCreatLesson()
+    {
+        var url = Path.Combine("/createlesson/" + idspec + "/" + idsubject.ToString());
+        Navigation.NavigateTo(url);
+    }
+    private async Task Create()
+    {
+        ShowAuthError = false;
+        lesson.Id = Guid.NewGuid();
+        var result = await _iLessonClient.Create(Guid.Parse(idsubject), lesson);
+        if (result != 1)
+        {
+            _toastService.ShowError("Thêm bài học không thành công");
+            var url = Path.Combine("/createlesson/" + idspec + "/" + idsubject);
+            ShowAuthError = true;
+            Navigation.NavigateTo(url);
+        }
+        else
+        {
+            _toastService.ShowSuccess("Thêm bài học thành công");
+            Confirmation.show();
+        }
+    }
+
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/createsubject/" +  idspecNonDecrypt);
+       
+        Navigation.NavigateTo(url);
+    }
+    private async void ClearForm()
+    {
+
+        lesson.LessonName = null;
+        lesson.Descriptions = null;
+        lesson.Status = 1;
+        lesson.Index = a + 1;
+    }
+    public async Task OnConfirmation(bool confirmed)
+    {
+        if (confirmed)
+        {
+            var url = Path.Combine("/createlessoncontent/", _cryptoServices.Encrypt((idspec).ToString()).Replace("/", "I0H"), _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H"), _cryptoServices.Encrypt((lesson.Id).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+            Navigation.NavigateTo(url);
+        }
+        else
+        {
+            var url = Path.Combine("/createlesson/" +_cryptoServices.Encrypt((idspec).ToString()).Replace("/", "I0H")  + "/" +_cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H"));
+            Navigation.NavigateTo(url);
+        }
+    }
+}

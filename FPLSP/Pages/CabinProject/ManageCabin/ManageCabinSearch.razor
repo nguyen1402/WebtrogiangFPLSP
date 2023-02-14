@@ -1,0 +1,53 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels.CabinProject
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.Cabin
+
+<EditForm Model="@_semesterListSearch" OnSubmit=@SearchForm>
+    <div class="row">
+
+        <div class="col-3 ">
+            <InputText placeholder="Nhập tên Cabin" class="form-control" @bind-Value="_semesterListSearch.CabinName"></InputText>
+        </div>
+        <div class="col-3">
+            <InputText placeholder="Nhập tên tòa" class="form-control" @bind-Value="_semesterListSearch.BuildingName"></InputText>
+        </div>
+        <div class="col-3">
+            <InputSelect @bind-Value="_semesterListSearch.Status" class="form-select">
+                <option value="">Tất cả</option>
+                <option value="0">Đang hoạt động</option>
+                <option value="2">Đang bảo trì</option>
+            </InputSelect>
+        </div>
+
+        <div class="col-3">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+            <button class="btn btn-outline-success ms-2" @onclick="() => ClearSearch()">Làm mới</button>
+        </div>
+
+    </div>
+</EditForm>
+@code {
+    [Parameter]
+    public EventCallback<CabinSearchViewModel> OnSearch { get; set; }
+
+    private CabinSearchViewModel _semesterListSearch = new CabinSearchViewModel();
+
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(_semesterListSearch);
+    }
+    private async void LeverSearch(int? a, string search)
+    {
+        _semesterListSearch.Status = a;
+        _semesterListSearch.BuildingName = search;
+        _semesterListSearch.CabinName = search;
+        await SearchForm(null);
+    }
+    public async Task ClearSearch()
+    {
+        _semesterListSearch.BuildingName = "";
+        _semesterListSearch.CabinName = "";
+        _semesterListSearch.Status = null;
+        _semesterListSearch.PageNumber = 1;
+        await SearchForm(null);
+    }
+}

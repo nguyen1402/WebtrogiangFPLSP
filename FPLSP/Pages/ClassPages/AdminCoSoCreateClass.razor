@@ -1,0 +1,293 @@
+﻿@page "/createclass/{idTrainingFacility}"
+@using Blazored.Toast
+@using Blazored.Toast.Services
+@using FPLSP.Data
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using FPLSP.Server.Domain.Entities.UserParts
+@using FPLSP.Server.Domain.Entities.UsesParts
+@using FPLSP.Server.Infrastructure.ViewModels
+
+<PageTitle>FPLSP | Elearning</PageTitle>
+<div class="row">
+    <div class="form-group pt-2 col-md-6">
+        <label for="name" class="col-md-5 col-form-label">Loại Lớp:</label>
+        <div class="col-md-12">
+            <EditForm Model="@_radioModel">
+                <InputRadioGroup @bind-Value="_radioModel.IsDemo">
+                    <div class="row">
+                        <div class="col-lg-1">
+                            <InputRadio id="2radio" Value="false" checked="checked" @onclick="@(() => InputForClassDemo())"/>
+                        </div>
+                        <div class="col-lg-3">
+                            Lớp chính
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-1">
+                            <InputRadio id="1radio" Value="true" @onclick="@(() => InputForClassDemo())" />
+                        </div>
+                        <div class="col-lg-3">
+                            Lớp mẫu
+                        </div>
+                    </div>
+                </InputRadioGroup>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<EditForm Model="@_classUp" OnValidSubmit="Created">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="row">
+        <div class="form-group pt-2 col-md-6">
+            <label for="name" class="col-md-5 col-form-label">Mã Lớp:</label>
+            <div class="col-md-12">
+                <InputText class="form-control" @bind-Value="_classUp.ClassroomCode"></InputText>
+                <ValidationMessage For="@(() => _classUp.ClassroomCode)" />
+            </div>
+        </div>
+        <div class="form-group pt-2 col-md-6">
+            <label for="name" class="col-md-5 col-form-label">Tên Lớp:</label>
+            <div class="col-md-12">
+                <InputText class="form-control" @bind-Value="_classUp.ClassroomName"></InputText>
+                <ValidationMessage For="@(() => _classUp.ClassroomName)" />
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="form-group pt-2 col-md-6">
+            <label for="name" class="col-md-5 col-form-label">Chuyên Ngành:</label>
+            <div class="col-md-12">
+                <InputSelect class="form-control" @bind-Value="_classUp.specializedUPId">
+                    @foreach (var x in _lstSpec)
+                    {
+                        <option value="@x.Id">@x.SpecializationName</option>
+                    }
+                </InputSelect>
+            </div>
+        </div>
+        <div class="form-group pt-2 col-md-6">
+            <label for="name" class="col-md-5 col-form-label">Môn Học:</label>
+            <div class="col-md-12">
+                <InputSelect class="form-control" @bind-Value="_classUp.SubjectId">
+                    @foreach (var x in _lstSub)
+                    {
+                        <option value="@x.Id">@x.SubjectName</option>
+                    }
+                </InputSelect>
+            </div>
+        </div>
+    </div>
+    <div class="row" hidden="@_radioModel.IsDemo">
+        <div class="form-group pt-2 col-md-6">
+            <label for="name" class="col-md-5 col-form-label">Tòa nhà:</label>
+            <div class="col-md-12">
+                <InputText hidden="@_radioModel.IsDemo" class="form-control" @bind-Value="_classUp.Building"></InputText>
+                <ValidationMessage For="@(() => _classUp.Building)" />
+            </div>
+        </div>
+        <div class="form-group pt-2 col-md-6">
+            <label for="name" class="col-md-5 col-form-label">Số lượng sinh viên:</label>
+            <div class="col-md-12">
+                <InputNumber hidden="@_radioModel.IsDemo" class="form-control" @bind-Value="_classUp.StudentAmount"></InputNumber>
+                <ValidationMessage For="@(() => _classUp.StudentAmount)" />
+            </div>
+        </div>
+    </div>
+    <div class="row" hidden="@_radioModel.IsDemo">
+        <div class="form-group pt-2 col-md-6">
+            <label for="name" class="col-md-5 col-form-label">Giảng Viên:</label>
+            <div class="col-md-12">
+                <InputSelect class="form-control" @bind-Value="@_classUp.HomeroomLecturerId">
+                    @foreach (var x in _lstLec)
+                    {
+                        <option value="@x.Id">@x.LecturersName </option>
+                    }
+                </InputSelect>
+            </div>
+        </div>
+        <div class="form-group pt-2 col-md-6">
+        </div>
+    </div>
+    <div class="row pt-2">
+        <div class="col-md-9"></div>
+        <div class="col-md-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <button type="submit" class="btn btn-success">Tạo mới</button>
+                </div>
+                <div class="col-md-6">
+                    <button class="btn btn-danger" @onclick="()=>Quaylai()">Quay Lại</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public string idTrainingFacility { get; set; }
+
+    [Inject] IToastService _toast { get; set; }
+    [Inject] NavigationManager _navigationManager { get; set; }
+    [Inject]
+    public ITaskRepositories<ClassUPViewModel> _taskRepositories { get; set; }
+    [Inject]
+    public ILecturersCPRepo _lecturersCPRepo { get; set; }
+
+    private CreateClassVM _classUp;
+    public LecturersCP lecturer = new LecturersCP();
+    private SubjectUP _SubjectUP;
+    private LecturersCP _lecturersCP;
+    private List<ClassUPViewModel> _lstClass;
+    private SpecializedUP _specializedUP;
+    private ClassSearchDTO _classSearchDTO = new ClassSearchDTO();
+    private List<StudentViewModel> _lstStudents;
+    private List<ExcelErrors> _lstErrr = new List<ExcelErrors>();
+    private bool IsDisabled = false;
+    //ElementReference MyList { get; set; }
+    public MetaData MetaData { get; set; } = new MetaData();
+    private List<SubjectDto> _lstSub;
+    private List<SubjectDto> _lstSubDemo;
+    private List<Guid> _lstSubDemoID;
+    private List<ClassUp> ClassUPList;
+    private List<LecturersCP> _lstLec;
+    private List<LectuterSpecializedCPDto> _lstLecSpec;
+    private List<SpecializedDto> _lstSpec;
+    private List<SubjectsSpecializedDtos> _lstSubSpec;
+    private RadioModel _radioModel = new RadioModel();
+
+    private ClassUPViewModel _classUPViewModel = new ClassUPViewModel();
+    //
+    private List<StudentViewModel> _lstStuForSearch = new List<StudentViewModel>();
+
+    [Inject]
+    public ISubjectsSpecializedUPRepo _subSpecUPRepo { get; set; }
+    [Inject]
+    public ISubjectUPRepo _iSubjectUPRepo { get; set; }
+    [Inject]
+    public ISpecializedUPRepo _iSpecializedUPRepo { get; set; }
+    [Inject]
+    public ILectuterSpecializedCPCilents _iLecSpecializedCPRepo { get; set; }
+
+    public bool isNotSelectedSpec { get; set; } = true;
+
+    public class PreStatus
+    {
+        public int Id { get; set; }
+        public string StatusName { get; set; }
+    }
+
+    private List<PreStatus> _preStatuses = new List<PreStatus>();
+    private PreStatus _Statuses = new PreStatus();
+
+    public AdminCoSoCreateClass()
+    {
+        ClassUPList = new List<ClassUp>();
+
+        _preStatuses = new List<PreStatus>()
+            {
+                new PreStatus(){Id=0,StatusName="Đang Hoạt Động"},
+                new PreStatus(){Id=1,StatusName="Dừng Hoạt Động"},
+                new PreStatus(){Id=2,StatusName="Chưa Đủ Sinh Viên"},
+                new PreStatus(){Id=3 ,StatusName="Chưa Có Môn Học"},
+            };
+
+        _lecturersCP = new LecturersCP();
+        _specializedUP = new SpecializedUP();
+        _lstStudents = new List<StudentViewModel>();
+        _lstLec = new List<LecturersCP>();
+        _lstLecSpec = new List<LectuterSpecializedCPDto>();
+        _lstSpec = new List<SpecializedDto>();
+        _lstSubSpec = new List<SubjectsSpecializedDtos>();
+        _Statuses = new PreStatus();
+        _classUp = new CreateClassVM();
+        _lstSub = new List<SubjectDto>();
+        _lstSubDemoID = new List<Guid>();
+        _SubjectUP = new SubjectUP();
+        _lstClass = new List<ClassUPViewModel>();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _classUp = await _taskRepositories.GetClassModel();
+
+        _lstSpec = await _iSpecializedUPRepo.GetAll();
+        // lấy list LecID thuộc cơ sở
+        _lstLec = await _lecturersCPRepo.GetAllLecturerAsync();
+        var _lstLecID = _lstLec.Where(x => x.TrainingFacilitiesId == Guid.Parse(idTrainingFacility)).Select(c => c.Id).ToList();
+        // lấy list SpecID của Lec
+        _lstLecSpec = await _iLecSpecializedCPRepo.GetAllAsync();
+        var _lstSpecID = _lstLecSpec.Where(x => _lstLecID.Contains(x.Idlecturers)).Select(c => c.Idspecialized).ToList();
+        // lấy list Sub của Spec
+        _lstSubSpec = await _subSpecUPRepo.GetAllAsync();
+        var _lstSubID = _lstSubSpec.Where(x => _lstSpecID.Contains(x.SpecializedId)).Select(c => c.SubjectId).ToList();
+
+        _lstSub = await _iSubjectUPRepo.GetAllSubjectAsync();
+        _lstSub = _lstSub.Where(c => _lstSubID.Contains(Guid.Parse(c.Id.ToString()))).ToList();
+
+        //
+        foreach (var x in _preStatuses)
+        {
+            _Statuses.Id = x.Id;
+            _Statuses.StatusName = x.StatusName;
+        }
+
+        // lấy môn học isDemo
+        GetSpecializedAndSubject(_radioModel.IsDemo);
+    }
+
+    private void GetSpecializedAndSubject(bool isDemo)
+    {
+        // lấy môn (mẫu) => chuyên ngành => giảng viên thuộc cơ sở
+        _lstSub = _lstSub.Where(c => c.IsDemo == isDemo).ToList();
+        var _lstSubID = _lstSub.Select(c => c.Id).ToList();
+
+        var _lstSpecOfSubID = _lstSubSpec.Where(x => _lstSubID.Contains(x.SubjectId)).Select(c => c.SpecializedId).ToList();
+
+        _lstSpec = _lstSpec.Where(c => _lstSpecOfSubID.Contains(c.Id)).ToList();
+    }
+
+    private async Task Created(EditContext editContext)
+    {
+        if (_radioModel.IsDemo)
+        {
+            _classUp.HomeroomLecturerId = Guid.Empty;
+            _classUp.Building = "N/A";
+            _classUp.StudentAmount = 0;
+        }
+
+        _classUp.subjectUP = new List<Guid?>() { _classUp.SubjectId };
+
+        var res = await _taskRepositories.AddAsync(_classUp);
+        if (res)
+        {
+            _toast.ShowSuccess($"Thêm Lớp {_classUp.ClassroomName} thành công");
+            _navigationManager.NavigateTo($"/createclass/{idTrainingFacility}");
+        }
+        else
+        {
+            _toast.ShowError($"Thêm Lớp {_classUp.ClassroomName} thất bại");
+            _navigationManager.NavigateTo($"/createclass/{idTrainingFacility}");
+        }
+    }
+
+    private async Task Quaylai()
+    {
+
+    }
+
+    private class RadioModel
+    {
+        public bool IsDemo { get; set; } = false;
+    }
+
+    private async Task InputForClassDemo()
+    {
+        await OnInitializedAsync();
+    }
+}

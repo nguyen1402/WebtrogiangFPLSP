@@ -1,0 +1,63 @@
+﻿@page "/detailslesson/{id}/{idud}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<div class="row pt-3">
+@if (lesson != null)
+{
+    <div class="row pt-1">
+        <label for="name" class=" col-md-6 col-form-label">Môn học: <b>@lesson.SubjectCode - @lesson.SubjectName</b></label>
+    </div>
+    <div class="row pt-1">
+        <label for="name" class=" col-md-col-md-6 col-form-label">Bài học: <b>@lesson.LessonCode : @lesson.LessonName</b></label>
+    </div>
+    <div class="row pt-1">
+        <label for="name" class=" col-md-col-md-6 col-form-label">Mô tả : <b>@lesson.Descriptions</b></label>
+    </div>
+    <div class="row pt-1">
+        <label for="name" class=" col-md-col-md-6 col-form-label">Tổng số buổi <b>@lesson.TotalOfSub</b></label>
+    </div>
+    <div class="row pt-1">
+        <label for="name" class=" col-md-col-md-6 col-form-label">
+            Trạng Thái:
+            @if (lesson.Status == 1)
+            {
+                <b>Đang học</b>
+            }
+            else
+            {
+                <b>Chưa bắt đầu</b>
+            }
+        </label>
+    </div>
+    <div class="row pt-2 col-md-1 text-center">
+        <a @onclick="()=>Quaylai()" class="btn btn-outline-danger">Quay Lại</a>
+    </div>
+
+}
+</div>
+@code {
+    private LessonDto lesson;
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    [Inject]
+    public ILessonCPRepo _iLessonClient { get; set; }
+    public bool ShowAuthError { get; set; }
+    public string Error { get; set; }
+
+    [Parameter]
+    public string idud { get; set; }
+    [Parameter]
+    public string id { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        lesson = await _iLessonClient.GetbyId(Guid.Parse(idud));
+    }
+
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/lesson", id);
+        Navigation.NavigateTo(url);
+    }
+}

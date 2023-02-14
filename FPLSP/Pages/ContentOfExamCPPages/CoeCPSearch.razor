@@ -1,0 +1,55 @@
+﻿
+@using FPLSP.Server.Infrastructure.ViewModels.ContentOfExamsCP
+<EditForm Model="@coeListSearchVm" OnSubmit="@SearchForm">
+    <div class="row">
+        <div class="col-3">
+             <div class="col">
+                <select class="form-select" @onchange="args =>FilterStatus(args.Value) ">
+                    <option value="">Tất cả</option>
+                    <option value="1">Đang hoạt động</option>
+                    <option value="0">Không hoạt động</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-5">
+            <div class="col">
+                <InputText placeholder="Mã nội dung của đề thi" class="form-control" @bind-Value="coeListSearchVm.CoeCode"></InputText>
+            </div>
+        </div>
+        <div class="col-4 text-left">
+            <button type="submit" class="btn btn-primary">Tìm kiếm<i class="fas fa-magnifying-glass"></i></button>
+            <button class="btn btn-outline-primary me-2" stype="border:3px double Green" @onclick="() => Undo()">Làm mới</button>
+        </div>
+    </div>
+
+</EditForm>
+@code {
+     [Parameter]
+        public EventCallback<CoeListSearchVm> OnSearch { get; set; }
+
+        private CoeListSearchVm coeListSearchVm = new CoeListSearchVm();
+
+        private async Task SearchForm(EditContext context)
+        {
+            await OnSearch.InvokeAsync(coeListSearchVm);
+        }
+        private async void FilterStatus(object Value)
+        {
+            var a = Value.ToString();
+            var b = a ?? null;
+
+            if (!string.IsNullOrEmpty(b))
+                coeListSearchVm.Status = Int32.Parse(b);
+            else
+                coeListSearchVm.Status = null;
+            await OnSearch.InvokeAsync(coeListSearchVm);
+        }
+        private async void Undo()
+        {
+            coeListSearchVm.CoeCode = null;
+            coeListSearchVm.Content = null;
+            coeListSearchVm.Status = null;
+            await OnSearch.InvokeAsync(coeListSearchVm);
+        }
+    }
+}

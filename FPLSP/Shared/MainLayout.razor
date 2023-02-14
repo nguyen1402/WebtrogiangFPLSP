@@ -1,0 +1,56 @@
+﻿@using Blazored.Toast
+@using Blazored.Toast.Configuration
+@inject UserManager<UserSignIn> _userManager
+@using System.Security.Claims
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Entities.CoresParts
+
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+@using Microsoft.AspNetCore.Identity
+@inject IAuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IUserIdentityRepo IUser;
+
+@inject UserManager<UserSignIn> _userManager
+@inject ProtectedSessionStorage ProtectedSessionStore
+@inherits LayoutComponentBase
+<BlazoredToasts Position="ToastPosition.BottomRight" Timeout="5" IconType="IconType.FontAwesome" ErrorIcon="fa fa-times"
+    InfoIcon="fa fa-info" SuccessIcon="fa fa-check" WarningIcon="fa fa-exclamation" />
+<PageTitle>FPLSP | Elearning</PageTitle>
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+    <div class="page" >
+    <div class="sidebar col-md-2" style="max-width:100%; width:16%;">
+        <NavMenu />
+    </div>
+
+    <main >
+
+        <HeaderBar></HeaderBar>
+
+
+        <article >
+            @Body
+        </article>
+    </main>
+</div>
+@code {
+    //[CascadingParameter]
+    //private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    //protected async override Task OnAfterRenderAsync(bool firstRender)
+    //{
+    //    if (firstRender)
+    //    {
+    //        var authState = await authenticationStateTask;
+    //        var user = authState.User;
+    //        await ProtectedSessionStore.SetAsync("User", user.Claims.ToList()[4].Value.ToString());
+    //    }
+       
+    //}
+
+
+}
+
+

@@ -1,0 +1,19 @@
+﻿#docs-menubars {
+    display: none;
+}
+
+.docs-titlebar-badges goog-inline-block {
+    display: none;
+}
+
+#docs-header {
+    display: none;
+}
+
+.docs-titlebar-buttons {
+    display: none;
+}
+
+#docs-branding-container {
+    display: none;
+}

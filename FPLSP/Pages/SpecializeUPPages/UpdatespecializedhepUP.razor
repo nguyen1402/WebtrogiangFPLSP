@@ -1,0 +1,103 @@
+﻿@page "/updatespecializedhepUP/{idbo}/{id}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.Specialized
+<div class="row pt-3">
+    <h2>Cập Nhật Chuyên Ngành Hẹp</h2>
+    @if (ShowAuthError)
+    {
+        <div class="alert alert-danger" role="alert">
+            @Error
+        </div>
+    }
+    @if (model != null)
+    {
+        <EditForm Model="model" OnValidSubmit="Update" class="card card-body bg-light mt-5">
+            <DataAnnotationsValidator />
+            <div class="form-group">
+                <div class="row">
+                    <div class="form-group pt-2 col-md-6">
+                        <label for="name" class="col-md-2 col-form-label">Code:</label>
+                        <div class="col-md-10">
+                            <InputText id="name" class="form-control" @bind-Value="model.SpecializedCode" disabled />
+                            <ValidationMessage For="@(() => model.SpecializedCode)" />
+                        </div>
+                    </div>
+                    <div class="form-group pt-2 col-md-6">
+                        <label for="name" class="col-md-2 col-form-label">Tên:</label>
+                        <div class="col-md-10">
+                            <InputText id="name" class="form-control" @bind-Value="model.SpecializationName" />
+                            <ValidationMessage For="@(() => model.SpecializationName)" />
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group pt-2 col-md-6">
+                    <label for="name" class="col-md-2 col-form-label">Trạng thái:</label>
+                    <div class="col-md-10">
+                        <InputSelect @bind-Value="model.Status" class="form-control">
+                            <option value="0">Chưa đủ sinh viên</option>
+                            <option value="1">Chờ đi vào hoạt động</option>
+                            <option value="2">Ngưng hoạt động</option>
+                            <option value="3">Đang hoạt động</option>
+                        </InputSelect>
+                    </div>
+                </div>
+            </div>
+            <div class="row pt-2">
+                <div class="col-md-6 text-center">
+                    <button type="submit" class="btn btn-primary">Cập nhật</button>
+                </div>
+                <div class="col-md-6 text-center">
+                    <a @onclick="() => Quaylai()" class="btn btn-danger">Quay Lại</a>
+                </div>
+            </div>
+        </EditForm>
+    }
+</div>
+
+@code {
+
+    private SpecializedVM model;
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    [Inject]
+    public ISpecializedUPRepo _iSpecializedClient { get; set; }
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+    [Parameter]
+    public string Id { get; set; }
+    [Parameter]
+    public string Idbo { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        var modeldb = await _iSpecializedClient.GetbyId(Guid.Parse(Idbo), Guid.Parse(Id));
+        model = new SpecializedVM()
+            {
+                SpecializedCode = modeldb.SpecializedCode,
+                SpecializationName = modeldb.SpecializationName,
+                Status = modeldb.Status
+            };
+    }
+    private async Task Update()
+    {
+        ShowAuthError = false;
+        var result = await _iSpecializedClient.Update(Guid.Parse(Idbo), Guid.Parse(Id), model);
+
+        if (result != 1)
+        {
+            Error = "Lỗi";
+            ShowAuthError = true;
+            Navigation.NavigateTo("/updatespecializedhepUP/" + Idbo.ToString() + Id.ToString());
+        }
+        else
+        {
+            Navigation.NavigateTo("/specializedhepUP/" + Idbo.ToString());
+        }
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/specializedhepUP", Idbo);
+        Navigation.NavigateTo(url);
+    }
+}

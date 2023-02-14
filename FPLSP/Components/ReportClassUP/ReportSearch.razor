@@ -1,0 +1,48 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels.ReportClassUP
+
+
+<EditForm Model="@_reportClassUpSearch" OnSubmit="@SearchForm">
+    <div class="row">
+        <div class="col-lg-3"></div>
+        <div class="col-lg-2">
+            <InputSelect class="form-select" ValueExpression="@(()=>_reportClassUpSearch.Lever)" Value="@_reportClassUpSearch.Lever" ValueChanged="@((int? value)=>
+            LeverSearch(value))">
+                <option value="">Đánh giá</option>
+                <option value="0">Thấp</option>
+                <option value="1">Trung bình</option>
+                <option value="2">Cao</option>
+            </InputSelect>
+        </div>
+        <div class="col-lg-5">
+            <div class="input-group mb-3">
+                <InputText type="text" class="form-control" placeholder="Tìm kiếm mô tả..." aria-label="Tìm kiếm mô tả..." aria-describedby="basic-addon2" @bind-Value="_reportClassUpSearch.Describe"></InputText>
+                <div class="input-group-append pl-1">
+                    <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2">
+            <a @onclick="@ClearSearch" class="btn btn-outline-success">Làm mới</a>
+        </div>
+    </div>
+</EditForm>
+@code {
+    [Parameter]
+    public EventCallback<ReportClassUpSearch> OnSearch { get; set; }
+    private ReportClassUpSearch _reportClassUpSearch = new ReportClassUpSearch();
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(_reportClassUpSearch);
+    }
+    private void LeverSearch(int? a)
+    {
+        _reportClassUpSearch.Lever = a;
+        SearchForm(null);
+    }
+    public async Task ClearSearch()
+    {
+        _reportClassUpSearch.Describe = "";
+        _reportClassUpSearch.Lever = null;
+        await SearchForm(null);
+    }
+}

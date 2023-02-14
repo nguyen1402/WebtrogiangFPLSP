@@ -1,0 +1,155 @@
+﻿@page "/createsubjectup/{idspecializedUP}"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.Subject
+
+<div class="row pt-3">
+    <h3>Tạo Mới Môn Học </h3>
+
+    @if (subject != null)
+    {
+        <EditForm Model="subject" OnValidSubmit="CreateUP" class="card card-body bg-light mt-5">
+            <DataAnnotationsValidator />
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-lg-2 pt-4 pl-3">
+                        <img style="height: 230px;width: 190px; border-radius: 10px;" src="@subject.Image" />
+                        <div class="form-group pt-2">
+                            <label for="image" class="form-label">Đổi Ảnh:</label>
+                            <div class="text-danger">
+                                <ImageUpload OnChange="AssignImageUrl" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-10">
+                        <div class="row">
+                            <div class="form-group pt-2 col-md-6">
+                                <label for="name" class="col-md-2 col-form-label">Mã Môn:</label>
+                                <div class="col-md-12 text-danger">
+                                    <InputText id="name" class="form-control" @bind-Value="subject.SubjectCode"  />
+                                    <ValidationMessage For="@(() => subject.SubjectCode)" />
+                                </div>
+                            </div>
+                            <div class="form-group pt-2 col-md-6">
+                                <label for="name" class="col-md-2 col-form-label">Tên Môn:</label>
+                                <div class="col-md-12 text-danger">
+                                    <InputText id="name" class="form-control" @bind-Value="subject.SubjectName" />
+                                    <ValidationMessage For="@(() => subject.SubjectName)" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="form-group pt-2 col-md-6">
+                                <label for="name" class="col-md-3 col-form-label">Ngày bắt đầu:</label>
+                                <div class="col-md-12 text-danger">
+                                    <InputDate id="name" class="form-control" @bind-Value="subject.StartDay" />
+                                    <ValidationMessage For="@(() => subject.StartDay)" />
+                                </div>
+                            </div>
+                            <div class="form-group pt-2 col-md-6">
+                                <label for="name" class="col-md-3 col-form-label">Ngày kết thúc:</label>
+                                <div class="col-md-12 text-danger">
+                                    <InputDate id="name" class="form-control" @bind-Value="subject.EndDay" />
+                                    <ValidationMessage For="@(() => subject.EndDay)" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group pt-2 col-md-6">
+                                <label for="name" class="col-md-2 col-form-label">Số buổi:</label>
+                                <div class="col-md-12 text-danger">
+                                    <InputNumber id="name" class="form-control" @bind-Value="subject.TotalOfSub" />
+                                    <ValidationMessage For="@(() => subject.TotalOfSub)" />
+                                </div>
+                            </div>
+                            <div class="form-group pt-2 col-md-6">
+                                <label for="name" class="col-md-3 col-form-label">Trạng thái:</label>
+                                <div class="col-md-12 text-danger">
+                                    <InputSelect @bind-Value="subject.Status" class="form-control">
+                                        <option value="0">Chưa bắt đầu</option>
+                                        <option value="1">Đang giảng dạy</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-center mb-2">
+                        <div class="p-2">
+                            <button type="submit" class="btn btn-success">Thêm mới</button>
+                        </div>
+                        <div class="p-2">
+                            <a @onclick="()=> ClearForm()" class="btn btn-outline-primary">Clear Form</a>
+                        </div>
+                        <div class="p-2">
+                            <a href="/listsubjects/@idspecializedUP" class="btn btn-outline-danger">Quay Lại</a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </EditForm>
+
+    }
+    else
+    {
+        <LoadingIndicator></LoadingIndicator>
+    }
+</div>
+
+@code{
+
+    private SubjectCreateVM subject = new SubjectCreateVM();
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+    [Inject] private IToastService ToastService { get; set; }
+    private string imageDefautl = "\\css\\images\\Others\\logoFPT.png";
+    [Inject]
+    public ISubjectUPRepo _subjectUPRepo { get; set; }
+    [Parameter]
+    public string idspecializedUP { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        subject.Image = imageDefautl;//Ảnh logo mặc định khi chưa chọn ảnh
+    }
+    private async Task CreateUP()
+    {
+        try
+        {
+            if (subject.Image == imageDefautl)
+            {
+                ToastService.ShowError("Bạn chưa chọn ảnh");
+                Navigation.NavigateTo($"/createsubjectup/{idspecializedUP}");
+            }
+            else
+            {
+                var result = await _subjectUPRepo.CreateSubject(Guid.Parse(idspecializedUP), subject);
+
+                if (!result)
+                {
+                    ToastService.ShowError("Thêm mới thất bại, mã môn học đã tồn tại");
+                    Navigation.NavigateTo($"/createsubjectup/{idspecializedUP}");
+                }
+                else
+                {
+                    Navigation.NavigateTo($"/listsubjects/{idspecializedUP}");
+                    ToastService.ShowSuccess("Thêm mới thành công");
+                }
+            }
+        }
+        catch (Exception)
+        {
+            ToastService.ShowError("Đã xảy ra lỗi, thử lại sau");
+        }
+
+    }
+    private void ClearForm()
+    {
+        subject = new SubjectCreateVM();
+        subject.Image = imageDefautl;
+
+    }
+    private void AssignImageUrl(string imgUrl) => subject.Image = imgUrl;
+}

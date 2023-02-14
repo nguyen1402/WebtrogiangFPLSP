@@ -1,0 +1,259 @@
+﻿@page "/ImageList"
+@using FPLSP.Components
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.ImagesCP
+
+
+
+<main class="app-content">
+    <div class="app-title">
+        <ul class="app-breadcrumb breadcrumb side">
+            <li class="breadcrumb-item active"><a class="btn" href="ImageList"><b><h3>Danh sách Ảnh</h3></b></a></li>
+        </ul>
+        <div id="clock"></div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="tile">
+                <div class="tile-body">
+
+                    <div class="row element-button">
+                        <div class="col-sm-2">
+
+                            <a class="btn btn-success" href="/ImageCreate" title="Thêm">
+                                <i class="fas fa-plus"></i>
+                                Tạo mới ảnh
+                            </a>
+                        </div>
+                        @*<div class="col-sm-2">
+                        <button class="btn btn-secondary" type="button" title="Nhập">
+                        <i class="fas fa-file-upload"></i> Tải từ file
+                        </button>
+                        </div>
+
+                        <div class="col-sm-2">
+                        <button class="btn btn-secondary " type="button" title="In">
+                        <i class="fas fa-print"></i> In dữ liệu
+                        </button>
+                        </div>
+                        <div class="col-sm-2">
+                        <button class="btn btn-secondary " type="button" title="Sao chép">
+                        <i class="fas fa-copy"></i> Sao chép
+                        </button>
+                        </div>
+
+                        <div class="col-sm-2">
+                        <button class="btn btn-secondary" title="In"><i class="fas fa-file-excel"></i> Xuất Excel</button>
+                        </div>
+
+                        <div class="col-sm-2">
+                        <button class="btn btn-danger " type="button" title="Xóa">
+                        <i class="fas fa-trash-alt"></i> Xóa tất cả
+                        </button>
+                        </div>*@
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <ImageSearch OnSearch="Search"></ImageSearch>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <table class="table table-hover table-bordered js-copytextarea" cellpadding="0" cellspacing="0" border="0"
+                               id="sampleTable">
+                            <thead class="text-center">
+                                <tr>
+                                    <th width="5%"><input type="checkbox" id="all"></th>
+                                    <th>Ảnh</th>
+                                    <th>Mô tả</th>
+                                    <th>Trạng thái</th>
+                                    <th width="15%">Tính năng</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in _ImageCPDtos)
+                                {
+                                    <tr>
+                                        <td width="10"><input type="checkbox"></td>
+                                        <td class="text-center"><img src="@item.Path" onerror="this.src='./css/images/Others/logoFPT.png'" alt="product image" style="width:100px;" /></td>
+                                        <td>@item.Descriptions</td>
+                                        <td class="text-center">@(@item.Status == 1 ? "Đang sử dụng" : "Chưa sử dụng")</td>
+                                        <td class="text-center">
+                                            <a class="btn btn-primary " type="button" title="Xóa" @onclick="() => RedirectToDelete(item.Id)">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                            <a class="btn btn-primary " type="button" title="Sửa" id="show-emp"
+                                           @onclick="() => RedirectToUpdate(item.Id)">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a class="btn btn-primary" type="button" title="Chi Tiết" @onclick="() => RedirectToDetails(item.Id)">
+                                                <i class="fa-solid fa-bars"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                    </div>
+                    <div class="d-flex justify-content-center">
+                        <tfoot>
+                            <FPLSP.Components.Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></FPLSP.Components.Pagingation>
+                        </tfoot>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<FPLSP.Components.Comfirmation ConfirmationMessage="Are you sure to Delete?"
+                               ConfirmationTitle="Delete Exam"
+                               ConfirmationChanged="OnConfirmationCreate " @ref="DeleteConfirmation"></FPLSP.Components.Comfirmation>
+@*
+<div class="row pt-3">
+    <div class="col-md-10">
+        <h2>PHÁT TRIỂN PHẦN MỀM</h2>
+    </div>
+    <div class="col-md-2 float-end">
+        <a class="btn btn-outline-primary" href="/ImageCreate">Thêm Ảnh</a>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <ImageSearch OnSearch="Search"></ImageSearch>
+        </div>
+    </div>
+</div>
+<div class="row">
+    @if (_ImageCPDtos.Count > 0)
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ảnh</th>
+                    <th>Mô tả</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in _ImageCPDtos)
+                {
+
+                    <tr>
+                        <td><img src="@item.Path" alt="product image" style="width:100px;" /></td>
+                        <td>@item.Descriptions</td>
+                        <td>@(@item.Status == 1 ? "Đang sử dụng" : "Chưa sử dụng")</td>
+                        <td>
+                            <div class="col-1 pt-4">
+                                <div class="dropdown float-end">
+                                    <a class="dropdown-toggle" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                                        <li><a class="dropdown-item" @onclick="() => RedirectToDetails(item.Id)">Chi tiết ảnh</a></li>
+                                        <li><a class="dropdown-item" @onclick="() => RedirectToUpdate(item.Id)">Cập nhật ảnh</a></li>
+                                        <li><a class="dropdown-item" @onclick="() => RedirectToDelete(item.Id)">Xóa ảnh</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </td>
+
+                    </tr>
+
+                }
+            </tbody>
+        </table>
+
+    }
+    else
+    {
+        <span>
+            Danh sách Ảnh đang rỗng...
+        </span>
+    }
+</div>
+<tfoot>
+    <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+</tfoot>
+<FPLSP.Components.Comfirmation @ref="DeleteConfirmation" ConfirmationMessage="Are you sure to Delete?"
+                               ConfirmationTitle="Delete Image"
+                               ConfirmationChanged="OnConfirmationCreate"></FPLSP.Components.Comfirmation>*@
+
+
+@code {
+    public List<ImageCPDto> _ImageCPDtos { get; set; } = new List<ImageCPDto>();
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    private ImageCPListSearchVm _imageCPListSearchVm = new ImageCPListSearchVm();
+
+    protected Comfirmation DeleteConfirmation { get; set; }
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    [Inject]
+    public IImageCPRepo _imageCPRepo { get; set; }
+    private Guid Id;
+    public string Error { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        await GetTasks();
+    }
+    private void RedirectToDetails(Guid id)
+    {
+
+        var url = Path.Combine("/ImageDetail", id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToUpdate(Guid id)
+    {
+
+        var url = Path.Combine("/ImageUpdate", id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task RedirectToDelete(Guid id)
+    {
+        Id = id;
+        DeleteConfirmation.show();
+    }
+
+    public async Task OnConfirmationCreate(bool deleteconfirmed)
+    {
+        if (deleteconfirmed)
+        {
+            await _imageCPRepo.DeleteImageCP(Id);
+            await GetTasks();
+            NavigationManager.NavigateTo($"/ImageList");
+        }
+    }
+
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _imageCPRepo.GetImageCPList(_imageCPListSearchVm);
+            _ImageCPDtos = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _imageCPListSearchVm.PageNumber = page;
+        await GetTasks();
+    }
+
+    public async Task Search(ImageCPListSearchVm imageCPListSearch)
+    {
+        _imageCPListSearchVm = imageCPListSearch;
+        await GetTasks();
+    }
+    }

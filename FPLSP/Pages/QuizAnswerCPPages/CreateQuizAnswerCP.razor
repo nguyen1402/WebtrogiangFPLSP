@@ -1,0 +1,98 @@
+﻿ @page "/CreateQuizAnswerCP"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.QuizQuestionCPDtos
+@using FPLSP.Server.Domain.Enums
+@using FPLSP.Server.Infrastructure.ViewModels.QuizAnswerCPVm
+@using FPLSP.Server.Infrastructure.ViewModels.QuizQuestionCPVm
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+<h3>Thêm QuizAnswer</h3>
+<div class="row mt-3 mb-3">
+    <div class="form-group pt-2 col-12">
+        <div class="row pt-2 col-1 ms-0 text-right">
+            <a href="/MainQuizAnswerCP" class="btn btn-outline-danger">Quay Lại</a>
+        </div>
+    </div>
+</div>
+@if (ShowAuthError)
+{
+    <div class="alert alert-danger" role="alert">
+        @Error
+    </div>
+}
+<EditForm Model="QuizAnswer" OnValidSubmit="Create" class="card card-body bg-light mt-3">
+    <DataAnnotationsValidator />
+    <div class="form-group">
+        <div class="row">
+            <div class="form-group pt-2 col-md-6">
+                <label for="name" class="col-md-2 col-form-label">Mã Câu Hỏi:</label>
+                <div class="col-md-12">
+                    <InputSelect id="name" class="form-control" @bind-Value="QuizAnswer.IdQuizQuestion">
+                        <option value="">Mã câu hỏi</option>
+                        @foreach (var item in ListQuizQuestionCP)
+                        {
+                            <option value="@item.Id">@item.QuestionCode - @item.QuestionName</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => QuizAnswer.IdQuizQuestion)" />
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-6">
+                <label for="name" class="col-md-2 col-form-label">Câu trả lời:</label>
+                <div class="col-md-12">
+                    <InputText id="name" class="form-control" @bind-Value="QuizAnswer.Answer" />
+                    <ValidationMessage For="@(() => QuizAnswer.Answer)" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+        </div>
+    </div>
+
+    <div class="row pt-2">
+        <div class="col-md-12 text-center">
+            <button type="submit" class="btn btn-success">Thêm QuizAnswer</button>
+        </div>
+    </div>
+</EditForm>
+@code {
+    private ListQuizQuestionSearch QuizQuestionCPListSearch = new ListQuizQuestionSearch();
+    [Inject] public NavigationManager Navigation { get; set; }
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+    public List<QuizQuestionCPDtos> ListQuizQuestionCP { get; set; } = new List<QuizQuestionCPDtos>();
+    public CreateQuizAnswerCPVm QuizAnswer { get; set; } = new CreateQuizAnswerCPVm();
+    [Inject] public IQuizQuestionCPRepo _quizQuestionCPClient { get; set; }
+    [Inject] public IQuizAnswerCPRepo _quizanswerCPClient { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        var pagingResponse = await _quizQuestionCPClient.GetQuizQuestionList(QuizQuestionCPListSearch);
+        ListQuizQuestionCP = pagingResponse.Items;
+    }
+    private async Task Create()
+    {
+
+        ShowAuthError = false;
+        var result = await _quizanswerCPClient.CreateQuizAnswerCP(QuizAnswer);
+
+        if (result != 1)
+        {
+            Error = "Chưa chọn Mã câu hỏi";
+            ShowAuthError = true;
+            Navigation.NavigateTo("/CreateQuizAnswerCP");
+        }
+        else
+        {
+            Navigation.NavigateTo("/MainQuizAnswerCP");
+
+        }
+
+
+    }
+}
+
+
+
+
+

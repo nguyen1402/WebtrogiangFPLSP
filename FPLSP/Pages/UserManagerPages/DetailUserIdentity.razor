@@ -1,0 +1,965 @@
+﻿@page "/detailuser/{GetIdNonDecrpyt}/{maxlevelNonDecrpyt}/{IdCoSoNonDecrpyt}"
+@using Blazored.LocalStorage
+@using Blazored.Toast.Services
+@using FPLSP.Data;
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.StudentUPDtos
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using FPLSP.Server.Infrastructure.ViewModels
+@using FPLSP.Server.Infrastructure.ViewModels.LecturerCPVm
+@using Microsoft.AspNetCore.Identity
+@using System.Security.Claims;
+@using System.Text.RegularExpressions
+@attribute [Authorize(Roles = "AdminCore,AdminCS,LecturerFPLSP")]
+
+@if (_lstTrain != null && _lstRole != null)
+{
+    <a class="btn btn-outline-danger" href="/listuseriden/@_cryptoServices.Encrypt(maxlevel.ToString().Replace("/", "I0H" ))/@_cryptoServices.Encrypt(IdCoSo.ToString().Replace("/", "I0H" ))">Quay Lại</a>
+    <div class="row d-flex justify-content-center">
+        <div class="col-md-8">
+
+            <div>
+                 
+            </div>
+            <h5 class="fw-bold">Chọn Các Quyền Gán Cho :<strong>@_User.UserName</strong></h5>
+            <MudChipSet AllClosable="true" OnClose="Closed">
+
+                @foreach (var x in @_User.ListRoles)
+                {
+                    <MudChip Text="@x"></MudChip>
+                }
+
+            </MudChipSet>
+            <hr />
+            <div class="mb-3">
+                <label for="exampleFormControlInput3" class="form-label px-lg-0">Chọn quyền :</label>
+
+
+                @foreach (var x in _lstRole)
+                {
+                    <MudButton OnClick="()=>Add(x.Name)"><span class="px-2">@x.Name  </span></MudButton>
+                }
+
+            </div>
+
+            @if (_User.ListRoles.ToList().Any(c => c != "AdminCore"))
+            {
+                <h5 class="fw-bold">Chọn Cơ Sở Cho : <strong>@_User.UserName</strong></h5>
+                <MudChipSet>
+                    <span>Cơ sở hiện tại: </span>
+                    <MudChip Text="@_lstTrain.Where(c => c.Id == _User.IdTrainingFacility).Select(c => c.TrainingInstitutionName).FirstOrDefault()"></MudChip>
+
+                </MudChipSet>
+                <hr />
+                <div class="mb-3">
+                    <label for="exampleFormControlInput3" class="form-label px-lg-0">Chọn cơ sở :</label>
+                    @foreach (var x in _lstTrain)
+                    {
+                        <MudButton Style="hover:grey;" OnClick="()=>AddTrain(x.Id)"><span class="px-2">@x.TrainingInstitutionName</span>  </MudButton>
+                    }
+
+                </div>
+            }
+            @*//thêm cliams xác định điều hướng*@
+
+
+
+            <h5 class="fw-bold">Chọn Điều Hướng Cho : <strong>@_User.UserName</strong></h5>
+            <MudChipSet AllClosable="true" OnClose="RemoveReDirect">
+                @*  <span>Điều Hướng Hiện Tại:  </span>*@
+                @foreach (var re in _User.ListRedirectClaims)
+                {
+
+                    if (_User.ListRedirectClaims.Where(c => c.Value == "true").Count() == 2)
+                    {
+
+                        if (_User.ListRedirectClaims.Any(c => c.Type == fpl))
+                        {
+                            <MudChip Value="(_User.ListRedirectClaims.Find(c=>c.Type==fpl))">FPLSP Support</MudChip>
+                        }
+                        if (_User.ListRedirectClaims.Any(c => c.Type == cabin))
+                        {
+                            <MudChip Value="(_User.ListRedirectClaims.Find(c=>c.Type==cabin))">Cabin Project</MudChip>
+                        }
+                        if (_User.ListRedirectClaims.Any(c => c.Type == exam))
+                        {
+                            <MudChip Value="(_User.ListRedirectClaims.Find(c=>c.Type==exam))">Exam Project</MudChip>
+                        }
+
+                        break;
+                    }
+                    if (re.Type == "CanViewFPLSPProject")
+                    {
+                        <MudChip Value="(_User.ListRedirectClaims.Find(c=>c.Type==fpl))">FPLSP Support</MudChip>
+                    }
+                    if (re.Type == "CanViewCabinProject")
+                    {
+                        <MudChip Value="(_User.ListRedirectClaims.Find(c=>c.Type==cabin))">Cabin Project</MudChip>
+                    }
+                    if (re.Type == "CanViewFPLExam")
+                    {
+                        <MudChip Value="(_User.ListRedirectClaims.Find(c=>c.Type==exam))">Exam Project</MudChip>
+                    }
+                }
+
+
+            </MudChipSet>
+            <hr />
+            <div class="mb-3">
+                <label for="exampleFormControlInput3" class="form-label px-lg-0">Chọn Điều Hướng :</label>
+
+                <MudButton Style="hover:grey;" OnClick="()=>AddRedirect(_lstRedirect.Find(c=>c.Type==fpl))"><span class="px-2">FPLSP Support</span>  </MudButton>
+
+
+                <MudButton Style="hover:grey;" OnClick="()=>AddRedirect(_lstRedirect.Find(c=>c.Type==cabin))"><span class="px-2">Cabin Project</span>  </MudButton>
+
+                <MudButton Style="hover:grey;" OnClick="()=>AddRedirect(_lstRedirect.Find(c=>c.Type==exam))"><span class="px-2">Exam Project</span>  </MudButton>
+
+
+            </div>
+
+        </div>
+        <div class="row d-flex justify-content-center">
+            <button class="btn btn-warning col-lg-6" @onclick=AddRoleToUser>Cấp quyền</button>
+        </div>
+    </div>
+}
+else
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+<FPLSP.Components.Comfirmation ConfirmationMessage="Khi đổi cơ sở sẽ bị xóa hết dự liệu ở cơ sở cũ ban chắc chắc chứ?"
+                               ConfirmationTitle="Xóa dữ liệu"
+                               @ref="DeleteConfirmation"
+                               ConfirmationChanged="OnConfirmationDelete"></FPLSP.Components.Comfirmation>
+<FPLSP.Components.Comfirmation ConfirmationMessage="Khi xóa quyền hiện có sẽ bị xóa hết dự liệu ở quyền đó ban chắc chắc chứ?"
+                               ConfirmationTitle="Xóa dữ liệu"
+                               @ref="DeleteConfirmationUser"
+                               ConfirmationChanged="OnConfirmationDeleteUser"></FPLSP.Components.Comfirmation>
+
+@code
+{
+    string fpl = "CanViewFPLSPProject";
+    string cabin = "CanViewCabinProject";
+    string exam = "CanViewFPLExam";
+    string checker = "true";
+    [Inject] public IUserIdentityRepo _UserIdentityRepo { get; set; }
+    [Inject] public IToastService _toastService { get; set; }
+    [Inject] public ITrainingFacilitiesCPRepo _trainingFacilitiesCPRepo { get; set; }
+    [Inject] public IStudentUPRepo _studentUPRepo { get; set; }
+    private UserInListRoles _User;
+    private UserInListRoles _UserFlag;
+    [Inject]
+    public IRoleUserIdentityRepo _roleUserIdentityRepo { get; set; }
+    [Inject] public ILecturersCPRepo _lecturersCPRepo { get; set; }
+    private List<IdentityRole> _lstRole { get; set; }
+    private List<TrainingFacilitiesCP> _lstTrain = new List<TrainingFacilitiesCP>();
+    private TrainingFacilitiesCP _Train = new TrainingFacilitiesCP();
+    private IdentityRole _role;
+    [Inject] public NavigationManager Navigation { get; set; }
+    [Inject] public IToastService toastService { get; set; }
+    protected Comfirmation DeleteConfirmation { get; set; }
+    protected Comfirmation DeleteConfirmationUser { get; set; }
+    Guid idTrainFlag;
+    [Parameter]
+    public string GetIdNonDecrpyt { get; set; }
+    public string GetId = "";
+
+    public string email { get; set; }
+    public bool check { get; set; } = false;
+    [Parameter]
+    public string maxlevelNonDecrpyt { get; set; }
+    public string maxlevel = "";
+    [Parameter]
+    public string IdCoSoNonDecrpyt { get; set; }
+    public string IdCoSo = "";
+    //tạo ra 1 list claim redriect
+    private List<Claim> _lstRedirect = new List<Claim>();
+    [Inject] public UserManager<UserSignIn> _userManager { get; set; }
+    
+
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    public DetailUserIdentity()
+    {
+
+        _User = new UserInListRoles();
+        _role = new IdentityRole();
+    }
+    bool flagReturn = false;
+   
+    public async Task OnConfirmationDelete(bool confirmed)
+    {
+        if (confirmed)
+        {
+          
+            await _UserIdentityRepo.CheckUserChageIdTrain(_User.Id, _User.IdTrainingFacility);
+            UserUpdateRolesHasClaims userUpdateRoles = new UserUpdateRolesHasClaims()
+                {
+                    ID = GetId,
+                    Name = _User.UserName,
+                    claims = _User.ListRedirectClaims,
+                    RoleNames = _User.ListRoles.ToArray()
+                };
+
+            //Check tồn tại phù hợp với quyền
+            if (userUpdateRoles.RoleNames.Any(c => c == "GV FPLExam") || userUpdateRoles.RoleNames.Any(c => c == "LecturerFPLSP"))
+            {
+                var lstLeture = await _lecturersCPRepo.GetLecturerMapper();
+                lstLeture = lstLeture.Where(c => c.LecturersCode.Contains("GV")).ToList();
+                if (lstLeture.Any(c => c.Id == Guid.Parse(_User.Id)))
+                {
+                    var lectureCP = lstLeture.Find(c => c.Id == Guid.Parse(_User.Id));
+                    lectureCP.IsDeleted = false;
+
+                    await _lecturersCPRepo.UpdateLectureCP(lectureCP);
+                }
+                else
+                {
+                    var createLeture = new CreateleatureForTrainVm()
+                        {
+                            Email = _User.Email,
+                            IdTrain = _User.IdTrainingFacility,
+                            Id = Guid.Parse(_User.Id)
+
+                        };
+                    await _lecturersCPRepo.CreateLecturerForTrain(createLeture);
+                }
+
+            }
+            if (userUpdateRoles.RoleNames.Any(c => c == "Student"))
+            {
+                var lstStudent = await _studentUPRepo.GetAllStudentDtosAsync();
+
+                var a = lstStudent.FirstOrDefault(c => c.Id == Guid.Parse(_User.Id));
+                if (lstStudent.Any(c => c.Id == Guid.Parse(_User.Id)))
+                {
+                    var studentUP = lstStudent.Find(c => c.Id == Guid.Parse(_User.Id));
+                    var update = new FPLSP.Server.Infrastructure.ViewModels.StudentsUPVm.StudentUpdateVM()
+                        {
+                            Email = studentUP.Email,
+                            Ethnic = studentUP.Ethnic,
+                            Address = studentUP.Address,
+                            DateOfBirth = studentUP.DateOfBirth,
+                            Description = studentUP.Description,
+                            FathersName = studentUP.FathersName,
+                            Gender = studentUP.Gender,
+                            HomeTown = studentUP.HomeTown,
+                            IdentityCardNumber = studentUP.IdentityCardNumber,
+                            ImageUrl = studentUP.ImageUrl,
+                            IssuedOn = studentUP.IssuedOn,
+                            MotherName = studentUP.MotherName,
+                            PhoneNumber = studentUP.PhoneNumber,
+                            StudentCode = studentUP.StudentCode,
+                            StudentName = studentUP.StudentName,
+                            Password = studentUP.Password,
+                            Status = studentUP.Status,
+                            IsDelete = false
+
+                        };
+
+                    await _studentUPRepo.UpdateStudentUP(studentUP.Id, update);
+
+
+
+                }
+                else
+                {
+
+                    var studentgmail = _User.Email.Split("@")[0];
+                    var studentCode = studentgmail.Substring(studentgmail.Length - 7).ToUpper();
+                    var studentInClassCreate = new StudentUpDto()
+                        {
+                            Email = _User.Email,
+                            Ethnic = "",
+                            Address = "",
+                            DateOfBirth = DateTime.Now,
+                            Description = "",
+                            FathersName = "",
+                            Gender = true,
+                            HomeTown = "",
+                            Id = Guid.Parse(_User.Id),
+                            IdentityCardNumber = "",
+                            ImageUrl = "",
+                            IssuedOn = DateTime.Now,
+                            MotherName = "",
+                            Password = "",
+                            PhoneNumber = "",
+                            Status = 2,
+                            StudentCode = studentCode,
+                            StudentName = ""
+
+                        };
+                    await _studentUPRepo.CreateStudentUPstudentInClass(studentInClassCreate);
+                }
+            }
+            //kiểm tra xem tất cả role hiện tại sau khi đã thêm hoặc cập nhật role đã có admin core chưa
+            if (userUpdateRoles.RoleNames.ToList().Any(c => c != "AdminCore"))
+            {
+
+
+              
+                if (_User.IdTrainingFacility != Guid.Empty)
+                {
+                    //kiểm tra xem cơ sở cũ ở trongdatabase với cơ sở mới vừa chọn có khác nhau hay không
+                    var getCurrentUser = await _UserIdentityRepo.GetUserRoleById(GetId);
+                    if (getCurrentUser.IdTrainingFacility != _User.IdTrainingFacility)
+                    {
+                        foreach (var user in _userManager.Users.ToList().Where(c => c.Id == GetId))
+                        {
+                            user.IdTrainingFacility = _User.IdTrainingFacility;
+                            await _userManager.UpdateAsync(user);
+
+                        }
+                    }
+
+
+
+                    //cập nhật mới lại cho giảng viên
+                    if (userUpdateRoles.RoleNames.ToList().Any(c => c == "Lecturer" || c == "LecturerFPLSP"))
+                    {
+                        var update = new CreateleatureForTrainVm()
+                            {
+                                Id = Guid.Parse(_User.Id),
+                                Email = _User.UserName,
+                                IdTrain = _User.IdTrainingFacility
+                            };
+                        var all = await _lecturersCPRepo.GetAllLecturerAsync();
+                        foreach (var x in all.Where(c => c.Email == _User.Email))
+                        {
+                            x.TrainingFacilitiesId = _User.IdTrainingFacility;
+                            await _lecturersCPRepo.UpdateLecturerTrain(x.Id, update);
+                        }
+                    }
+                }
+            }
+
+            if (_User.IdTrainingFacility == Guid.Empty)
+            {
+                _toastService.ShowError("Bạn chưa chọn cơ sở ");
+            
+                return;
+            }
+            else
+            {
+                
+                var res = await _UserIdentityRepo.AddRolesToUser(userUpdateRoles);
+                if (res)
+                {
+
+                    toastService.ShowSuccess($"Cấp quyền thành công cho {_User.UserName}");
+                    
+                    Navigation.NavigateTo($"/listuseriden/{_cryptoServices.Encrypt(maxlevel.ToString().Replace("/", "I0H"))}/{_cryptoServices.Encrypt(IdCoSo.ToString().Replace("/", "I0H"))}");
+                }
+                else
+                {
+                    toastService.ShowError($"Cấp quyền thất bại cho {_User.UserName}");
+                    
+                    return;
+                }
+            }
+        }
+        else
+        {
+            _User.IdTrainingFacility = idTrainFlag;
+            flagChageIDTrain = false;
+            
+        }
+
+    }
+
+    public async Task OnConfirmationDeleteUser(bool confirmed)
+    {
+        if (confirmed)
+        {
+           
+            await _UserIdentityRepo.DeleteUserNorRole(_User.Id);
+            UserUpdateRolesHasClaims userUpdateRoles = new UserUpdateRolesHasClaims()
+                {
+                    ID = GetId,
+                    Name = _User.UserName,
+                    claims = _User.ListRedirectClaims,
+                    RoleNames = _User.ListRoles.ToArray()
+                };
+
+            //Check tồn tại phù hợp với quyền
+            if (userUpdateRoles.RoleNames.Any(c => c == "GV FPLExam") || userUpdateRoles.RoleNames.Any(c => c == "LecturerFPLSP"))
+            {
+                var lstLeture = await _lecturersCPRepo.GetLecturerMapper();
+                lstLeture = lstLeture.Where(c => c.LecturersCode.Contains("GV")).ToList();
+                if (lstLeture.Any(c => c.Id == Guid.Parse(_User.Id)))
+                {
+                    var lectureCP = lstLeture.Find(c => c.Id == Guid.Parse(_User.Id));
+                    lectureCP.IsDeleted = false;
+
+                    await _lecturersCPRepo.UpdateLectureCP(lectureCP);
+                }
+                else
+                {
+                    var createLeture = new CreateleatureForTrainVm()
+                        {
+                            Email = _User.Email,
+                            IdTrain = _User.IdTrainingFacility,
+                            Id = Guid.Parse(_User.Id)
+
+                        };
+                    await _lecturersCPRepo.CreateLecturerForTrain(createLeture);
+                }
+
+            }
+            if (userUpdateRoles.RoleNames.Any(c => c == "Student"))
+            {
+                var lstStudent = await _studentUPRepo.GetAllStudentDtosAsync();
+
+                var a = lstStudent.FirstOrDefault(c => c.Id == Guid.Parse(_User.Id));
+                if (lstStudent.Any(c => c.Id == Guid.Parse(_User.Id)))
+                {
+                    var studentUP = lstStudent.Find(c => c.Id == Guid.Parse(_User.Id));
+                    var update = new FPLSP.Server.Infrastructure.ViewModels.StudentsUPVm.StudentUpdateVM()
+                        {
+                            Email = studentUP.Email,
+                            Ethnic = studentUP.Ethnic,
+                            Address = studentUP.Address,
+                            DateOfBirth = studentUP.DateOfBirth,
+                            Description = studentUP.Description,
+                            FathersName = studentUP.FathersName,
+                            Gender = studentUP.Gender,
+                            HomeTown = studentUP.HomeTown,
+                            IdentityCardNumber = studentUP.IdentityCardNumber,
+                            ImageUrl = studentUP.ImageUrl,
+                            IssuedOn = studentUP.IssuedOn,
+                            MotherName = studentUP.MotherName,
+                            PhoneNumber = studentUP.PhoneNumber,
+                            StudentCode = studentUP.StudentCode,
+                            StudentName = studentUP.StudentName,
+                            Password = studentUP.Password,
+                            Status = studentUP.Status,
+                            IsDelete = false
+
+                        };
+
+                    await _studentUPRepo.UpdateStudentUP(studentUP.Id, update);
+
+
+
+                }
+                else
+                {
+
+                    var studentgmail = _User.Email.Split("@")[0];
+                    var studentCode = studentgmail.Substring(studentgmail.Length - 7).ToUpper();
+                    var studentInClassCreate = new StudentUpDto()
+                        {
+                            Email = _User.Email,
+                            Ethnic = "",
+                            Address = "",
+                            DateOfBirth = DateTime.Now,
+                            Description = "",
+                            FathersName = "",
+                            Gender = true,
+                            HomeTown = "",
+                            Id = Guid.Parse(_User.Id),
+                            IdentityCardNumber = "",
+                            ImageUrl = "",
+                            IssuedOn = DateTime.Now,
+                            MotherName = "",
+                            Password = "",
+                            PhoneNumber = "",
+                            Status = 2,
+                            StudentCode = studentCode,
+                            StudentName = ""
+
+                        };
+                    await _studentUPRepo.CreateStudentUPstudentInClass(studentInClassCreate);
+                }
+            }
+
+            //kiểm tra xem tất cả role hiện tại sau khi đã thêm hoặc cập nhật role đã có admin core chưa
+            if (userUpdateRoles.RoleNames.Any(c => c == "Student"))
+            {
+                var lstStudent = await _studentUPRepo.GetAllStudentUPAsync();
+                if (lstStudent.Any(c => c.Id != Guid.Parse(_User.Id)))
+                {
+                    var studentgmail = _User.Email.Split("@")[0];
+                    var studentCode = studentgmail.Substring(studentgmail.Length - 7).ToUpper();
+                    var studentInClassCreate = new StudentUpDto()
+                        {
+                            Email = _User.Email,
+                            Ethnic = "",
+                            Address = "",
+                            DateOfBirth = DateTime.Now,
+                            Description = "",
+                            FathersName = "",
+                            Gender = true,
+                            HomeTown = "",
+                            Id = Guid.Parse(_User.Id),
+                            IdentityCardNumber = "",
+                            ImageUrl = "",
+                            IssuedOn = DateTime.Now,
+                            MotherName = "",
+                            Password = "",
+                            PhoneNumber = "",
+                            Status = 2,
+                            StudentCode = studentCode,
+                            StudentName = ""
+
+                        };
+                    await _studentUPRepo.CreateStudentUPstudentInClass(studentInClassCreate);
+
+                }
+                else
+                {
+
+                    var studentUP = lstStudent.Find(c => c.Id == Guid.Parse(_User.Id));
+                    var update = new FPLSP.Server.Infrastructure.ViewModels.StudentsUPVm.StudentUpdateVM()
+                        {
+                            Email = studentUP.Email,
+                            Ethnic = studentUP.Ethnic,
+                            Address = studentUP.Address,
+                            DateOfBirth = studentUP.DateOfBirth.Value,
+                            Description = studentUP.Description,
+                            FathersName = studentUP.FathersName,
+                            Gender = studentUP.Gender.Value,
+                            HomeTown = studentUP.HomeTown,
+                            IdentityCardNumber = studentUP.IdentityCardNumber,
+                            ImageUrl = studentUP.ImageUrl,
+                            IssuedOn = studentUP.IssuedOn.Value,
+                            MotherName = studentUP.MotherName,
+                            PhoneNumber = studentUP.PhoneNumber,
+                            StudentCode = studentUP.StudentCode,
+                            StudentName = studentUP.StudentName,
+                            Password = studentUP.Password,
+                            Status = studentUP.Status.Value,
+                            IsDelete = false
+
+                        };
+
+                    await _studentUPRepo.UpdateStudentUP(studentUP.Id, update);
+                }
+            }
+            //kiểm tra xem tất cả role hiện tại sau khi đã thêm hoặc cập nhật role đã có admin core chưa
+            if (userUpdateRoles.RoleNames.ToList().Any(c => c != "AdminCore"))
+            {
+
+
+             
+                if (_User.IdTrainingFacility != Guid.Empty)
+                {
+                    //kiểm tra xem cơ sở cũ ở trongdatabase với cơ sở mới vừa chọn có khác nhau hay không
+                    var getCurrentUser = await _UserIdentityRepo.GetUserRoleById(GetId);
+                    if (getCurrentUser.IdTrainingFacility != _User.IdTrainingFacility)
+                    {
+                        foreach (var user in _userManager.Users.ToList().Where(c => c.Id == GetId))
+                        {
+                            user.IdTrainingFacility = _User.IdTrainingFacility;
+                            await _userManager.UpdateAsync(user);
+
+                        }
+                    }
+
+
+
+                    //cập nhật mới lại cho giảng viên
+                    if (userUpdateRoles.RoleNames.ToList().Any(c => c == "Lecturer" || c == "LecturerFPLSP"))
+                    {
+                        var update = new CreateleatureForTrainVm()
+                            {
+                                Id = Guid.Parse(_User.Id),
+                                Email = _User.UserName,
+                                IdTrain = _User.IdTrainingFacility
+                            };
+                        var all = await _lecturersCPRepo.GetAllLecturerAsync();
+                        foreach (var x in all.Where(c => c.Email == _User.Email))
+                        {
+                            x.TrainingFacilitiesId = _User.IdTrainingFacility;
+                            await _lecturersCPRepo.UpdateLecturerTrain(x.Id, update);
+                        }
+                    }
+                }
+            }
+
+            if (_User.IdTrainingFacility == Guid.Empty)
+            {
+                _toastService.ShowError("Bạn chưa chọn cơ sở ");
+                
+                return;
+            }
+            else
+            {
+              
+                var res = await _UserIdentityRepo.AddRolesToUser(userUpdateRoles);
+                if (res)
+                {
+                    
+                    toastService.ShowSuccess($"Cấp quyền thành công cho {_User.UserName}");
+                    Navigation.NavigateTo($"/listuseriden/{_cryptoServices.Encrypt(maxlevel.ToString().Replace("/", "I0H"))}/{_cryptoServices.Encrypt(IdCoSo.ToString().Replace("/", "I0H"))}");
+                }
+                else
+                {
+                    toastService.ShowError($"Cấp quyền thất bại cho {_User.UserName}");
+                    
+                    return;
+                }
+            }
+        }
+        else
+        {
+            _User.ListRoles = _UserFlag.ListRoles;
+            flagChageUserRole = false;
+            
+        }
+
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        GetId = _cryptoServices.Decrypt(GetIdNonDecrpyt.Replace("I0H", "/"));
+        maxlevel = _cryptoServices.Decrypt(maxlevelNonDecrpyt.Replace("I0H", "/"));
+        IdCoSo = _cryptoServices.Decrypt(IdCoSoNonDecrpyt.Replace("I0H", "/"));
+        _lstRedirect.Add(new Claim("CanViewFPLSPProject", "true"));
+        _lstRedirect.Add(new Claim("CanViewCabinProject", "true"));
+        _lstRedirect.Add(new Claim("CanViewFPLExam", "true"));
+        _User = await _UserIdentityRepo.GetUserRoleById(GetId);
+        _UserFlag = await _UserIdentityRepo.GetUserRoleById(GetId);
+        idTrainFlag = _User.IdTrainingFacility;
+        _lstTrain = await _trainingFacilitiesCPRepo.GetTrainingFacilitiesAsync();
+
+        _lstRole = await _roleUserIdentityRepo.GetAllRolesAsync();
+        //xử lý loại trừ các role cấp cao hơn role mà dường dùng truyền vào
+
+        var lstRolremove = new List<IdentityRole>();
+        foreach (IdentityRole role in _lstRole)
+        {
+            if (maxlevel == "6")
+            {
+                if (role.Name == "AdminCore")
+                {
+                    lstRolremove.Add(role);
+                }
+            }
+            else if (maxlevel == "5")
+            {
+                if (role.Name == "AdminCS" || role.Name == "AdminCore")
+                {
+                    lstRolremove.Add(role);
+                }
+            }
+            else if (maxlevel == "4")
+            {
+                if (role.Name == "AdminCS" || role.Name == "AdminCore" || role.Name == "DirectorOfTraining")
+                {
+                    lstRolremove.Add(role);
+                }
+            }
+            else if (maxlevel == "3")
+            {
+
+
+                if (role.Name == "AdminCS" || role.Name == "AdminCore" || role.Name == "DirectorOfTraining" || role.Name == "HeadOfDepartment")
+                {
+                    lstRolremove.Add(role);
+                }
+            }
+
+            else if (maxlevel == "2")
+            {
+                if (role.Name == "AdminCS" || role.Name == "AdminCore" || role.Name == "DirectorOfTraining" || role.Name == "HeadOfDepartment" || role.Name == "Staff")
+                {
+                    lstRolremove.Add(role);
+                }
+            }
+        }
+        foreach (var item in lstRolremove)
+        {
+            _lstRole.Remove(item);
+        }
+
+        var let = await _lecturersCPRepo.GetAllLecturerAsync();
+
+    }
+
+    private async Task UpdateRoleForUser(EditContext editContext)
+    {
+
+    }
+    private async Task AddRedirect(Claim claim)
+    {
+        if (_User.ListRedirectClaims.Any(c => c.Type == claim.Type) == false)
+        {
+            _User.ListRedirectClaims.Add(claim);
+        }
+    }
+    public async void Add(string name)
+    {
+        //if (name == "LecturerFPLSP")
+        //{
+        //    if (_User.ListRoles.Any(c => c == "Student"))
+        //    {
+        //        _toastService.ShowError("Hãy xóa quyền sinh viên trước khi cập nhập quyền là giảng viên");
+        //        return;
+        //    }
+        //}
+        //if (name == "Student")
+        //{
+        //    if (_User.ListRoles.Any(c => c == "LecturerFPLSP"))
+        //    {
+        //        _toastService.ShowError("Hãy xóa quyền giảng viên trước khi cập nhập quyền là sinh viên");
+        //        return;
+        //    }
+        //}
+        //if (name == "GV FPLExam")
+        //{
+        //    if (_User.ListRoles.Any(c => c == "TBM FPLExam" || c == "SV FPLExam"))
+        //    {
+        //        _toastService.ShowError("Hãy xóa quyền TBM Exam hoặc SV FPLExam trước khi cập nhập quyền là GV Exam");
+        //        return;
+        //    }
+        //}
+        //if (name == "TBM FPLExam")
+        //{
+        //    if (_User.ListRoles.Any(c => c == "GV FPLExam" || c == "SV FPLExam"))
+        //    {
+        //        _toastService.ShowError("Hãy xóa quyền GV Exam hoặc SV FPLExam trước khi cập nhập quyền là TBM Exam");
+        //        return;
+        //    }
+        //}
+        //if (name == "SV FPLExam")
+        //{
+        //    if (_User.ListRoles.Any(c => c == "GV FPLExam" || c == "TBM FPLExam"))
+        //    {
+        //        _toastService.ShowError("Hãy xóa quyền GV Exam hoặc TBM FPLExam trước khi cập nhập quyền là SV Exam");
+        //        return;
+        //    }
+        //}
+
+
+        if (_User.ListRoles.Any(c => c == name) == false)
+        {
+            _User.ListRoles.Add(name);
+
+        }
+    }
+    bool flagChageIDTrain = false;
+    bool flagChageUserRole = false;
+    public void AddTrain(Guid IdCoSo)
+    {
+        if (_User.IdTrainingFacility != IdCoSo)
+        {
+            _User.IdTrainingFacility = IdCoSo;
+
+
+        }
+    }
+    private async void AddRoleToUser()
+    {
+        if (_UserFlag.ListRoles.Any(c => c == "LecturerFPLSP"))
+        {
+            if (!_User.ListRoles.Any(c => c == "LecturerFPLSP"))
+            {
+                flagChageUserRole = true;
+            }
+        }
+        if (_UserFlag.ListRoles.Any(c => c == "Student"))
+        {
+            if (!_User.ListRoles.Any(c => c == "Student"))
+            {
+                flagChageUserRole = true;
+            }
+        }
+        if (_UserFlag.IdTrainingFacility != _User.IdTrainingFacility)
+        {
+            flagChageIDTrain = true;
+        }
+    
+        if (!flagChageUserRole)
+        {
+            if (!flagChageIDTrain)
+            {   
+                UserUpdateRolesHasClaims userUpdateRoles = new UserUpdateRolesHasClaims()
+                    {
+                        ID = GetId,
+                        Name = _User.UserName,
+                        claims = _User.ListRedirectClaims,
+                        RoleNames = _User.ListRoles.ToArray()
+                    };
+
+                //Check tồn tại phù hợp với quyền
+                if (userUpdateRoles.RoleNames.Any(c => c == "GV FPLExam") || userUpdateRoles.RoleNames.Any(c => c == "LecturerFPLSP"))
+                {
+                    var lstLeture = await _lecturersCPRepo.GetLecturerMapper();
+                    lstLeture = lstLeture.Where(c => c.LecturersCode.Contains("GV")).ToList();
+                    if (lstLeture.Any(c => c.Id == Guid.Parse(_User.Id)))
+                    {
+                        var lectureCP = lstLeture.Find(c => c.Id == Guid.Parse(_User.Id));
+                        lectureCP.IsDeleted = false;
+
+                        await _lecturersCPRepo.UpdateLectureCP(lectureCP);
+                    }
+                    else
+                    {
+                        var createLeture = new CreateleatureForTrainVm()
+                            {
+                                Email = _User.Email,
+                                IdTrain = _User.IdTrainingFacility,
+                                Id = Guid.Parse(_User.Id)
+
+                            };
+                        await _lecturersCPRepo.CreateLecturerForTrain(createLeture);
+                    }
+
+                }
+                if (userUpdateRoles.RoleNames.Any(c => c == "Student"))
+                {
+                    var lstStudent = await _studentUPRepo.GetAllStudentDtosAsync();
+
+                    var a = lstStudent.FirstOrDefault(c => c.Id == Guid.Parse(_User.Id));
+                    if (lstStudent.Any(c => c.Id == Guid.Parse(_User.Id)))
+                    {
+                        var studentUP = lstStudent.Find(c => c.Id == Guid.Parse(_User.Id));
+                        var update = new FPLSP.Server.Infrastructure.ViewModels.StudentsUPVm.StudentUpdateVM()
+                            {
+                                Email = studentUP.Email,
+                                Ethnic = studentUP.Ethnic,
+                                Address = studentUP.Address,
+                                DateOfBirth = studentUP.DateOfBirth,
+                                Description = studentUP.Description,
+                                FathersName = studentUP.FathersName,
+                                Gender = studentUP.Gender,
+                                HomeTown = studentUP.HomeTown,
+                                IdentityCardNumber = studentUP.IdentityCardNumber,
+                                ImageUrl = studentUP.ImageUrl,
+                                IssuedOn = studentUP.IssuedOn,
+                                MotherName = studentUP.MotherName,
+                                PhoneNumber = studentUP.PhoneNumber,
+                                StudentCode = studentUP.StudentCode,
+                                StudentName = studentUP.StudentName,
+                                Password = studentUP.Password,
+                                Status = studentUP.Status,
+                                IsDelete = false
+
+                            };
+
+                        await _studentUPRepo.UpdateStudentUP(studentUP.Id, update);
+
+
+
+                    }
+                    else
+                    {
+
+                        var studentgmail = _User.Email.Split("@")[0];
+                        var studentCode = studentgmail.Substring(studentgmail.Length - 7).ToUpper();
+                        var studentInClassCreate = new StudentUpDto()
+                            {
+                                Email = _User.Email,
+                                Ethnic = "",
+                                Address = "",
+                                DateOfBirth = DateTime.Now,
+                                Description = "",
+                                FathersName = "",
+                                Gender = true,
+                                HomeTown = "",
+                                Id = Guid.Parse(_User.Id),
+                                IdentityCardNumber = "",
+                                ImageUrl = "",
+                                IssuedOn = DateTime.Now,
+                                MotherName = "",
+                                Password = "",
+                                PhoneNumber = "",
+                                Status = 2,
+                                StudentCode = studentCode,
+                                StudentName = ""
+
+                            };
+                        await _studentUPRepo.CreateStudentUPstudentInClass(studentInClassCreate);
+                    }
+                }
+                //kiểm tra xem tất cả role hiện tại sau khi đã thêm hoặc cập nhật role đã có admin core chưa
+                if (userUpdateRoles.RoleNames.ToList().Any(c => c != "AdminCore"))
+                {
+
+
+
+                    if (_User.IdTrainingFacility != Guid.Empty)
+                    {
+                        //kiểm tra xem cơ sở cũ ở trongdatabase với cơ sở mới vừa chọn có khác nhau hay không
+                        var getCurrentUser = await _UserIdentityRepo.GetUserRoleById(GetId);
+                        if (getCurrentUser.IdTrainingFacility != _User.IdTrainingFacility)
+                        {
+                            foreach (var user in _userManager.Users.ToList().Where(c => c.Id == GetId))
+                            {
+                                user.IdTrainingFacility = _User.IdTrainingFacility;
+                                await _userManager.UpdateAsync(user);
+
+                            }
+                        }
+
+
+
+                        //cập nhật mới lại cho giảng viên
+                        if (userUpdateRoles.RoleNames.ToList().Any(c => c == "Lecturer" || c == "LecturerFPLSP"))
+                        {
+                            var update = new CreateleatureForTrainVm()
+                                {
+                                    Id = Guid.Parse(_User.Id),
+                                    Email = _User.UserName,
+                                    IdTrain = _User.IdTrainingFacility
+                                };
+                            var all = await _lecturersCPRepo.GetAllLecturerAsync();
+                            foreach (var x in all.Where(c => c.Email == _User.Email))
+                            {
+                                x.TrainingFacilitiesId = _User.IdTrainingFacility;
+                                await _lecturersCPRepo.UpdateLecturerTrain(x.Id, update);
+                            }
+                        }
+                    }
+                }
+
+                if (_User.IdTrainingFacility == Guid.Empty)
+                {
+                    _toastService.ShowError("Bạn chưa chọn cơ sở ");
+                    
+                    return;
+                }
+                else
+                {
+                   
+                    var res = await _UserIdentityRepo.AddRolesToUser(userUpdateRoles);
+                    if (res)
+                    {
+                        toastService.ShowSuccess($"Cấp quyền thành công cho {_User.UserName}");
+                        
+                        Navigation.NavigateTo($"/listuseriden/{_cryptoServices.Encrypt(maxlevel.ToString().Replace("/", "I0H"))}/{_cryptoServices.Encrypt(IdCoSo.ToString().Replace("/", "I0H"))}");
+                    }
+                    else
+                    {
+                        toastService.ShowError($"Cấp quyền thất bại cho {_User.UserName}");
+                        
+                        return;
+                    }
+                }
+            }
+            else
+            {
+                DeleteConfirmation.show();
+                
+            }
+        }
+        else
+        {
+            DeleteConfirmationUser.show();
+            
+        }
+
+
+
+
+    }
+    public void Closed(MudChip chip) => _User.ListRoles.Remove(chip.Text);
+    public void RemoveReDirect(MudChip chip)
+    {
+
+        _User.ListRedirectClaims.Remove((Claim)chip.Value);
+    }
+
+}

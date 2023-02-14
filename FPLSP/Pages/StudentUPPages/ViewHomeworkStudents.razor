@@ -1,0 +1,175 @@
+﻿@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Dtos.StudentStatisticVM
+@attribute [Authorize(Roles = "LecturerFPLSP")]
+@if (ShowConfirmation)
+{
+    <div class="modal fade show d-block" id="exampleModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">@ConfirmationTitle</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                        @onclick="() => OnConfirmationChange(false)">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    @if (_ls.Count() > 0 || _ls == null)
+                    {
+                        <table class="table table-hover align-middle table-bordered mt-3" style="text-align:center">
+                            <thead class="table-success">
+                                <tr>
+                                    <th stype="width:10%">STT</th>
+                                    <th stype="width:15%">Đường dẫn</th>
+                                    <th stype="width:20%">Thời gian nộp</th>
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in _ls)
+                                {
+                                    <tr>
+
+                                        <td>@a</td>
+
+                                        @if (@item.SubmitLink != "")
+                                        {
+                                            <td class="align-middle" title="@item.SubmitLink"><a href="@item.SubmitLink" target="_blank">Đến link</a></td>
+                                        }
+                                        else
+                                        {
+                                            <td>Chưa nộp</td>
+                                        }
+                                        <td>@item.SubmitTime</td>
+                                    </tr>
+                                    a++;
+
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p>Rỗng</p>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                        @onclick="() => OnConfirmationChange(false)">
+                        Đóng
+                    </button>
+                    @*<button type="button" class="btn btn-danger"
+                @onclick="() => { OnConfirmationChange(true); }">
+                Thêm
+                </button>*@
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+
+
+@code {
+    [Inject] NavigationManager _navigationManager { get; set; }
+
+
+    protected bool ShowConfirmation { get; set; }
+    [Inject]
+    public ISubmitHomeWorkApiClient _SubmitHomeWorkApiClient { get; set; }
+
+    [Inject]
+    public IStudentUPRepo studentUPRepo { get; set; }
+    [Inject]
+    public ILessonUPRepo lessonUPRepo { get; set; }
+    [Parameter]
+    public string ConfirmationTitle { get; set; }
+
+    [Parameter]
+    public string ConfirmationMessage { get; set; } = "Chi tiết";
+
+    [Parameter]
+    public EventCallback<bool> ConfirmationChanged { get; set; }
+
+    private List<SubmitHomeWorkDtos> _ls = new List<SubmitHomeWorkDtos>();
+    [Parameter]
+    public EventCallback<string> Confirmation { get; set; }
+
+    [Parameter]
+    public string idclass1 { get; set; }
+    [Parameter]
+    public string idstudent1 { get; set; }
+    [Parameter]
+    public string idlesoon { get; set; }
+
+    private int a { get; set; } = 1;
+
+    private int baihoc { get; set; } = 1;
+    private bool flag = false;
+
+    private Thongtinlop thongtinlop = new Thongtinlop();
+
+    //protected async override Task OnInitializedAsync()
+    //{
+
+    //}
+    public async void show(string idclass1, string subjectId, string idlesoon, string idstudent1)
+    {
+        var xlist = await _SubmitHomeWorkApiClient.GetALl();
+        _ls = xlist.Where(c => c.IdClass == Guid.Parse(idclass1) && c.IdStudent == Guid.Parse(idstudent1)
+        && c.IdLesson == Guid.Parse(idlesoon)).OrderByDescending(c => c.SubmitTime).ToList();
+
+        var lssinhvien = await studentUPRepo.GetAllStudentUPAsync();
+        var namer = lssinhvien.Where(c => c.Id == Guid.Parse(idstudent1)).Select(c => c.StudentName).First();
+        if (namer == null)
+        {
+            namer = "...";
+        }
+        var lslesson = await lessonUPRepo.GetAll();
+        var namerleson = lslesson.Where(c => c.Id == Guid.Parse(idlesoon)).Select(c => c.LessonName).First();
+
+        if (namerleson == null)
+        {
+            namerleson = "...";
+        }
+        thongtinlop = await studentUPRepo.Thongtinlop(Guid.Parse(idclass1), Guid.Parse(subjectId));
+
+        for (var i = 0; i < thongtinlop.Listidlesson.Count(); i++)
+        {
+            if (thongtinlop.Listidlesson[i].ToString() == idlesoon)
+            {
+                break;
+            }
+            else
+            {
+                baihoc += 1;
+            }
+
+        }
+        ConfirmationTitle = $"{namer} - Bài học {baihoc}";
+        ShowConfirmation = true;
+        StateHasChanged();
+    }
+
+    protected async Task OnConfirmationChange(bool value)
+    {
+
+        if (value)
+        {
+            ShowConfirmation = false;
+
+            //await Confirmation.InvokeAsync(idclass1);
+            //await ConfirmationChanged.InvokeAsync(value);
+        }
+        else
+        {
+            ShowConfirmation = false;
+            a = 1;
+            baihoc = 1;
+        }
+    }
+
+}

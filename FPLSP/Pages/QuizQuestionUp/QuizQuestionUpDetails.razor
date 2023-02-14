@@ -1,0 +1,68 @@
+﻿@page "/quizquestionup/details/{Id}"
+@using Blazored.Toast
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.QuizQuestionUp
+@using Microsoft.AspNetCore.Components
+
+<h3>Chi tiết Quiz Question Up </h3>
+<PageTitle>FPLSP | Elearning</PageTitle>
+<div class="row">
+<EditForm Model="@_quizQuestionUpVm">
+    <div class="col">
+        <label>Quesntion Tital</label>
+        <InputText class="form-control" @bind-Value=@_quizQuestionUpVm.QuestionTital></InputText>
+    </div>
+    <div class="col">
+        <label>Content Question</label>
+        <InputText class="form-control" @bind-Value=@_quizQuestionUpVm.ContentQuestion></InputText>
+    </div>
+    <div class="col">
+        <label>Quiz Question Code</label>
+        <InputText class="form-control" @bind-Value=@_quizQuestionUpVm.QuestionCode></InputText>
+    </div>
+    <div class="col">
+        <label>Quiz Question Name</label>
+        <InputText class="form-control" @bind-Value=@_quizQuestionUpVm.QuestionName></InputText>
+    </div>
+    <div class="col">
+        <label>Quiz Question Status</label>
+        <InputNumber class="form-control" @bind-Value=@_quizQuestionUpVm.Status></InputNumber>
+    </div>
+    <div class="col">
+        <label>Quiz Question Id</label>
+        <InputText class="form-control" @bind-Value=@QuizQuestionId></InputText>
+    </div>
+
+    <div class="col"><button class="btn btn-info" @onclick="Update">Sửa</button>
+        <button class="btn btn-danger" @onclick="Delete">Xóa</button>
+        <button class="btn btn-outline-danger"><a href="/quizquestionup">Thoát</a></button>
+    </div>
+</EditForm>
+</div>
+@code
+{
+    [Parameter]public string Id { set; get; }
+    [Inject] IQuizQuestionUPRepo _quizQuestionUPRepo { get; set; }
+    [Inject] NavigationManager NavigationManager { get; set; }
+    private QuizQuestionUpVm _quizQuestionUpVm = new QuizQuestionUpVm();
+    string QuizQuestionId { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        _quizQuestionUpVm = await _quizQuestionUPRepo.GetDetails(Id);
+        QuizQuestionId = Convert.ToString(_quizQuestionUpVm.QuestionTypeId);
+    }
+    protected async Task Update()
+    {
+        if (await _quizQuestionUPRepo.Update(Id, _quizQuestionUpVm))
+        {
+            NavigationManager.NavigateTo("/quizquestionup");
+        }
+    }
+    protected async Task Delete()
+    {
+        if (await _quizQuestionUPRepo.Delete(Id))
+        {
+            NavigationManager.NavigateTo("/quizquestionup");
+        }
+    }
+}

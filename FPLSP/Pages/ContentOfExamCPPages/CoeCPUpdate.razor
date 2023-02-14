@@ -1,0 +1,211 @@
+﻿@page "/CoeCPUpdate/{id:guid}"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.ContentOfExamsCP
+
+<h3>Cập Nhập Nội Dung Đề Thi</h3>
+
+@if (_UpdateVm != null)
+{
+    <div class="row">
+        <div class="col-1">
+        </div>
+        <div class="d-flex justify-content-center col-10 ">
+            <EditForm Model="_UpdateVm" OnValidSubmit="Update" class="card card-body bg-light mt-5">
+                <DataAnnotationsValidator />
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-code"></i> Mã link Đề Thi:</label>
+                    <div class="col-md-10">
+                        <InputText id="name" class="form-control" @bind-Value="_UpdateVm.CoeCode" />
+                        <div class="text-danger">
+                            <ValidationMessage For="@(() => _UpdateVm.CoeCode)"></ValidationMessage>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fas fa-check"></i> Mức Độ:</label>
+                    <div class="col-md-10">
+                        <InputSelect class="form-select" @bind-Value="_UpdateVm.Level">
+                            <option value="5">Mức 5</option>
+                            <option value="4">Mức 4</option>
+                            <option value="3">Mức 3</option>
+                            <option value="2">Mức 2</option>
+                            <option value="1">Mức 1</option>
+                        </InputSelect>
+                    </div>
+                </div>
+
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-calendar-days"></i> Ngày Mở:</label>
+                    <div class="col-md-10">
+                        <InputDate id="name" class="form-control" @bind-Value="_UpdateVm.DateStarted" />
+                        <div class="text-danger">
+                            <ValidationMessage For="@(() => _UpdateVm.DateStarted)"></ValidationMessage>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-calendar-days"></i> Ngày Đóng:</label>
+                    <div class="col-md-10">
+                        <InputDate id="name" class="form-control" @bind-Value="_UpdateVm.EndDate" />
+                        <div class="text-danger">
+                            <ValidationMessage For="@(() => _UpdateVm.EndDate)"></ValidationMessage>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fas fa-light fa-file-lines"></i> Nội Dung:</label>
+                    <div class="col-md-10">
+                        <InputTextArea class="form-control" @bind-Value="_UpdateVm.Content" />
+                        <div class="text-danger">
+                            <ValidationMessage For="@(() => _UpdateVm.Content)"></ValidationMessage>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fas fa-clipboard"></i> Số lượng câu hỏi:</label>
+                    <div class="col-md-10">
+                        <InputNumber class="form-control" @bind-Value="_UpdateVm.TotalOfQuestions" />
+                        <div class="text-danger">
+                            <ValidationMessage For="@(() => _UpdateVm.TotalOfQuestions)"></ValidationMessage>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-check"></i>Trạng Thái:</label>
+                    <div class="col-md-10">
+                        <InputSelect class="form-select" @bind-Value="_UpdateVm.Status">
+                            <option value="1">Mở</option>
+                            <option value="0">Đóng</option>
+                        </InputSelect>
+                    </div>
+                </div>
+
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-regular fa-file"></i> Đề Thi:</label>
+                    <div class="col-md-10">
+                        <InputSelect class="form-select" @bind-Value="_UpdateVm.ExamId">
+                            @if (_lstExam != null)
+                            {
+                                @foreach (var item in _lstExam)
+                                {
+                                    <option value="@item.Id">@item.ExamName</option>
+                                }
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+                <div class="row pt-2">
+                    <div class="col-4"></div>
+                    <div class="col-4" style="text-align: center">
+                        <button type="submit" class="btn btn-primary me-2">Cập Nhật</button>
+                        <button type="button" class="btn btn-success me-2" @onclick="Restore">Khôi Phục</button>
+                        <a href="/ExamList" class="btn btn-danger">Quay Lại</a>
+                    </div>
+                    <div class="col-4"></div>
+                </div>
+            </EditForm>
+        </div>
+        <div class="col-1">
+        </div>
+    </div>
+
+}
+@code{
+    private CoeUpdateVm _UpdateVm = new CoeUpdateVm();
+    [Inject] public NavigationManager Navigation { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    [Inject] private IContentOfExamCPRepo contentOfExamCPRepo { get; set; }
+    private List<ContentOfExamCPDto> _lsContentOfExamCpDtos = new List<ContentOfExamCPDto>();
+    [Inject] private NavigationManager _navier { get; set; }
+    [Inject] private IExamCPServicesRepo examApiClient { get; set; }
+
+    private CoeListSearchVm _CoeListSearchVm = new CoeListSearchVm();
+    private List<ExamCPDto> _lstExam;
+
+    public CoeCPUpdate()
+    {
+        _lstExam = new List<ExamCPDto>();
+    }
+    [Parameter]
+    public Guid Id { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        _lsContentOfExamCpDtos = await contentOfExamCPRepo.GetCoeCPListAll();
+        await Get();
+    }
+    private async Task Get()
+    {
+
+        var pagingResponse = await examApiClient.GetAllExamCPListAsync();
+        _lstExam = pagingResponse;
+
+        var examCp = await contentOfExamCPRepo.GetCoeCPById(Id);
+        var examDto = new CoeUpdateVm()
+            {
+                EndDate = examCp.EndDate,
+                CoeCode = examCp.CoeCode,
+                DateStarted = examCp.DateStarted,
+                Level = examCp.Level,
+                Status = examCp.Status,
+                Content = examCp.Content,
+                ExamId = examCp.ExamId,
+                TotalOfQuestions = examCp.TotalOfQuestions,
+                QuestionType = examCp.QuestionType
+            };
+        _UpdateVm = examDto;
+
+    }
+
+
+    private async Task Update()
+    {
+        if (CheckCode(_UpdateVm.CoeCode))
+        {
+            _toastService.ShowError("Mã nội dung bị trùng!");
+            Navigation.NavigateTo($"/CoeCPUpdate/{Id}");
+        }
+        else
+        {
+            var result = await contentOfExamCPRepo.UpdateCoeCP(Id, _UpdateVm);
+            if (result)
+            {
+                _toastService.ShowSuccess("Sửa Thành Công");
+                Navigation.NavigateTo("/CoeCPList");
+            }
+            else
+            {
+                _toastService.ShowError("Lỗi! không Sửa được Link");
+                Navigation.NavigateTo($"/CoeCPUpdate/{Id}");
+            }
+        }
+
+    }
+    private async void Restore()
+    {
+        var examCp = await contentOfExamCPRepo.GetCoeCPById(Id);
+        var examDto = new CoeUpdateVm()
+            {
+                EndDate = examCp.EndDate,
+                CoeCode = examCp.CoeCode,
+                DateStarted = examCp.DateStarted,
+                Level = examCp.Level,
+                Status = examCp.Status,
+                Content = examCp.Content,
+                ExamId = examCp.ExamId,
+                TotalOfQuestions = examCp.TotalOfQuestions,
+                QuestionType = examCp.QuestionType
+            };
+        _UpdateVm = examDto;
+        await OnInitializedAsync();
+
+    }
+    private bool CheckCode(string code)
+    {
+        var checkExited = _lsContentOfExamCpDtos.Any(c => Equals(code, c.CoeCode));
+        return checkExited;
+    }
+}
+

@@ -1,0 +1,15 @@
+﻿@page "/"
+@using System.Security.Policy
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Entities.CoresParts
+@layout EmptyLayout
+
+@code {
+    [Inject]
+    NavigationManager NavigationManage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationManage.NavigateTo("/Account/Login?ReturnUrl=/adminlogin/", true);
+    }
+}

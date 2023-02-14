@@ -1,0 +1,174 @@
+﻿@page "/ExamLinkUpdate/{id:guid}"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using FPLSP.Server.Infrastructure.ViewModels.ExamLinks
+@using FPLSP.Server.Infrastructure.ViewModels.Exams
+@using Microsoft.AspNetCore.Components
+
+<h3>Cập Nhập Thông Tin Link Đề Thi</h3>
+
+@if (_examLinkUpdateVm != null)
+{
+    <div class="row">
+        <div class="col-1">
+        </div>
+        <div class="d-flex justify-content-center col-10 ">
+            <EditForm Model="_examLinkUpdateVm" OnValidSubmit="Update" class="card card-body bg-light mt-5">
+                <DataAnnotationsValidator />
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-code"></i> Mã link Đề Thi:</label>
+                    <div class="col-md-10">
+                        <InputText id="name" class="form-control" @bind-Value="_examLinkUpdateVm.ExamLinkCode" />
+                        <div class="text-danger">
+                            <ValidationMessage For="@(() => _examLinkUpdateVm.ExamLinkCode)"></ValidationMessage>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-regular fas  fa-cloud"></i> Link Đề Thi:</label>
+                    <div class="col-md-10">
+                        <InputText id="name" class="form-control" @bind-Value="_examLinkUpdateVm.Path" />
+                        <div class="text-danger">
+                            <ValidationMessage For="@(() => _examLinkUpdateVm.Path)"></ValidationMessage>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-calendar-days"></i> Ngày Đóng:</label>
+                    <div class="col-md-10">
+                        <InputDate id="name" class="form-control" @bind-Value="_examLinkUpdateVm.ExpirationDate" />
+                        <div class="text-danger">
+                            <ValidationMessage For="@(() => _examLinkUpdateVm.ExpirationDate)"></ValidationMessage>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-check"></i> Trạng Thái:</label>
+                    <div class="col-md-10">
+                        <InputSelect class="form-control" @bind-Value="_examLinkUpdateVm.Status">
+                            <option value="1">Mở</option>
+                            <option value="0">Đóng</option>
+                        </InputSelect>
+                    </div>
+                </div>
+
+                <div class="form-group row mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-regular fa-file"></i> Đề Thi:</label>
+                    <div class="col-md-10">
+                        <InputSelect class="form-select" @bind-Value="_examLinkUpdateVm.ExamId">
+                            @if (_lstExam != null)
+                            {
+                                @foreach (var item in _lstExam)
+                                {
+                                    <option value="@item.Id">@item.ExamName</option>
+                                }
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+                <div class="row pt-2">
+                    <div class="col-4"></div>
+                    <div class="col-4" style="text-align: center">
+                        <button type="submit" class="btn btn-primary me-2">Cập Nhật</button>
+                        <button type="button" class="btn btn-success me-2" @onclick="Restore">Khôi Phục</button>
+                        <a href="/ExamLinkList" class="btn btn-danger">Quay Lại</a>
+                    </div>
+                    <div class="col-4"></div>
+                </div>
+            </EditForm>
+        </div>
+        <div class="col-1">
+        </div>
+    </div>
+
+}
+
+@code {
+    private ExamLinkUpdateVm _examLinkUpdateVm = new ExamLinkUpdateVm();
+    [Inject] public NavigationManager Navigation { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+
+    [Inject] private IExamLinkCPRepo _examLinkApiClient { get; set; }
+
+    [Inject] private IExamCPServicesRepo _examApiClient { get; set; }
+
+    private ExamListSearchVm _examListSearchVm;
+    private List<ExamCPDto> _lstExam;
+    private List<ExamLinkCP> ExamDtos = new List<ExamLinkCP>();
+    private ExamLinkCP examLink = new ExamLinkCP();
+
+
+    public ExamLinkUpdate()
+    {
+        _examListSearchVm = new ExamListSearchVm();
+        _lstExam = new List<ExamCPDto>();
+    }
+    [Parameter]
+    public Guid Id { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        var pagingResponse = await _examApiClient.GetAllExamCPListAsync();
+        _lstExam = pagingResponse;
+        ExamDtos = await _examLinkApiClient.GetExamLinkCP();
+        await Get();
+    }
+    private async Task Get()
+    {
+
+        examLink = await _examLinkApiClient.GetExamLinkCPById(Id);
+        var examDto = new ExamLinkUpdateVm()
+            {
+                ExamId = examLink.Id,
+                ExamLinkCode = examLink.ExamLinkCode,
+                ExpirationDate = examLink.ExpirationDate,
+                Path = examLink.Path,
+                Status = examLink.Status
+            };
+        _examLinkUpdateVm = examDto;
+
+    }
+
+
+    public async Task Update()
+    {
+        //if (CheckCode(_examLinkUpdateVm.ExamLinkCode))
+        //{
+        //    _toastService.ShowError("Lỗi! mã Link bị trùng");
+        //    Navigation.NavigateTo($"/ExamLinkUpdate/{examLink.Id}");
+        //}
+        //else
+        //{
+        var result = await _examLinkApiClient.UpdateExamLinkCP(Id, _examLinkUpdateVm);
+        if (result)
+        {
+            _toastService.ShowSuccess("Sửa Thành Công");
+            Navigation.NavigateTo("/ExamLinkList");
+        }
+        else
+        {
+            _toastService.ShowError("Lỗi!");
+            Navigation.NavigateTo($"/ExamLinkUpdate/{examLink.Id}");
+        }
+        // }
+
+    }
+    private bool CheckCode(string input)
+    {
+        var sdfdsf = ExamDtos.Any(c => Equals(input, c.ExamLinkCode));
+        return sdfdsf;
+    }
+    private async void Restore()
+    {
+
+        _examLinkUpdateVm.ExamLinkCode = examLink.ExamLinkCode;
+        _examLinkUpdateVm.Path = examLink.Path;
+        _examLinkUpdateVm.Status = examLink.Status;
+        _examLinkUpdateVm.ExpirationDate = examLink.ExpirationDate;
+        await OnInitializedAsync();
+
+    }
+
+}

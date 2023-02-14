@@ -1,0 +1,89 @@
+﻿@page "/updaterole/{id}"
+@using FPLSP.Repositories.Interfaces
+@using Microsoft.AspNetCore.Identity
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+@if (_identityRole == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <EditForm Model="@_identityRole" OnSubmit="@Update" class="card card-body bg-light mt-5" id="update-form">
+        <DataAnnotationsValidator />
+        <div class="form-group">
+            <div class="row">
+
+                <div class="form-group pt-2 col-md-6">
+                    <label for="name" class="col-md-2 col-form-label">Tên Chức Vụ:</label>
+                    <div class="col-md-10">
+                        <InputText id="name" class="form-control" @bind-Value="@_identityRole.Name" />
+                        <ValidationMessage For="@(() => _identityRole.Name)" />
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div class="row">
+            </div>
+        </div>
+
+        <div class="row pt-2">
+            <div class="col-md-12 text-right">
+                <button type="submit" class="btn btn-success" form="update-form">Sửa Chức Vụ</button>
+                <button type="button" class="btn btn-primary" @onclick="Undo">Khôi Phục</button>
+            </div>
+        </div>
+        <ValidationSummary />
+    </EditForm>
+}
+
+@code {
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+    [Inject]
+    public IRoleUserIdentityRepo _roleUserIdentityRepo { get; set; }
+    private IdentityRole _identityRole;
+
+
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+
+    [Parameter]
+    public string id { get; set; }
+
+    public UpdateRole()
+    {
+        _identityRole = new IdentityRole();
+    }
+    protected async override Task OnInitializedAsync()
+    {
+        _identityRole = await _roleUserIdentityRepo.GetRoleById(id);
+
+    }
+    private async Task Update()
+    {
+
+        ShowAuthError = false;
+
+        _identityRole.NormalizedName = String.Empty;
+        var result = await _roleUserIdentityRepo.UpdateRoles(_identityRole);
+
+        if (result != true)
+        {
+            Error = "Lỗi";
+            ShowAuthError = true;
+            Navigation.NavigateTo($"/updaterole/{id}");
+        }
+        else
+        {
+            Navigation.NavigateTo("/listrole", true);
+            this.StateHasChanged();
+
+        }
+    }
+
+    private async Task Undo()
+    {
+    }}

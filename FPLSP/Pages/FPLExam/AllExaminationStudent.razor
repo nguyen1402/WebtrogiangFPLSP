@@ -1,0 +1,265 @@
+﻿@page "/allofexaminationstudent/{IdStudent}"
+@using AntDesign
+@using FPLSP.Repositories.Interfaces.FPLExam;
+@using FPLSP.Server.Infrastructure.Services.Interfaces.FPLExam;
+@using FPLSP.Server.Infrastructure.ViewModels.FPLExam;
+@inject NavigationManager NavigationManager;
+<h4 class="text-center">Danh Sách Các Phòng Thi : @_lstExamofStudentById.Count()</h4>
+<EditForm class="row mb-4" Model="_StudentToExamSearch">
+
+    <div class="col-3">
+        <span>Ngày bắt đầu</span>
+        <InputDate class="form-select" @bind-Value="_StudentToExamSearch.ngaybatdau">
+
+        </InputDate>
+    </div>
+    <div class="col-3">
+
+        <span>Ngày kết thúc</span>
+        <InputDate class="form-select" @bind-Value="_StudentToExamSearch.ngayketthuc">
+        </InputDate>
+    </div>
+    <div class="col-4">
+        <span>Tìm kiếm theo tên môn</span>
+        <div class="input-group mb-3">
+            <InputText placeholder="Nhập Tên môn ..." class="form-control" @bind-Value="_StudentToExamSearch.nammon"></InputText>
+            <div class="input-group-append pl-1">
+                <button type="submit" @onclick="()=>GetTasksSearch(_StudentToExamSearch)" class="btn btn-outline-secondary">🔍</button>
+            </div>
+        </div>
+    </div>
+    <div class=" col-2">
+        <span></span>
+        <div class="input-group mb-3 mt-4">
+            <div class="input-group-append pl-1">
+                <button type="button" @onclick="Clear" class="btn btn-outline-success">Làm Mới</button>
+            </div>
+        </div>
+    </div>
+
+</EditForm>
+
+
+<MudPaper Elevation="5" MinHeight="500px;">
+  
+    <div class="row">
+        @if (flag == true)
+        {
+            <LoadingIndicator></LoadingIndicator>
+        }
+        else if (_lstExamofStudentById.Count() > 0)
+        {
+
+            @foreach (var x in _lstExamofStudentById.OrderByDescending(c => (c.StartTime - DateTime.Now).TotalMinutes <= 15 && DateTime.Now <= c.EndTime))
+            {
+
+
+                @if ((x.StartTime - DateTime.Now).TotalMinutes <= 15 && DateTime.Now <= x.EndTime && x.Status == 0)
+                {
+                    <div class="col-lg-3">
+                        <section class="page-contain">
+                            <a @onclick="()=>ForceGoToOnlineRoom(x)" class="data-card">
+                                <h6>Môn Học: @x.SubjectName</h6>
+                                <hr>
+                                <h5>@x.SubjetCode</h5>
+                                <p>Thời gian bắt đầu :@x.StartTime.ToString("dd/MM/yyyy") @x.StartTime.ToString("HH:mm:ss")</p>
+                                <p>Thời gian kết thúc :@x.EndTime.ToString("dd/MM/yyyy") @x.EndTime.ToString("HH:mm:ss")</p>
+                                <span class="link-text">
+                                    <span>Vào Phòng Thi Ngay</span>
+                                    <svg width="25" height="16" viewBox="0 0 25 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" clip-rule="evenodd" d="M17.8631 0.929124L24.2271 7.29308C24.6176 7.68361 24.6176 8.31677 24.2271 8.7073L17.8631 15.0713C17.4726 15.4618 16.8394 15.4618 16.4489 15.0713C16.0584 14.6807 16.0584 14.0476 16.4489 13.657L21.1058 9.00019H0.47998V7.00019H21.1058L16.4489 2.34334C16.0584 1.95281 16.0584 1.31965 16.4489 0.929124C16.8394 0.538599 17.4726 0.538599 17.8631 0.929124Z" fill="#753BBD" />
+                                    </svg>
+                                </span>
+                            </a>
+                        </section>
+                    </div>
+                }
+                @if (DateTime.Now > x.StartTime && DateTime.Now < x.EndTime && x.Status == 0)
+                {
+                    <div class="col-lg-3">
+                        <section class="page-contain">
+                            <a @onclick="()=>ForceGoToOnlineRoom(x)" class="data-card">
+                                <h6>Môn Học: @x.SubjectName</h6>
+                                <hr>
+                                <h5>@x.SubjetCode</h5>
+                                <p>Thời gian bắt đầu :@x.StartTime.ToString("dd/MM/yyyy") @x.StartTime.ToString("HH:mm:ss")</p>
+                                <p>Thời gian kết thúc :@x.EndTime.ToString("dd/MM/yyyy") @x.EndTime.ToString("HH:mm:ss")</p>
+                                <span class="link-text">
+                                    <span>Vào Phòng Thi Ngay</span>
+                                    <svg width="25" height="16" viewBox="0 0 25 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" clip-rule="evenodd" d="M17.8631 0.929124L24.2271 7.29308C24.6176 7.68361 24.6176 8.31677 24.2271 8.7073L17.8631 15.0713C17.4726 15.4618 16.8394 15.4618 16.4489 15.0713C16.0584 14.6807 16.0584 14.0476 16.4489 13.657L21.1058 9.00019H0.47998V7.00019H21.1058L16.4489 2.34334C16.0584 1.95281 16.0584 1.31965 16.4489 0.929124C16.8394 0.538599 17.4726 0.538599 17.8631 0.929124Z" fill="#753BBD" />
+                                    </svg>
+                                </span>
+                            </a>
+                        </section>
+                    </div>
+                }
+
+                @if (DateTime.Now > x.EndTime)
+                {
+                    <div class="col-lg-3">
+                        <section class="page-contain">
+                            <a href="/resultofexaminationroom/Sv FPLExam/@x.IdUser" class="data-card">
+                                <h6>Môn Học: @x.SubjectName</h6>
+                                <hr>
+                                <h5>@x.SubjetCode</h5>
+                                <p>Thời gian bắt đầu :@x.StartTime.ToString("dd/MM/yyyy") @x.StartTime.ToString("HH:mm:ss")</p>
+                                <p>Thời gian kết thúc :@x.EndTime.ToString("dd/MM/yyyy") @x.EndTime.ToString("HH:mm:ss")</p>
+                                <span class="link-text">
+                                    <span>Xem Kết Quả</span>
+                                    <svg width="25" height="16" viewBox="0 0 25 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" clip-rule="evenodd" d="M17.8631 0.929124L24.2271 7.29308C24.6176 7.68361 24.6176 8.31677 24.2271 8.7073L17.8631 15.0713C17.4726 15.4618 16.8394 15.4618 16.4489 15.0713C16.0584 14.6807 16.0584 14.0476 16.4489 13.657L21.1058 9.00019H0.47998V7.00019H21.1058L16.4489 2.34334C16.0584 1.95281 16.0584 1.31965 16.4489 0.929124C16.8394 0.538599 17.4726 0.538599 17.8631 0.929124Z" fill="#753BBD" />
+                                    </svg>
+                                </span>
+                            </a>
+                        </section>
+                    </div>
+                }
+
+                @if (DateTime.Now > x.StartTime && DateTime.Now < x.EndTime && x.Status == 4)
+                {
+                    <div class="col-lg-3">
+                        <section class="page-contain">
+                            <a @onclick="()=>ForceGoToOnlineRoom(x)" class="data-card">
+                                <h6>Môn Học: @x.SubjectName</h6>
+                                <hr>
+                                <h5>@x.SubjetCode</h5>
+                                <p>Thời gian bắt đầu :@x.StartTime.ToString("dd/MM/yyyy") @x.StartTime.ToString("HH:mm:ss")</p>
+                                <p>Thời gian kết thúc :@x.EndTime.ToString("dd/MM/yyyy") @x.EndTime.ToString("HH:mm:ss")</p>
+                                <span class="link-text">
+                                    <span>Vào Phòng Chờ Xử Lý</span>
+                                    <svg width="25" height="16" viewBox="0 0 25 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" clip-rule="evenodd" d="M17.8631 0.929124L24.2271 7.29308C24.6176 7.68361 24.6176 8.31677 24.2271 8.7073L17.8631 15.0713C17.4726 15.4618 16.8394 15.4618 16.4489 15.0713C16.0584 14.6807 16.0584 14.0476 16.4489 13.657L21.1058 9.00019H0.47998V7.00019H21.1058L16.4489 2.34334C16.0584 1.95281 16.0584 1.31965 16.4489 0.929124C16.8394 0.538599 17.4726 0.538599 17.8631 0.929124Z" fill="#753BBD" />
+                                    </svg>
+                                </span>
+                            </a>
+                        </section>
+                    </div>
+                }
+            }
+
+        }
+        else
+        {
+            <h5>Danh sách trống</h5>
+        }
+    </div>
+</MudPaper>
+
+@code {
+    private System.Timers.Timer _timer = null!;
+    private int _secondsToRun = 0;
+    bool loading = true;
+    bool flag = false;
+    [Inject] public IOnlineExamRoomRepo onlineExamRoomServices { get; set; }
+    private List<StudentGoToExamViewModel> _lstExamofStudentById = new List<StudentGoToExamViewModel>();
+    private List<StudentGoToExamViewModel> _lstExamofStudentByIdFlag = new List<StudentGoToExamViewModel>();
+    [Parameter]
+    public string IdStudent { get; set; }
+
+    public StudentToExamSearch _StudentToExamSearch { get; set; } = new StudentToExamSearch();
+
+    protected async override Task OnInitializedAsync()
+    {
+        flag = true;
+        _lstExamofStudentById = await onlineExamRoomServices.GetAllOfExamByIdStudent(IdStudent);
+        _lstExamofStudentByIdFlag = await onlineExamRoomServices.GetAllOfExamByIdStudent(IdStudent);
+        loading = false;
+        flag = false;
+    }
+    private async Task ForceGoToOnlineRoom(StudentGoToExamViewModel studentGoToExamViewModel)
+    {
+
+        NavigationManager.NavigateTo($"/onlineroomhandler/{studentGoToExamViewModel.SecretKey}/{studentGoToExamViewModel.IdUser}",true);
+    }
+    public async Task Start(int secondsToRun, ExamRoomSupervisorViewModel examRoomSupervisorViewModel)
+    {
+        _secondsToRun = secondsToRun;
+
+        if (_secondsToRun > 0)
+        {
+            examRoomSupervisorViewModel.CountDown = TimeSpan.FromSeconds(_secondsToRun).ToString(@"d\:hh\:mm\:ss");
+            StateHasChanged();
+            _timer.Start();
+
+        }
+
+    }
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+
+            using var periodicTimer = new PeriodicTimer(TimeSpan.FromSeconds(15));
+            while (await periodicTimer.WaitForNextTickAsync())
+            {
+                //cứ 5s là làm mới màn này 1 lần
+
+
+                Console.WriteLine("refresh");
+                flag = true;
+                if (!string.IsNullOrEmpty(_StudentToExamSearch.nammon))
+                {
+                    var result = await onlineExamRoomServices.GetAllOfExamByIdStudent(IdStudent);
+                    _lstExamofStudentById = result.Where(c => c.SubjectName.ToLower().Contains(_StudentToExamSearch.nammon.ToLower())).ToList();
+                }
+                if (_StudentToExamSearch.ngaybatdau != _StudentToExamSearch.ngayketthuc)
+                {
+                    var result = await onlineExamRoomServices.GetAllOfExamByIdStudent(IdStudent);
+                    _lstExamofStudentById = result.Where(c => c.StartTime >= _StudentToExamSearch.ngaybatdau && c.EndTime.Date <= _StudentToExamSearch.ngayketthuc).ToList();
+                }
+                if (string.IsNullOrEmpty(_StudentToExamSearch.nammon))
+                {
+                    _lstExamofStudentById = await onlineExamRoomServices.GetAllOfExamByIdStudent(IdStudent);
+                }
+
+                await InvokeAsync(() =>
+                        {
+
+                            StateHasChanged();
+                        });
+
+            }
+            flag = false;
+        }
+
+        //foreach (var x in _lstShedules)
+        //{
+        //    _timer = new System.Timers.Timer(1000);
+        //    _timer.Elapsed += OnTimedEvent;
+        //    _timer.AutoReset = true;
+        //    var totalseconds = Convert.ToInt32((x.StartTime - DateTime.Now).TotalSeconds);
+        //    await Start(totalseconds, x);
+        //}
+    }
+
+
+
+    private async Task Clear()
+    {
+        flag = true;
+        _StudentToExamSearch = new StudentToExamSearch();
+        _lstExamofStudentById = _lstExamofStudentByIdFlag;
+        flag = false;
+    }
+
+    private async Task GetTasksSearch(StudentToExamSearch _StudentToExamSearch)
+    {
+        flag = true;
+        _lstExamofStudentById = _lstExamofStudentByIdFlag;
+        if (!string.IsNullOrEmpty(_StudentToExamSearch.nammon))
+        {
+            _lstExamofStudentById = _lstExamofStudentById.Where(c => c.SubjectName.ToLower().Contains(_StudentToExamSearch.nammon.ToLower())).ToList();
+        }
+        if (_StudentToExamSearch.ngaybatdau != null && _StudentToExamSearch.ngayketthuc != null)
+    {
+            _lstExamofStudentById = _lstExamofStudentById.Where(c => c.StartTime >= _StudentToExamSearch.ngaybatdau && c.EndTime.Date <= _StudentToExamSearch.ngayketthuc).ToList();
+        }
+        if (string.IsNullOrEmpty(_StudentToExamSearch.nammon))
+        {
+            _lstExamofStudentById = _lstExamofStudentById;
+        }
+        flag = false;
+    }
+}

@@ -1,0 +1,88 @@
+﻿@page "/lessoninclass/{Id}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.LessonContentUP
+@using FPLSP.Server.Infrastructure.ViewModels.LessonUP
+
+@if(ListLesson.Count != 0){
+    @foreach (var ls in ListLesson)
+    {
+        <MudPaper Width="1000px" Elevation="0">
+            <MudTreeView T="string" ExpandOnClick="true" Hover="true">
+                <MudTreeViewItem Value="@(ls.LessonName + " - " + @ls.Descriptions)" Icon="@Icons.Custom.Uncategorized.Folder">
+                    @foreach (var list in listLessonContent)
+                    {
+                        if (list.Key == ls.Id)
+                        {
+                            foreach (var lc in list.Value)
+                            {
+                                <MudTreeViewItem Value="@(lc.LessonContentName)" Icon="@Icons.Custom.FileFormats.FileVideo">
+                                    <a href="getvideo/@Id/@ls.Id/@lc.ResuorceLinkId/@lc.LessonContentCode/@lc.LessonId/@lc.LessonContentName"><MudTreeViewItem Value="@(lc.LessonContentName)" /></a>
+                                </MudTreeViewItem>
+                            }
+                        }
+                    }
+                    <MudTreeViewItem Value="@("Tên Quiz Fake")" Icon="@Icons.Custom.FileFormats.FileDocument">
+                        <a><MudTreeViewItem Value="@("Linh Quiz Fake")" /></a>
+                    </MudTreeViewItem>
+                </MudTreeViewItem>
+            </MudTreeView>
+        </MudPaper>
+    }
+}
+else
+{
+    <h3 class="text-muted mb-1">Hiện chưa có bài học nào trong lớp</h3>
+}
+@code {
+    [Parameter]
+    public List<LessonUPViewModel> ListLesson { get; set; } = new List<LessonUPViewModel>();
+    public Dictionary<Guid, List<LessonContentUPViewModel>> listLessonContent = new Dictionary<Guid, List<LessonContentUPViewModel>>();
+
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    [Inject]
+    public ILessonUPRepo _iLessonClient { get; set; }
+    [Inject]
+    public ILessonContentUPRepo _iLessonContentRepo { get; set; }
+    private SubjectDto subject = new SubjectDto();
+    [Inject]
+    public ISubjectUPRepo _iSubjectRepo { get; set; }
+    public string Error { get; set; }
+    [Parameter]
+    public string Id { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        subject = await _iSubjectRepo.GetSubjectbyId(Guid.Parse(Id));
+        if (subject != null)
+        {
+            await GetListLesson();
+        }
+    }
+
+    private async Task GetListLesson()
+    {
+        try
+        {
+            ListLesson = await _iLessonClient.GetAll();
+            ListLesson = ListLesson.Where(c => c.SubjectId == subject.Id).ToList();
+
+            foreach (var item in ListLesson)
+            {
+                listLessonContent.Add(item.Id, await GetLessonContents(item.Id));
+            }
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+
+    private async Task<List<LessonContentUPViewModel>> GetLessonContents(Guid idLS)
+    {
+        var x = await _iLessonContentRepo.GetAll();
+        var result = x.Where(c => c.LessonId == idLS).ToList();
+        return result;
+    }
+}

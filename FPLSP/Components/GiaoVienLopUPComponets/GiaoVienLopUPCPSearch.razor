@@ -1,0 +1,37 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels.GiaoVienTaoLop
+<EditForm Model="@lessonContentListSearch" OnSubmit=@SearchForm>
+    <div class="row pl-5">
+        <div class="col-lg-4"></div>
+        <div class=" col-lg-10">
+            <div class="input-group mb-3">
+                <InputText placeholder="Nhập tên lớp ..." class="form-control" @bind-Value="lessonContentListSearch.Name"></InputText>
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-outline-secondary">🔍</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-1">
+            <a @onclick="@ClearSearch" class="btn btn-outline-success">Clear</a>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public EventCallback<SubjectServicesCPListSearch> OnSearch { set; get; }
+
+
+    private SubjectServicesCPListSearch lessonContentListSearch = new SubjectServicesCPListSearch();
+    
+
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(lessonContentListSearch);
+
+    }
+    public async Task ClearSearch()
+    {
+        lessonContentListSearch = new SubjectServicesCPListSearch();
+        await SearchForm(null);
+    }
+}

@@ -1,0 +1,98 @@
+﻿@page "/DetailQuizCP/{IdNonDecrypt}/{idsubjectNonDecrypt}"
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.QuizCPDtos
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<h3>Thông tin Quiz</h3>
+@if (quiz != null)
+{
+    <div class="form-group">
+        <div class="row">
+            <div class="col-md-6 text-right">
+                <a @onclick="()=>Quaylai()" class="btn btn-danger">Quay Lại</a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-12">
+                <div class="row pt-2 col-md-1 text-center">
+                    <a class="btn btn-outline-danger" @onclick="() => RedirectToMain()">Quay Lại</a>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-12">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Tên Quiz: <b>@quiz.QuizName</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Điểm: <b>@quiz.Point</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">
+                    Trạng thái:
+                    @if (@quiz.Status == 0)
+                    {
+                        <b>Đang hoạt động</b>
+                    }
+                    else
+                    {
+                        <b>Ngưng hoạt động</b>
+                    }
+                </label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Ngày bắt đầu: <b>@quiz.StartDay.Day/@quiz.StartDay.Month/@quiz.StartDay.Year</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Ngày kết thúc: <b>@quiz.EndDay.Day/@quiz.EndDay.Month/@quiz.EndDay.Year</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Mô tả: <b>@quiz.Descriptions</b></label>
+            </div>
+        </div>
+    </div>
+
+
+
+}
+@code {
+    public SubjectQuizCPDtos quiz { get; set; } = new SubjectQuizCPDtos();
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+    [Inject] public IQuizCPRepo _iQuizCPClient { get; set; }
+
+    [Parameter]
+    public string IdNonDecrypt { get; set; }
+    public string Id;
+    [Parameter]
+    public string idsubjectNonDecrypt { get; set; }
+    public string idsubject;
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        Id = _cryptoServices.Decrypt(IdNonDecrypt.Replace("I0H", "/"));
+        idsubject = _cryptoServices.Decrypt(idsubjectNonDecrypt.Replace("I0H", "/"));
+        quiz = await _iQuizCPClient.GetQuizById(Guid.Parse(Id));
+    }
+    private async Task RedirectToMain()
+    {
+        var url = Path.Combine("/MainQuizsCP", _cryptoServices.Encrypt((idsubject.ToString()).ToString()).Replace("/", "I0H") );
+        Navigation.NavigateTo(url);
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/MainQuizsCP", _cryptoServices.Encrypt((idsubject.ToString()).ToString()).Replace("/", "I0H"));
+        Navigation.NavigateTo(url);
+    }
+}

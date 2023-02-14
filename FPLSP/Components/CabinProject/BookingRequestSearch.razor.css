@@ -1,0 +1,29 @@
+﻿.selectstatus {
+    z-index: 1055;
+    background-color: #f8f9fa;
+    position: absolute;
+    justify-content: end;
+    right: 0px;
+    top: 120px;
+    min-width: 150px;
+    box-shadow: 0 1px 6px #0a58ca52;
+    border-radius: 2px;
+}
+
+    .selectstatus > div:hover {
+        transition: transform .3s ease-in-out;
+        background: #0a58ca9c;
+        color:#fff;
+    }
+
+    .selectstatus > div:active {
+        transform: scale(0.95);
+    }
+
+.threedot i:hover {
+    transition: transform .3s ease-in-out;
+    color: #0a58ca9c;
+}
+.threedot i :active {
+    transform: scale(0.95);
+}

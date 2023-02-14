@@ -1,0 +1,36 @@
+﻿@using FPLSP.Server.Domain.Enums
+@using FPLSP.Server.Infrastructure.ViewModels.KìnOfQuestionCPVm
+
+<EditForm Model="@_koqCPListSearch" OnSubmit="@SearchForm">
+    <div class="row">
+        <div class="col-1"></div>
+        <div class="col-4">
+            <InputSelect id="name" class="form-control" @bind-Value="_koqCPListSearch.QuestionForm">
+                <option value="">Loại câu hỏi</option>
+                @foreach (var item in Enum.GetValues(typeof(QuestionForms)))
+                {
+                    <option value="@item">@item</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="col-5">
+            <InputText class="form-control" @bind-Value="_koqCPListSearch.QuestionTypeName" placeholder="Nhập tên loại câu hỏi"></InputText>
+        </div>
+        <div class="col-2">
+            <button type="submit" class="btn btn-success">Tìm kiếm</button>
+        </div>
+    </div>
+
+</EditForm>
+@code {
+
+    [Parameter]
+    public EventCallback<ListKOQCPSearch> OnSearch { get; set; }
+
+    private ListKOQCPSearch _koqCPListSearch = new ListKOQCPSearch();
+
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(_koqCPListSearch);
+    }
+}

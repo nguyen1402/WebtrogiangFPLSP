@@ -1,0 +1,214 @@
+﻿@page "/SpecializedUP"
+@using Blazored.Toast.Services
+@using FPLSP.Components.SpecializedUP
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Specialized
+
+
+<div class="row">
+    <h3>CHUYÊN NGÀNH</h3>
+</div>
+<div class="row pt-3">
+    <div class="col-md-2 float-end">
+    </div>
+    <div class="col-md-8 text-right">
+        <SpecializedSearchUP OnSearch="SearchSpecializedUP"></SpecializedSearchUP>
+    </div>
+</div>
+    @if (_lstSpecializedUP == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <div class="row pt-3">
+        @if (_lstSpecializedUP.Count == 0)
+        {
+            <span>Dánh sách chuyên ngành rỗng</span>
+        }
+        else
+        {
+            @foreach (var item in _lstSpecializedUP)
+            {
+                <div class="col-3" style="padding: 10px;">
+                    <div class="card text-bg-dark" style="border-top-right-radius: 30px">
+                        <div style="width:290px;">
+                            <p style="background-color: #ffe3e0;color: #e92727;margin: 0;padding: 10px 15px;font-weight: 650;font-size: 15px;border-top-right-radius: 30px"><i class="fa-solid fa-graduation-cap"></i> <b>@item.SpecializedCode</b> - @item.SpecializationName.ToUpper()</p>
+                        </div>
+                        <img src="@item.Image" onerror="this.src='./css/images/Others/logoFPT.png'" style="height:160px;" class="card-img" alt="...">
+                        <div class="card-img-overlay d-flex align-items-end p-0">
+                            <div class="row">
+                                <div class="col-8 dropup-center dropup">
+                                    <button class="btn btn-danger dropdown-toggle" style="border-top-right-radius: 30px; font-size: smaller;width: 165px;background-color: #ec5528;color: #f5f5f5;" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        @item.SpecializationName
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        @foreach (var x in _lstAll.Where(x => x.IdSpeciality == item.Id))
+                                        {
+                                            <li><a class="dropdown-item" style="font-size:small;" href="#" @onclick="@(() => { NavigateToSubjectUP(item.Id); })"><i class="fa-solid fa-graduation-cap"></i> @x.SpecializationName</a></li>
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            }
+        }
+    </div>
+    <div class="footer text-muted">
+        <div class="row mt-3">
+
+            <span>
+                <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+            </span>
+
+        </div>
+    </div>
+}
+<Comfirmation ConfirmationMessage="Bạn có chắc muốn xóa chuyên ngành không?"
+              ConfirmationTitle="Xóa"
+              @ref="DeleteConfirmation"
+              ConfirmationChanged="OnConfirmationDelete"></Comfirmation>
+
+
+@code {
+    [Inject]
+    public ISpecializedUPRepo _specializedUPRepo { get; set; }
+    private List<SpecializedDto> _lstSpecializedUP = new List<SpecializedDto>();
+    private List<SpecializedDto> _lstAll = new List<SpecializedDto>();
+
+
+    private List<Guid> _removeSpecializedUP = new List<Guid>();
+
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+
+    [CascadingParameter]
+    private Error _error { get; set; }
+    public MetaData MetaData { get; set; } = new MetaData();
+    public SpecializedListSearch _specializedListSearch { get; set; } = new SpecializedListSearch();
+    protected Comfirmation DeleteConfirmation { get; set; }
+    private string deleteID { get; set; }
+    [Inject]
+    public IToastService ToastService { get; set; }
+    private bool Check = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _lstAll = await _specializedUPRepo.GetAll();
+        _lstAll = _lstAll.Where(x => x.Level != 0 && x.Status == 0).ToList();
+        await GetSpecializedUPList();
+    }
+    private async Task SelectedPage(int page)
+    {
+        _specializedListSearch.PageNumber = page;
+        Check = false;
+        await GetSpecializedUPList();
+    }
+    public async Task SearchSpecializedUP(SpecializedListSearch search)
+    {
+        _specializedListSearch = search;
+        await GetSpecializedUPList();
+    }
+    private async Task GetSpecializedUPList()
+    {
+        try
+        {
+            var pagingResponse = await _specializedUPRepo.Gets(Guid.Empty, _specializedListSearch);
+            _lstSpecializedUP = pagingResponse.Items;
+            _lstSpecializedUP = _lstSpecializedUP.OrderBy(x => x.SpecializedCode).ToList();
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+
+            _error.ProcessError(ex);
+        }
+    }
+    public void OnDelete(Guid id)
+    {
+        deleteID = id.ToString();
+        DeleteConfirmation.show();
+    }
+
+    public async Task OnConfirmDelete(bool deleteConfirmed)
+    {
+        if (deleteConfirmed)
+        {
+            var result = await _specializedUPRepo.Delete(Guid.Empty, Guid.Parse(deleteID));
+            if (result == 1)
+            {
+                ToastService.ShowSuccess("Đổi trạng thái chuyên ngành thành công", "Success");
+                await GetSpecializedUPList();
+            }
+            else
+            {
+                ToastService.ShowError("Đổi trạng thái chuyên ngành thất bại", "Error");
+            }
+        }
+    }
+
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (deleteconfirmed && deleteID == null && _removeSpecializedUP.Count == 0)
+        {
+            ToastService.ShowError("Bạn chưa chọn đối tượng để xóa");
+            await GetSpecializedUPList();
+            NavigationManager.NavigateTo($"/SpecializedUP");
+        }
+        else if (deleteconfirmed && deleteID != null)
+        {
+            var result = await _specializedUPRepo.Delete(Guid.Empty, Guid.Parse(deleteID));
+            if (result == 1)
+            {
+                ToastService.ShowSuccess("Xóa thành công");
+                deleteID = null;
+                await GetSpecializedUPList();
+                NavigationManager.NavigateTo($"/SpecializedUP");
+            }
+            else
+            {
+                ToastService.ShowError("Xóa thất bại");
+                deleteID = null;
+                await GetSpecializedUPList();
+                NavigationManager.NavigateTo($"/SpecializedUP");
+            }
+        }
+        else if (deleteconfirmed && _removeSpecializedUP != null)
+        {
+
+            //var result = await _specializedCPRepo.RemoveSpecializedCP(_removeSpecializedCP);
+            //if (result)
+            //{
+            //    ToastService.ShowSuccess("Xóa thành công");
+            //    deleteID = null;
+            //    _removeSpecializedCP = null;
+            //    await GetSpecializedCPList();
+            //    NavigationManager.NavigateTo($"/SpecializedCP");
+            //}
+            //else
+            //{
+            //    ToastService.ShowError("Xóa thất bại");
+            //    deleteID = null;
+            //    _removeSpecializedCP = null;
+            //    await GetSpecializedCPList();
+            //    NavigationManager.NavigateTo($"/SpecializedCP");
+            //}
+        }
+        else
+        {
+            deleteID = null;
+            _removeSpecializedUP = null;
+        }
+        Check = false;
+    }
+
+    private void NavigateToSubjectUP(Guid id)
+    {
+        NavigationManager.NavigateTo($"/listsubjects/{id}");
+    }
+    }

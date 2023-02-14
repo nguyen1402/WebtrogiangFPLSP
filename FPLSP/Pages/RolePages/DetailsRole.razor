@@ -1,0 +1,7 @@
+﻿@page "/detailsrole/{id}"
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<h3>Role's Details</h3>
+
+@code {
+    [Parameter]
+    public string id { get; set; }}

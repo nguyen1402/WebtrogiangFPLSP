@@ -1,0 +1,43 @@
+﻿@page "/quizquestionup"
+<h3>QuizQuestionUp</h3>
+@using FPLSP.Components
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.QuizQuestionUPDto
+
+@if (quizQuestionUpDtos == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>[QuestionTital]</th>
+                <th>[ContentQuestion]</th>
+                <th><button><a href="/quizquestionup/add">Thêm</a></button></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in quizQuestionUpDtos)
+            {
+                <tr>
+                    <td>@item.QuestionTital</td>
+                    <td>@item.ContentQuestion</td>
+                    <td><a href="/quizquestionup/details/@item.Id">Chi tiết</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@code
+{
+    [Inject] IQuizQuestionUPRepo _quizQuestionUPRepo { get; set; }
+    List<QuizQuestionUpDto> quizQuestionUpDtos { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        quizQuestionUpDtos = await _quizQuestionUPRepo.GetAll();
+    }
+}
+

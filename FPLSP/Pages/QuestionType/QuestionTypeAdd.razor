@@ -1,0 +1,62 @@
+﻿@page "/questiontype/add"
+@using FPLSP.Server.Domain.Enums
+@using FPLSP.Server.Infrastructure.ViewModels.QuestionType
+@using Microsoft.AspNetCore.Components
+@using FPLSP.Repositories.Interfaces
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<h3>QuestionType Add</h3>
+<EditForm Model="questionTypeVm" OnValidSubmit="Add" class="card card-body bg-light mt-6">
+    <DataAnnotationsValidator />
+    <div class="form-group">
+        <div class="row">
+            <div class="form-group pt-2 col-md-6">
+                <label for="Question" class="form-label">Câu hỏi:</label>
+                <div class="text-danger">
+                    <InputText class="form-control" @bind-Value="questionTypeVm.QuestionTypeName"></InputText>
+                    <ValidationMessage For="@(() => questionTypeVm.QuestionTypeName)" />
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-6">
+                <label for="ReportLevel" class="form-label">Form câu hỏi:</label>
+                <div class="text-danger">
+                    <InputSelect id="name" class="form-control" @bind-Value="questionTypeVm.QuestionForm">
+                        @foreach (var item in Enum.GetValues(typeof(QuestionForms)))
+                        {
+                            <option value="@item">@item</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => questionTypeVm.QuestionForm)" />
+                </div>
+            </div>
+        </div>
+        <div class="d-flex justify-content-center mb-2">
+            <div class="p-2">
+                <button type="submit" class="btn btn-success">Tạo mới</button>
+            </div>
+            <div class="p-2">
+                <a @onclick="()=> LoadForm()" class="btn btn-outline-primary">Clear Form</a>
+            </div>
+            <div class="p-2">
+                <a href="/questiontype" class="btn btn-outline-danger">Quay Lại</a>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+        @code
+        { [Inject] IQuestionTypeRepo _questionTypeRepo { get; set; }
+            [Inject] NavigationManager NavigationManager { get; set; }
+            QuestionTypeVm questionTypeVm = new QuestionTypeVm();
+            protected async Task Add()
+            {
+
+                if (await _questionTypeRepo.Add(questionTypeVm))
+                {
+                    NavigationManager.NavigateTo("/questiontype");
+                }
+            }
+            protected async Task LoadForm()
+            {
+                questionTypeVm.QuestionTypeName = "";
+                questionTypeVm.QuestionForm = 0;
+            }}

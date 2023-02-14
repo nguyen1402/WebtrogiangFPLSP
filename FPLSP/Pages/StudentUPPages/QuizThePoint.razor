@@ -1,0 +1,329 @@
+﻿@page "/Quizthepoint/{idclassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}"
+@attribute [Authorize(Roles = "Student")]
+@using FPLSP.Components.SearchMaSV
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Dtos.StudentStatisticVM
+@using FPLSP.Server.Infrastructure.ViewModels.StudentStatistics
+
+<div class="row">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">Chuyên ngành: <a style="color:blue;box-shadow: 0 1px" @onclick="() => ResToSpec()"> @lstSpecAll.Where(c=>c.Id == Guid.Parse(specializedId)).Select(c=>c.SpecializationName).FirstOrDefault()</a></li>
+            <li class="breadcrumb-item">Môn :<a style="color:blue;box-shadow: 0 1px" @onclick="() => Mon()">@thongtinlop.NameMon</a></li>
+            <li class="breadcrumb-item">Lớp :<a style="color:blue;box-shadow: 0 1px" @onclick="() => RedirectToDetails()">@thongtinlop.NameClass</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Quiz </li>
+        </ol>
+    </nav>
+</div>
+<div class="row pt-3">
+    <div class="col-md-4">
+        @if (@thongtinlop != null)
+        {
+            <h4>
+                Môn : <b>@thongtinlop.NameMon</b> - Lớp <b>@thongtinlop.NameClass</b>
+            </h4>
+        }
+    </div>
+    <div class="col-md-2">
+
+        <div class="row">
+            <div class="col-5">
+            </div>
+            <div class="col-7">
+                <EditForm Model="@listidlesson">
+                    <select class="form-select" @onchange="args=>SearchCode(args.Value.ToString()) ">
+                        @if (thongtinlop != null)
+                        {
+                            <option value="">Lọc</option>
+                            @for (var i = 1; i <= listidlesson.CountQuiz; i++)
+                            {
+                                <option value="@listidlesson.Listidquiz[i-1]">Quiz @i</option>
+                            }
+                        }
+                    </select>
+                </EditForm>
+            </div>
+        </div>
+
+    </div>
+    <div class="col-md-3">
+        <SearchMaSV OnSearch="SearchTask"></SearchMaSV>
+    </div>
+    <div class="col-md-3">
+        <div class="row pl-10">
+            <div class="col-md-2">
+                @*<a class="btn btn-outline-primary" title="Đến bài học" @onclick="()=> RedirectToBaiHoc()"><i class="bi bi-book-half"></i></a>*@
+            </div>
+            <div class="col-md-8">
+                @*<a class="btn btn-outline-primary" title="Thêm sinh viên" @onclick="()=> RedirectToDetails()"><i class="bi bi-person-plus"></i></a>*@
+            </div>
+            <div class="col-md-1">
+                <a class="btn btn-outline-danger" @onclick="() => Quaylai()"><i class="bi bi-arrow-return-right"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+@if (flag == true)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else if (thongtinlop != null && CPList.Count() > 0)
+{
+    <div class="row">
+        <div class="row">
+            @*<h6 class="col-md-2">
+        Tổng sinh viên : <span class="badge bg-primary">@counttong</span>
+        </h6>*@
+            <h6 class="col-md-2">
+                Sinh viên hiển thị : <span class="badge bg-warning">@CPList.Count</span>
+            </h6>
+            @*@if (flag == true)
+        {
+        <h6 class="col-md-2">
+        <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+        </div>
+        </h6>
+        }*@
+
+            @*
+        <h6 class="col-md-2">
+        Tổng số quiz : <span class="badge bg-info">@thongtinlop.CountQuiz</span>
+        </h6>*@
+            @* <h6 class="col-md-2">
+        Nộp đủ : <span class="badge bg-success">@thongtinlop.CountSubmit</span>
+        </h6>
+        <h6 class="col-md-2">
+        Chưa nộp đủ : <span class="badge bg-danger">@thongtinlop.CountDonSubmit</span>
+        </h6>*@
+        </div>
+
+    </div>
+    <div class="row">
+
+        <table class="table">
+            <thead class="text-center">
+                <tr>
+                    <th style="width: 2%">Mã SV</th>
+                    <th style="width: 12%">Họ Tên</th>
+
+                    @for (var i = 1; i <= thongtinlop.CountQuiz; i++)
+                    {
+                        <th style="width: 6%">Quiz @i</th>
+                    }
+                    <th style="width: 6%">Điểm trung bình</th>
+                    @*<th style="width: 4%">Link bài tập</th>*@
+                </tr>
+            </thead>
+            <tbody class="text-center">
+                @foreach (var item in CPList)
+                {
+                    <tr>
+                        <td class="align-middle">
+                            @item.StudentCode
+                        </td>
+                        <td class="align-middle">
+                            @item.StudentName
+                        </td>
+                        @{
+                            int i = 0;
+                        }
+                        @foreach (var item2 in item.ListidQuiz)
+                        {
+
+                            @if (item2 == item.Quiz[i].QuizId)
+                            {
+                                <td style="color : black; text-decoration: none" class="align-middle">@item.Quiz[i].ScoreQuizOfStudent</td>
+                            }
+                            else
+                            {
+                                <td style="color : black; text-decoration: none" class="align-middle">chưa làm</td>
+                            }
+                        }
+                        <td style="color : black; text-decoration: none" class="align-middle">@item.Diemtrungbinh</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    @if (encounter != 14)
+    {
+        <LoadingIndicator></LoadingIndicator>
+    }
+    else
+    {
+        <h5>Danh sách sinh viên trống</h5>
+    }
+}
+
+<div class="footer text-muted">
+    <div class="row mt-3">
+
+        <span>
+            <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+        </span>
+
+    </div>
+</div>
+
+@code
+{
+    [Parameter]
+    public string specializedIdNonDecrypt { get; set; }
+    [Parameter]
+    public string lecuIdNonDecrypt { get; set; }
+    [Parameter]
+    public string subjectIdNonDecrypt { get; set; }
+    [Parameter]
+    public string idclassNonDecrypt { get; set; }
+
+    public string specializedId = "";
+
+    public string lecuId = "";
+
+    public string subjectId = "";
+
+    public string idclass = "";
+
+
+    private Thongtinlop thongtinlop = new Thongtinlop();
+    private Thongtinlop listidlesson = new Thongtinlop();
+    public string idstudent { get; set; }
+
+    private List<SubmitHomeWorkDtos> _ls = new List<SubmitHomeWorkDtos>();
+
+    public List<QuizSummit> Quiz = new List<QuizSummit>();
+    public List<StudentStatisticsDtos> CPList { get; set; } = new List<StudentStatisticsDtos>();
+    public MetaData MetaData { get; set; } = new MetaData();
+    private List<SubmitHomeWorkDtos> _lsSubmit = new List<SubmitHomeWorkDtos>();
+    private StudentStatisticListSearch _parameters = new StudentStatisticListSearch();
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    [Inject]
+    public IStudentUPRepo _iStudentUPRepo { get; set; }
+    [Inject]
+    public ISubmitHomeWorkApiClient _iSubmitHomeWorkApiClient { get; set; }
+    [Parameter]
+    public EventCallback<StudentStatisticListSearch> OnSearch { set; get; }
+    public List<SpecializedDto> lstSpecAll { get; set; } = new List<SpecializedDto>();
+    [Inject]
+    public ISpecializedCPRepo _iSpecializedClient { get; set; }
+
+    [Inject]
+    public IClassSubjectApiClient _iClassSubjectApiClient { get; set; }
+    int counttong;
+    //private StudentStatisticListSearch lessonContentListSearch = new StudentStatisticListSearch();
+    private int encounter;
+    public string Error { get; set; }
+    bool flag = false;
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        lecuId = _cryptoServices.Decrypt(lecuIdNonDecrypt.Replace("I0H", "/"));
+        subjectId = _cryptoServices.Decrypt(subjectIdNonDecrypt.Replace("I0H", "/"));
+        idclass = _cryptoServices.Decrypt(idclassNonDecrypt.Replace("I0H", "/"));
+        specializedId = _cryptoServices.Decrypt(specializedIdNonDecrypt.Replace("I0H", "/"));
+
+        thongtinlop = await _iStudentUPRepo.Thongtinlop(Guid.Parse(idclass), Guid.Parse(subjectId));
+        listidlesson = await _iStudentUPRepo.Thongtinlop(Guid.Parse(idclass), Guid.Parse(subjectId));
+        counttong = await _iClassSubjectApiClient.Soluongsinhvientronglop(Guid.Parse(idclass), Guid.Parse(subjectId));
+        await GetTasks();
+    }
+    public async Task SearchTask(StudentStatisticListSearch lessonContentListSearch)
+    {
+        flag = true;
+        if (lessonContentListSearch.Masv == null)
+        {
+            listidlesson = new Thongtinlop();
+            listidlesson = await _iStudentUPRepo.Thongtinlop(Guid.Parse(idclass), Guid.Parse(subjectId));
+        }
+        _parameters = lessonContentListSearch;
+        await GetTasks();
+    }
+
+    private async Task Mon()
+    {
+        var url = Path.Combine($"/Giaovien/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task RedirectToBaiHoc()
+    {
+        var url = Path.Combine($"/ListLessonClassUP/{idclass}/{specializedId}/{lecuId}/{subjectId}");
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task RedirectToDetails()
+    {
+        var url = Path.Combine($"/ViewChiTitet/{idclassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task RedirectToChitiet(Guid? idclass)
+    {
+        var url = Path.Combine($"/StudentStatisticsChitiet/{idclass}/{specializedId}/{lecuId}/{subjectId}");
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine($"/ViewChiTitet/{idclassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task ResToSpec()
+    {
+        var url = Path.Combine($"/LectuterSpecializedSubjectls/{lecuIdNonDecrypt}/{specializedIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task GetTasks()
+    {
+        try
+        {
+            flag = true;
+            for (var i = 0; i < 15; i++)
+            {
+                encounter = i;
+            }
+            lstSpecAll = await _iSpecializedClient.GetAll();
+            var pagingResponse = await _iStudentUPRepo.QuizStatisticsDtos(Guid.Parse(idclass), Guid.Parse(subjectId), _parameters);
+            CPList = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+            _lsSubmit = await _iSubmitHomeWorkApiClient.GetALl();
+            flag = false;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+
+
+    private async Task SelectedPage(int page)
+    {
+        _parameters.PageNumber = page;
+        await GetTasks();
+    }
+
+    public async Task SearchCode(string code)
+    {
+        _parameters.quizid = code;
+        await GetTasks();
+    }
+
+    private async Task OnConfirmationUpdate(bool submitConfirmed)
+    {
+        if (submitConfirmed)
+        {
+            _ls.Clear();
+        }
+        else
+        {
+            _ls.Clear();
+        }
+    }
+}

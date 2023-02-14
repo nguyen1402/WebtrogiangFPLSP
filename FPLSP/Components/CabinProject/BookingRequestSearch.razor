@@ -1,0 +1,238 @@
+﻿@using FPLSP.Repositories.Interfaces.CabinProject;
+@using FPLSP.Server.Domain.Entities.CoresParts;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.BookingRequest;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.ShiftOfCabin;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.TeachingSchedule;
+@using Microsoft.AspNetCore.SignalR.Client;
+
+<EditForm Model="_bookingRequestSearch" OnSubmit="SearchForm" class="row">
+    <div class="col-lg-8" style="margin: 5px -20px 0 20px;">
+        <div class="input-group">
+            <input placeholder="🔍 Tìm kiếm theo mã giảng viên..." class="form-control" @bind-value="@_bookingRequestSearch.stringSearch" @onkeyup="()=>SearchForm(null)" @bind-value:event="oninput" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm" />
+        </div>
+    </div>
+
+    <div class="col-lg-4 threedot row my-2" style="height:30px; margin:0;" @onclick="@Open" type="button" title="Trạng thái">
+        <div class="col-lg-1"></div>
+        <span class="col-lg-9 @_backgroundcolorstatus position-relative" style="font-size: initial;right: 7px;">
+            @_statuslable
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                @_amountstatus
+                <span class="visually-hidden">unread messages</span>
+            </span>
+        </span>
+    </div>
+    <span style="display:@_displayOfType;">
+
+
+        <div class="selectstatus">
+            @if (_listBookingRequest != null)
+            {
+                <div style="padding: 3px 10px;" type="button" @onclick="@SelectAll">Tất cả <span class="badge bg-primary" style="float:right;">@_listbookingRequestsGrouped.Where(c => c.Status != 1).ToList().Count</span> </div>
+                <div style="padding: 3px 10px;" type="button" @onclick="@noCheckedMethod">Chưa xử lý<span class="badge bg-danger" style="float:right;">@_listbookingRequestsGrouped.Where(c => c.Status == 0 && c.EndTime > DateTime.Now).ToList().Count</span></div>
+                <div style="padding: 3px 10px;" type="button" @onclick="@CheckedMethod">Đã được chọn<span class="badge bg-success" style="float:right;">@_listbookingRequestsGrouped.Where(c => c.Status == 2 && c.EndTime > DateTime.Now).ToList().Count</span></div>
+                <div style="padding: 3px 10px;" type="button" @onclick="@CloseCheckedMethod">Đã bị hủy<span class="badge bg-warning" style="float:right;">@_listbookingRequestsGrouped.Where(c => c.Status == 3 && c.EndTime > DateTime.Now).ToList().Count</span></div>
+                <div style="padding: 3px 10px;" type="button" @onclick="@ExpiredCheckedMethod">Đã hết hạn<span class="badge bg-secondary" style="float:right;">@(_listbookingRequestsGrouped.Where(c => c.Status != 1 && c.EndTime <= DateTime.Now).ToList().Count)</span></div>
+            }
+        </div>
+    </span>
+</EditForm>
+@code {
+    [Parameter]
+    public EventCallback<BookingRequestSearchViewModel> OnSearch { get; set; }
+    [Parameter]
+    public string _idTrainingFacility { get; set; }
+
+    private BookingRequestSearchViewModel _bookingRequestSearch = new BookingRequestSearchViewModel();
+    private List<BookingRequestViewModel> _listBookingRequest = new();
+    private List<TeachingScheduleVM> _teachingScheduleVMs = new List<TeachingScheduleVM>();
+    private List<BookingRequestViewModel> _listbookingRequestsGrouped = new();
+    private List<ShiftOfCabinVM> _shiftOfCabinVMs;
+
+    [Inject] private IBookingRequestRepo _iBookingRequestRepo { get; set; }
+    [Inject] private ITeachingScheduleApiClient _teachingScheduleApiClient { get; set; }
+    [Inject] private IShiftOfCabinApiClient _ishiftOfCabinApiClient { get; set; }
+
+    private bool _checked = false;
+    private bool _nochecked = false;
+    private bool _closechecked = false;
+    private bool _expiredchecked = false;
+    public string _displayOfType { get; set; } = "none";
+
+    private string _statuslable = "Tất cả";
+    private int _amountstatus { get; set; } = 0;
+    private string _backgroundcolorstatus { get; set; } = "badge bg-primary";
+
+    private int _dbchecked = 0;
+    private int _dbnochecked = 0;
+    private int _dbclosechecked = 0;
+    private int _dbexpiredchecked = 0;
+
+    private DateTime _monday = new();
+    private DateTime _sunday = new();
+
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(_bookingRequestSearch);
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            string url = "http://localhost:5001/SignalRCabinHub";
+            HubConnection _connection = null;
+            bool isConnected = false;
+            string connectionStatus = "Closed";
+            _connection = new HubConnectionBuilder()
+                .WithUrl(url)
+                .Build();
+
+            await _connection.StartAsync();
+            isConnected = true;
+            connectionStatus = "Connected :-)";
+
+            _connection.Closed += async (s) =>
+            {
+                isConnected = false;
+                connectionStatus = "Disconnected";
+                await _connection.StartAsync();
+                isConnected = true;
+            };
+
+            _connection.On<string>("SignalRBookingRequests", async (res) =>
+            {
+                if (res == "Done")
+                {
+                    await GetTasks();
+
+                    await this.InvokeAsync(() => this.StateHasChanged());
+                }
+
+
+            });
+        }
+        catch (Exception ex)
+        {
+
+
+        }
+        finally
+        {
+            await GetTasks();
+        }       
+    }
+    public async Task GetTasks()
+    {
+        await LoadDaysOfWeek(DateTime.Now);
+        _listBookingRequest = await _iBookingRequestRepo.GetAllBookingRequestAsync();
+        _shiftOfCabinVMs = await _ishiftOfCabinApiClient.GetAll();
+        _listBookingRequest = _listBookingRequest.Where(c => (new DateTime(c.StartTime.Year, c.StartTime.Month, c.StartTime.Day)) >= _monday && (new DateTime(c.StartTime.Year, c.StartTime.Month, c.StartTime.Day)) <= _sunday && c.Status != 4 && c.Status != 5).ToList();
+        var teachingschedules = await _teachingScheduleApiClient.GetAll();
+        _teachingScheduleVMs = teachingschedules.Where(c => c.IdTrainingFacility == Guid.Parse(_idTrainingFacility) && c.Status != 1).ToList();
+        _listbookingRequestsGrouped.Clear();
+        if (_listBookingRequest != null)
+        {
+            foreach (var bookigroup in _listBookingRequest.Where(c => c.Status != 1 && (_teachingScheduleVMs.Any(x => x.SubjectId == c.SubjectId && x.ClassId == c.ClassId && x.IdLecturter == c.IdLectuter && x.TeachingDay.Add(_shiftOfCabinVMs.FirstOrDefault(s => s.Id == x.IdShift).StartTime) == c.StartTime && x.TeachingDay.Add(_shiftOfCabinVMs.FirstOrDefault(s => s.Id == x.IdShift).EndTime) == c.EndTime))).GroupBy(g => new { g.SubjectId, g.ClassId, g.IdLectuter, g.StartTime, g.EndTime }).ToList())
+            {
+                _listbookingRequestsGrouped.Add(bookigroup.OrderByDescending(c => c.FeedBackTime).FirstOrDefault());
+            }
+        }
+        if (_statuslable == "Tất cả")
+        {
+            _amountstatus = _listbookingRequestsGrouped.Where(c => c.Status != 1).ToList().Count;
+        }
+        else if (_statuslable == "Đã được chọn")
+        {
+            _amountstatus = _listbookingRequestsGrouped.Where(c => c.Status == 2 && c.EndTime > DateTime.Now).ToList().Count;
+        }
+        else if (_statuslable == "Chưa xử lý")
+        {
+            _amountstatus = _listbookingRequestsGrouped.Where(c => c.Status == 0 && c.EndTime > DateTime.Now).ToList().Count;
+        }
+        else if (_statuslable == "Đã bị hủy")
+        {
+            _amountstatus = _listbookingRequestsGrouped.Where(c => c.Status == 3 && c.EndTime > DateTime.Now).ToList().Count;
+        }
+
+    }
+
+
+    public async Task LoadDaysOfWeek(DateTime date)
+    {
+        date = new DateTime(date.Year, date.Month, date.Day);
+
+        var dayOfWeek = date.DayOfWeek;
+        if (dayOfWeek == DayOfWeek.Sunday)
+        {
+            //xét chủ nhật là đầu tuần
+            //return date.AddDays(1);
+
+            //xét chủ nhật là ngày cuối tuần
+            _monday = date.AddDays(-6);
+        }
+        else
+        {
+            int offset = dayOfWeek - DayOfWeek.Monday;
+            _monday = date.AddDays(-offset);
+        }
+        _sunday = _monday.AddDays(6);
+    }
+
+    private void Open()
+    {
+        if (_displayOfType != "none")
+        {
+            _displayOfType = "none";
+        }
+        else
+        {
+            _displayOfType = "block";
+        }
+    }
+    private async Task SelectAll()
+    {
+        _amountstatus = _listbookingRequestsGrouped.Where(c => c.Status != 1).ToList().Count;
+        _statuslable = "Tất cả";
+        _backgroundcolorstatus = "badge bg-primary";
+        _bookingRequestSearch.Status = null;
+        _displayOfType = "none";
+        await SearchForm(null);
+    }
+    private async Task CheckedMethod()
+    {
+        _amountstatus = _listbookingRequestsGrouped.Where(c => c.Status == 2 && c.EndTime > DateTime.Now).ToList().Count;
+        _backgroundcolorstatus = "badge bg-success";
+        _statuslable = "Đã được chọn";
+        _bookingRequestSearch.Status = 2;
+        _displayOfType = "none";
+        await SearchForm(null);
+    }
+    private async Task noCheckedMethod()
+    {
+        _amountstatus = _listbookingRequestsGrouped.Where(c => c.Status == 0 && c.EndTime > DateTime.Now).ToList().Count;
+        _backgroundcolorstatus = "badge bg-danger";
+        _statuslable = "Chưa xử lý";
+        _bookingRequestSearch.Status = 0;
+        _displayOfType = "none";
+        await SearchForm(null);
+    }
+    private async Task CloseCheckedMethod()
+    {
+        _amountstatus = _listbookingRequestsGrouped.Where(c => c.Status == 3 && c.EndTime > DateTime.Now).ToList().Count;
+        _backgroundcolorstatus = "badge bg-warning";
+        _statuslable = "Đã bị hủy";
+        _bookingRequestSearch.Status = 3;
+        _displayOfType = "none";
+        await SearchForm(null);
+    }
+    private async Task ExpiredCheckedMethod()
+    {
+        _amountstatus = _listbookingRequestsGrouped.Where(c => c.Status != 1 && c.EndTime <= DateTime.Now).ToList().Count;
+        _backgroundcolorstatus = "badge bg-secondary";
+        _statuslable = "Đã hết hạn";
+        _bookingRequestSearch.Status = 4;
+        _displayOfType = "none";
+        await SearchForm(null);
+    }
+
+}

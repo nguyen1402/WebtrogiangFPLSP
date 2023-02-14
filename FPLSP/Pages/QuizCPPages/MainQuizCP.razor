@@ -1,0 +1,394 @@
+﻿@page "/MainQuizsCP/{idspecializedNonDecrypt}/{idsubjectNonDecrypt}"
+@using Blazored.Toast.Services
+@using FPLSP.Components.QuizCPConponents
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Dtos.QuizCPDtos
+@using FPLSP.Server.Infrastructure.ViewModels.QuizCPVm
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+<div class="row">
+    <h3 class="ps-0">Danh sách Quiz môn: @subjectSpec.SubjectCode - @subjectSpec.SubjectName</h3>
+</div>
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/SpecializedCP/@_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H")/@_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")">Chuyên ngành</a></li>
+        <li class="breadcrumb-item"><a href="/subjects/@_cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H")?@_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H")LDN01@_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")">@namespecialized</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Quizs</li>
+    </ol>
+</nav>
+<div class="row pt-3">
+    <div class="col-3 ps-0">
+        <a class="btn btn-outline-danger me-3" @onclick="() => Quaylai()">Quay Lại</a>
+        <a class="btn btn-primary me-3" @onclick="() => RedirectToCreate()">Thêm Quiz</a>
+    </div>
+    <div class="col-7 ps-0">
+        <div class="row">
+            <div class="col-4">
+                <EditForm Model="QuizCPListSearch">
+                    <div class="col-12">
+                        <InputSelect ValueExpression="@(()=>QuizCPListSearch.Status)" Value="@QuizCPListSearch.Status" ValueChanged="@((int newValue) => ChangeValue(newValue))" class="form-select">
+                            <option value="3">Tất cả</option>
+                            <option value="0">Không hoạt động</option>
+                            <option value="1">Đang hoạt động</option>
+                        </InputSelect>
+                    </div>
+                </EditForm>
+            </div>
+            <div class="col-8">
+                <EditForm Model="QuizCPListSearch">
+                    <div class="row">
+                        <div class="col-6 ps-0 pe-0">
+                            <InputText placeholder="Nhập tên Quiz" class="form-control" @bind-Value="QuizCPListSearch.QuizName"></InputText>
+                        </div>
+                        <div class="col-6">
+                            <button @onclick="() => TimKiem()" class="btn btn-primary">Tìm kiếm</button>
+                            <button class="btn btn-outline-success ms-2" @onclick="() => Undo()">Làm mới</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+    <div class="col-2 ps-3">
+        <div class="dropdown-center">
+            <button class="btn btn-info ps-4 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Chức Năng
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" @onclick="() => DeleteAll()">Đổi trạng thái</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+@if (ListQuizCP.Count() > 0 || (tg = DateTime.Now - time).Days < 7)
+{
+
+
+    <div class="row">
+
+        <table class="table table-hover align-middle table-bordered mt-3" style="text-align:center">
+            <thead class="table-success">
+                <tr>
+                    <th><input type="checkbox" @bind="@Check" @onchange="EventArgs => { CheckAllExpense( EventArgs.Value); } " @bind:event="oninput"></th>
+                    <th width="10%">Tên Quiz</th>
+                    <th width="13%">Tối đa số lần làm</th>
+                    <th width="13%">Ngày bắt đầu</th>
+                    <th width="13%">Ngày Kết thúc</th>
+                    <th width="15%">Trạng thái</th>
+                    <th width="16%">Mô tả</th>
+                    <th width="20%">Chức năng</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in ListQuizCP)
+                {
+                    <tr>
+                        <td><input type="checkbox" checked=@item.IsChecked @onchange="()=>CheckManual(item.Id,item.IsChecked)"></td>
+                        <td>@item.QuizName</td>
+                        <td>@item.MaxTurn</td>
+                        <td>@item.StartDay.Day/@item.StartDay.Month/@item.StartDay.Year</td>
+                        <td>@item.EndDay.Day/@item.EndDay.Month/@item.EndDay.Year</td>
+                        @if (@item.Status == 0)
+                        {
+                            <td>Không hoạt động</td>
+                        }
+                        else
+                        {
+                            <td>Đang hoạt động</td>
+                        }
+                        <td>@item.Descriptions</td>
+                        <td class="text-center">
+                            <a class="btn btn-info " type="button" title="Bộ câu hỏi" @onclick="()=>RedirectQuizQuestion(idspecialized,idsubject,item.Id)">
+                                <i class="bi bi-question-circle"></i>
+                            </a>
+                            <a class="btn btn-primary " type="button" title="Sửa" id="show-emp"
+                       @onclick="() => RedirectToUpdate(idspecialized,idsubject,item.Id)">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a class="btn btn-danger " type="button" title="Đổi trạng thái" @onclick="()=>DeleteQuiz(item.Id)">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </a>
+
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <Comfirmation ConfirmationMessage="Bạn có chắc muốn đổi trạng thái không?"
+                  ConfirmationTitle="Đổi trạng thái quiz"
+                  @ref="DeleteConfirmation"
+                  ConfirmationChanged="OnConfirmationDelete"></Comfirmation>
+    </div>
+    <div class="footer text-muted">
+        <div class="row mt-3">
+
+            <span>
+                <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+            </span>
+
+        </div>
+    </div>
+}
+else
+{
+    <span>
+        <LoadingIndicator></LoadingIndicator>
+    </span>
+}
+@code {
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    public List<SubjectQuizCPDtos> ListQuizCP { get; set; } = new List<SubjectQuizCPDtos>();
+    private PagingParameters _quizParameters = new PagingParameters();
+    public MetaData MetaData { get; set; } = new MetaData();
+    public string Error { get; set; }
+    [Inject] public IQuizCPRepo _iQuizCPClient { get; set; }
+    private ListQuizSearch QuizCPListSearch = new ListQuizSearch();
+
+    [Inject]
+    ISubjectClient _iSubjectClient { get; set; }
+
+    private SubjectDto subjectSpec = new SubjectDto();
+    [Parameter]
+    public string idsubjectNonDecrypt { get; set; }
+
+    [Parameter]
+    public string idspecializedNonDecrypt { get; set; }
+
+    [Parameter]
+    public string subjectnameNonDecrypt { get; set; }
+
+    [Parameter]
+    public string subjectcodeNonDecrypt { get; set; }
+
+
+    public string idsubject = "";
+    public string idspecialized = "";
+
+
+    public DateTime time { get; set; }
+    public TimeSpan tg;
+    private bool Check = false;
+
+    Uri uri;
+    string maxlevel = "";
+    string IdCoSo = "";
+    [Inject] private IToastService _toastService { get; set; }
+
+    private string _idQuiz;
+    protected Comfirmation DeleteConfirmation { get; set; }
+
+    private List<Guid> _removeListQuiz = new List<Guid>();
+
+    private int stt = 0;
+
+    private SubjectDto subject { get; set; } = new SubjectDto();
+
+    public SpecializedDto specializedDto { get; set; } = new SpecializedDto();
+    string namespecialized { get; set; }
+    [Inject]
+    public ISpecializedCPRepo _iSpecialized { get; set; }
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (string.IsNullOrEmpty(uri.Query) == false)
+        {
+            var urifist = uri.Query.Split("?")[1];
+            maxlevel = _cryptoServices.Decrypt(urifist.Split("LDN01")[0].Replace("I0H", "/"));
+            IdCoSo = _cryptoServices.Decrypt(urifist.Split("LDN01")[1].Replace("I0H", "/"));
+        }
+        idsubject = _cryptoServices.Decrypt(idsubjectNonDecrypt.Replace("I0H", "/"));
+        idspecialized = _cryptoServices.Decrypt(idspecializedNonDecrypt.Replace("I0H", "/"));
+
+        specializedDto = await _iSpecialized.GetbyId(Guid.Empty, Guid.Parse(idspecialized));
+        namespecialized = specializedDto.SpecializationName;
+        subject = await _iSubjectClient.GetSubjectbyId(Guid.Parse(idsubject));
+        subjectSpec = await _iSubjectClient.GetSubjectbyId(Guid.Parse(idsubject));
+        QuizCPListSearch.Status = 3;
+        await GetTasks();
+    }
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _iQuizCPClient.GetQuizCPList(Guid.Parse(idsubject), QuizCPListSearch);
+            ListQuizCP = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+            time = DateTime.Now;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+    private async Task Undo()
+    {
+        QuizCPListSearch.QuizName = "";
+        QuizCPListSearch.Status = 3;
+        QuizCPListSearch.PageNumber = 1;
+        await GetTasks();
+
+    }
+    private async Task TimKiem()
+    {
+        await GetTasks();
+    }
+    private async Task ChangeValue(int value)
+    {
+        QuizCPListSearch.Status = value;
+        QuizCPListSearch.QuizName = QuizCPListSearch.QuizName;
+        await GetTasks();
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/subjects/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToDetails(Guid id)
+    {
+
+        var url = Path.Combine("/DetailQuizCP/" + _cryptoServices.Encrypt((id.ToString()).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject.ToString()).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectQuizQuestion(string idspecialized, string idsubject, Guid id)
+    {
+
+        var url = Path.Combine("/quizQuesstionQuizCP/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((id.ToString()).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToUpdate(string idspecialized, string idsubject, Guid idquiz)
+    {
+
+        var url = Path.Combine("/UpdateQuizCP/" + _cryptoServices.Encrypt((idspecialized.ToString()).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject.ToString()).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idquiz.ToString()).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task RedirectToDelete(Guid id)
+    {
+        var url = Path.Combine("/DeleteQuizCP/", _cryptoServices.Encrypt((id.ToString()).ToString()).Replace("/", "I0H"), _cryptoServices.Encrypt((idsubject.ToString()).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task RedirectToCreate()
+    {
+        var url = Path.Combine("/CreateQuizCP/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject.ToString()).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        QuizCPListSearch.PageNumber = page;
+        Check = false;
+        await GetTasks();
+    }
+
+    public async Task SearchQuizCP(ListQuizSearch quiz)
+    {
+        QuizCPListSearch = quiz;
+        Check = false;
+        QuizCPListSearch.PageNumber = 1;
+        await GetTasks();
+    }
+
+    public async Task OnDelete(Guid id)
+    {
+        _idQuiz = id.ToString();
+        DeleteConfirmation.show();
+    }
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+
+        stt = 0;
+        if (deleteconfirmed && _idQuiz == null && _removeListQuiz.Count == 0)
+        {
+            _toastService.ShowError("Bạn chưa chọn đối tượng để đổi trạng thái");
+            await GetTasks();
+            NavigationManager.NavigateTo($"/MainQuizsCP/{_cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H")}/{_cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H")}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        }
+        else if (deleteconfirmed && _idQuiz != null)
+        {
+            var result = await _iQuizCPClient.DeleteQuizCP(Guid.Parse(_idQuiz));
+            if (result == 1)
+            {
+                _toastService.ShowSuccess("Đổi trạng thái thành công");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/MainQuizsCP/{_cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H")}/{_cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H")}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+            }
+            else
+            {
+                _toastService.ShowError("Đổi trạng thái thất bại");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/MainQuizsCP/{_cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H")}/{_cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H")}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+            }
+        }
+        else if (deleteconfirmed && _removeListQuiz != null)
+        {
+
+            var result = await _iQuizCPClient.RemoveListQuizCP(_removeListQuiz);
+            if (result)
+            {
+                _toastService.ShowSuccess("Đổi trạng thái thành công");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/MainQuizsCP/{_cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H")}/{_cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H")}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+            }
+            else
+            {
+                _toastService.ShowError("Đổi trạng thái thất bại");
+
+                await GetTasks();
+                NavigationManager.NavigateTo($"/MainQuizsCP/{_cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H")}/{_cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H")}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+            }
+        }
+        _idQuiz = null;
+        _removeListQuiz = null;
+        Check = false;
+    }
+    public void DeleteQuiz(Guid id)
+    {
+        _idQuiz = id.ToString();
+        DeleteConfirmation.show();
+    }
+    void CheckManual(Guid reportId, bool check)
+    {
+        stt = 0;
+        if (check == true)
+        {
+            foreach (var x in ListQuizCP.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in ListQuizCP.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    void DeleteAll()
+    {
+        stt = 0;
+        _removeListQuiz = ListQuizCP.Where(c => c.IsChecked == true).Select(c => c.Id).ToList();
+        DeleteConfirmation.show();
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        stt = 0;
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            ListQuizCP.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            ListQuizCP.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+}

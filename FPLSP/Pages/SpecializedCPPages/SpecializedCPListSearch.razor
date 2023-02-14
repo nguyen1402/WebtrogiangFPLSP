@@ -1,0 +1,29 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels.Specialized
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<EditForm Model="@specializedSearch" OnSubmit=@SearchForm>
+    <div class="row text-right">
+        <div class="col">
+            <InputText placeholder="Tìm theo tên, mã" class="form-control" @bind-Value="specializedSearch.Name"></InputText>
+        </div>
+        <div class="col-5">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+            <a class="btn btn-outline-success ms-2" @onclick="() => clearSearch()">Làm mới</a>
+
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public EventCallback<SpecializedListSearch> OnSearch { get; set; }
+    private SpecializedListSearch specializedSearch = new SpecializedListSearch();
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(specializedSearch);
+    }
+    public async void clearSearch()
+    {
+        specializedSearch.Name = "";
+        specializedSearch = new SpecializedListSearch();
+        await OnSearch.InvokeAsync(specializedSearch);
+    }}

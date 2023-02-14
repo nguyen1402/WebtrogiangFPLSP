@@ -1,0 +1,44 @@
+﻿@using IdentityServer4.Extensions
+
+@{
+    string name = null;
+    if (!true.Equals(ViewData["signed-out"]))
+    {
+
+    }
+}
+<div class="nav-page">
+    <div class="navbar navbar-expand-lg navbar-light bg-light">
+        <a href="/">
+
+        <div class="row m-0 p-0">
+            <div class="col-lg-2">
+                <a href="~/" class="navbar-brand">
+                    <img src="./css/images/Others/FPT_Polytechnic.png" class="icon-banner" width="250" alt="Image">
+                </a>
+            </div>
+            <div class="col-lg-4">
+                <a href="~/"></a>
+            </div>
+            <div class="col-lg-2 my-3">
+                <a href="~/" class="navbar-brand">
+                    FPLSP | Elearning
+                </a>
+            </div>
+            <div class="col-lg-4"></div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(name))
+        {
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item dropdown">
+
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" asp-action="Logout" asp-controller="Account">Logout</a>
+                    </div>
+                </li>
+            </ul>
+        }
+        </a>
+    </div>
+</div>

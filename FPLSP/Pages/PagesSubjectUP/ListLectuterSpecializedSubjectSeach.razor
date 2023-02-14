@@ -1,0 +1,42 @@
+﻿@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Subject
+<EditForm Model="@sjUPListSearch" OnSubmit=@SearchForm>
+    <div class="row pl-5">
+        <div class="col-lg-4"></div>
+        <div class=" col-lg-10">
+            <div class="input-group mb-3">
+                <InputText placeholder="Nhập tên môn..." class="form-control" @bind-Value="sjUPListSearch.Name"></InputText>
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-outline-secondary">🔍</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-1">
+            <a @onclick="@ClearSearch" class="btn btn-outline-success">Clear</a>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+
+    [Parameter]
+    public EventCallback<SubjectListSearch> OnSearch { get; set; }
+    [Inject] private ISubjectUPRepo _subjectUPRepo { get; set; }
+    private List<SubjectDto> _lstsubjectDtos { get; set; }
+
+    private SubjectListSearch sjUPListSearch = new SubjectListSearch();
+    protected override async Task OnInitializedAsync()
+    {
+        _lstsubjectDtos = await _subjectUPRepo.GetAllSubjectAsync();
+    }
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(sjUPListSearch);
+    }
+    public async Task ClearSearch()
+    {
+        sjUPListSearch = new SubjectListSearch();
+        await SearchForm(null);
+    }
+}

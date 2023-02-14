@@ -1,0 +1,220 @@
+﻿@page "/detailuserCabin/{GetIdCryto}/{maxlevelCryto}/{IdCoSoCryto}"
+@using Blazored.LocalStorage
+@using Blazored.Toast.Services
+@using FPLSP.Data;
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using FPLSP.Server.Infrastructure.ViewModels
+@using FPLSP.Server.Infrastructure.ViewModels.LecturerCPVm
+@using Microsoft.AspNetCore.Identity
+@using System.Security.Claims;
+@attribute [Authorize(Roles = "DirectorOfTraining,Staff")]
+
+@if (_lstRole != null)
+{
+    <div class="row d-flex justify-content-center">
+        <div class="col-md-8">
+
+            <h5 class="fw-bold">Chọn Các Quyền Gán Cho :<strong>@_User.UserName</strong></h5>
+            <MudChipSet AllClosable="true" OnClose="Closed">
+
+                @foreach (var x in @_User.ListRoles)
+                {
+                    if (x == "DirectorOfTraining" || x == "Staff" || x == "Lecturer")
+                    {
+                        if (maxlevel == "5")
+                        {
+                            <MudChip Text="@x"></MudChip>
+                        }
+                        else
+                        {
+                            if (x == "Lecturer")
+                            {
+                                <MudChip Text="@x"></MudChip>
+                            }
+                        }
+                    }
+                }
+
+            </MudChipSet>
+            <hr />
+            <div class="mb-3">
+                <label for="exampleFormControlInput3" class="form-label px-lg-0">Chọn quyền :</label>
+
+
+                @foreach (var x in _lstRole)
+                {
+                    if (x.Name != "LecturerFPLSP" && x.Name != "HeadOfDepartment")
+                    {
+                        <MudButton OnClick="()=>Add(x.Name)"><span class="px-2">@x.Name  </span></MudButton>
+                    }
+                }
+
+            </div>
+        </div>
+        <div class="row d-flex justify-content-center">
+            <button class="btn btn-primary col-lg-6" @onclick=AddRoleToUser>Cấp quyền</button>
+        </div>
+    </div>
+}
+else
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+@code
+{
+    string cabin = "CanViewCabinProject";
+    [Inject] public IUserIdentityRepo _UserIdentityRepo { get; set; }
+    private UserInListRoles _User;
+    [Inject]
+    public IRoleUserIdentityRepo _roleUserIdentityRepo { get; set; }
+    [Inject] public ILecturersCPRepo _lecturersCPRepo { get; set; }
+    private List<IdentityRole> _lstRole { get; set; }
+    private IdentityRole _role;
+
+    [Inject] public NavigationManager Navigation { get; set; }
+    [Inject] public IToastService toastService { get; set; }
+
+    [Parameter]
+    public string GetIdCryto { get; set; }
+    [Parameter]
+    public string maxlevelCryto { get; set; }
+    [Parameter]
+    public string IdCoSoCryto { get; set; }
+
+    public string IdCoSo { get; set; }
+    public string GetId { get; set; }
+    public string maxlevel { get; set; }
+
+    //tạo ra 1 list claim redriect
+    private List<Claim> _lstRedirect = new List<Claim>();
+    [Inject] public UserManager<UserSignIn> _userManager { get; set; }
+
+
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    public DetailPartitionCabin()
+    {
+
+        _User = new UserInListRoles();
+        _role = new IdentityRole();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        _lstRedirect.Add(new Claim("CanViewCabinProject", "true"));
+
+        IdCoSo = _cryptoServices.Decrypt(IdCoSoCryto.Replace("cabin", "/"));
+        GetId = _cryptoServices.Decrypt(GetIdCryto.Replace("cabin", "/"));
+        maxlevel = _cryptoServices.Decrypt(maxlevelCryto.Replace("cabin", "/"));
+        _User = await _UserIdentityRepo.GetUserRoleById(GetId);
+        _lstRole = await _roleUserIdentityRepo.GetAllRolesAsync();
+        //xử lý loại trừ các role cấp cao hơn role mà dường dùng truyền vào
+        if (maxlevel == "5")
+        {
+            foreach (var role in _lstRole.ToList())
+            {
+                if (role.Name != "DirectorOfTraining" && role.Name != "Staff" && role.Name != "Lecturer")
+                {
+                    _lstRole.Remove(role);
+                }
+            }
+        }
+        else if (maxlevel == "3")
+        {
+            foreach (var role in _lstRole.ToList())
+            {
+                if (role.Name != "Lecturer")
+                {
+                    _lstRole.Remove(role);
+                }
+            }
+
+        }
+
+        var let = await _lecturersCPRepo.GetAllLecturerAsync();
+
+
+
+    }
+
+    public void Add(string name)
+    {
+        if (_User.ListRoles.Any(c => c == name) == false)
+        {
+
+            _User.ListRoles.Add(name);
+        }
+    }
+    private async void AddRoleToUser()
+    {
+        try
+        {
+            if (_User.ListRedirectClaims.Any(c => c.Type == cabin) == false)
+            {
+                _User.ListRedirectClaims.Add(_lstRedirect.Find(c => c.Type == cabin));
+            }
+            UserUpdateRolesHasClaims userUpdateRoles = new UserUpdateRolesHasClaims()
+                {
+                    ID = GetId,
+                    Name = _User.UserName,
+                    claims = _User.ListRedirectClaims,
+                    RoleNames = _User.ListRoles.ToArray()
+                };
+
+            //kiểm tra xem cơ sở cũ ở trongdatabase với cơ sở mới vừa chọn có khác nhau hay không
+            var getCurrentUser = await _UserIdentityRepo.GetUserRoleById(GetId);
+            foreach (var user in _userManager.Users.ToList().Where(c => c.Id == GetId))
+            {
+                user.IdTrainingFacility = Guid.Parse(IdCoSo);
+                await _userManager.UpdateAsync(user);
+
+            }
+
+            //cập nhật mới lại cho giảng viên
+            if (userUpdateRoles.RoleNames.ToList().Any(c => c == "Lecturer"))
+            {
+                var update = new CreateleatureForTrainVm()
+                    {
+                        Id = Guid.Parse(_User.Id),
+                        Email = _User.UserName,
+                        IdTrain = Guid.Parse(IdCoSo)
+                    };
+                var all = await _lecturersCPRepo.GetAllLecturerAsync();
+                foreach (var x in all.Where(c => c.Email == _User.Email))
+                {
+                    await _lecturersCPRepo.UpdateLecturerTrain(x.Id, update);
+                }
+            }
+            //}
+            //}
+
+            var res = await _UserIdentityRepo.AddRolesToUser(userUpdateRoles);
+            if (res)
+            {
+
+                toastService.ShowSuccess($"Cấp quyền thành công cho {_User.UserName}");
+                Navigation.NavigateTo($"/listuseridenOfCabin/{_cryptoServices.Encrypt(maxlevel)}/{_cryptoServices.Encrypt(IdCoSo)}");
+            }
+            else
+            {
+                toastService.ShowError($"Cấp quyền thất bại cho {_User.UserName}");
+                return;
+            }
+        }
+        catch (Exception)
+        {
+            toastService.ShowError("Đã xảy ra lỗi, vui lòng thử lại");
+            await OnInitializedAsync();
+        }
+
+
+    }
+    public void Closed(MudChip chip) => _User.ListRoles.Remove(chip.Text);
+    public void RemoveReDirect(MudChip chip)
+    {
+
+        _User.ListRedirectClaims.Remove((Claim)chip.Value);
+    }
+
+}

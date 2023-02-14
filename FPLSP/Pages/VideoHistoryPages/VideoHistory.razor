@@ -1,0 +1,209 @@
+﻿@page "/videoHistory/{studentID}/{subjectid}/{idLesson}"
+@using Blazored.Toast.Services
+@using FPLSP.Components.VideoHistory
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.VideoHistoryVm
+@attribute [Authorize(Roles = "Student")]
+<h3>Danh sách video đã lưu</h3>
+@if (_lstVideoHistorys == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <div class="row">
+        <div>
+            @if (_lstVideoHistorys.Count > 0)
+            {
+                <input type="checkbox" @bind="Check" class="form-check-input"
+               @onchange="EventArgs => { CheckAllExpense( EventArgs.Value); }" value="" id="flexCheckDefault" @bind:event="oninput">
+                <label class="form-check-label" for="flexCheckDefault">
+                    Select All
+                </label>
+                <span class="px-3">Số Lượng Video Đã Chọn Là :@_lstVideoHistorys.Where(c=>c.IsChecked==true).Count()</span>
+            }
+        </div>
+        <div class="col-lg-9">
+            @foreach (var item in _lstVideoHistorys)
+            {
+                <div class=" row pt-3">
+                    <div class="col-lg-1 pr-11 pt-14"><input type="checkbox" checked=@item.IsChecked @onchange="()=>CheckManual(item.IdStuden,item.IdLessonConten, item.IsChecked)"></div>
+                    <a type="button" class="col-lg-11 btn" href="getvideoUP/@subjectid/@idLesson/@item.IdLessonConten/@studentID">
+                        <div class="row">
+                            <div class="col-lg-3">
+                                @if (cutidvideo(item.Path) != null)
+                                {
+                                    <iframe class="modal-xl" style="height: 130px;width:200px;padding-top: 10px; display:block" src='@cutidvideo(item.Path)' frameborder='0' allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe>
+                                }
+                                else
+                                {
+                                    <h5>Video sẽ được hiển thị ở đây</h5>
+                                }
+                            </div>
+                            <div class="col-lg-8 pt-2 text-right">
+                                <h5 style="padding-right: 420px;">@item.LessonContenCode - @item.LessonContenName</h5><br />
+                                <h7 style="padding-right: 70px;" class="">Đường dẫn: <a href="@cutidvideo(item.Path)">@cutidvideo(item.Path)</a> </h7><br />
+                                <h7 style="padding-right: 310px;" class="">Thời gian lưu: @item.TimeOfSaveHistory.ToString("dd-MM-yyyy") </h7>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+        <div class="col-lg-3 row fixed top-10 end-0" style="height: 580px; background: gainsboro;">
+            <VideoHistorySearch OnSearch="SearchVideoHistory"></VideoHistorySearch>
+            <div class="row" style=" margin-top:-220px;">
+            <div class="col-lg-5 pl-7 pt-2">
+                <button class="btn btn-danger" @onclick="() => DeleteAll()"> <i class="fa-solid fa-video-slash"></i> Bỏ lưu</button>
+            </div>
+           
+            </div>
+        </div>
+    </div>
+    <div class="card-footer text-muted">
+        <div class="row mt-3">
+
+            <span>
+                <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+            </span>
+
+        </div>
+    </div>
+}
+<Comfirmation ConfirmationMessage="Bạn có chắc muốn xóa không?"
+              ConfirmationTitle="Xóa nội dung bài học"
+              @ref="DeleteConfirmation"
+              ConfirmationChanged="OnConfirmationDelete"></Comfirmation>
+@code {
+    [Parameter]
+    public string studentID { get; set; }
+    [Parameter]
+    public string subjectid { get; set; }
+    [Parameter]
+    public string idLesson { get; set; }
+    [Inject] private IVideoHistoryRepo _VideoHistoryRepo { get; set; }
+    [Inject] public NavigationManager navigationManager { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    private List<VideoHistoryDto> _lstVideoHistorys = new List<VideoHistoryDto>();
+
+    private List<VideoHistoryDto> _removeReport = new List<VideoHistoryDto>();
+
+    private VideoHistoryListSearch _VideoHistorySearch = new VideoHistoryListSearch();
+
+    private bool Check { get; set; }
+
+    protected Comfirmation DeleteConfirmation { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTasks();
+    }
+
+    public async Task SearchVideoHistory(VideoHistoryListSearch VideoHistorySearch)
+    {
+        _VideoHistorySearch = VideoHistorySearch;
+        await GetTasks();
+    }
+
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _VideoHistoryRepo.GetListLink(Guid.Parse(studentID), Guid.Parse(idLesson), _VideoHistorySearch);
+            _lstVideoHistorys = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            _toastService.ShowError("Đã xảy ra lỗi, thử lại sau");
+        }
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            _lstVideoHistorys.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            _lstVideoHistorys.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+
+    void CheckManual(Guid st, Guid lessonct, bool check)
+    {
+        if (check == true)
+        {
+            foreach (var x in _lstVideoHistorys.Where(c => c.IdStuden == st && c.IdLessonConten == lessonct))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in _lstVideoHistorys.Where(c => c.IdStuden == st && c.IdLessonConten == lessonct))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    void DeleteAll()
+    {
+        _removeReport = _lstVideoHistorys.Where(c => c.IsChecked == true).ToList();
+        DeleteConfirmation.show();
+    }
+    private async Task SelectedPage(int page)
+    {
+        Check = false;
+        _VideoHistorySearch.PageNumber = page;
+        await GetTasks();
+    }
+
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (deleteconfirmed && _removeReport != null)
+        {
+            var result = await _VideoHistoryRepo.UpdateListVideo(_removeReport);
+            if (result)
+            {
+                if (_removeReport.Count > 0)
+                {
+                    _toastService.ShowSuccess($"Xóa {_removeReport.Count} video đã lưu thành công");
+                    await GetTasks();
+                }
+                else
+                {
+                    _toastService.ShowError($"Bạn chưa chọn video muốn xóa");
+                    await GetTasks();
+                }
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+
+                await GetTasks();
+            }
+        }
+        _removeReport = null;
+        Check = false;
+    }
+
+    private string cutidvideo(string url)
+    {
+        if (url == null)
+        {
+            return null;
+        }
+        var videoID = url.Replace("https://www.youtube.com/embed/", "");
+        videoID = videoID.Replace("https://www.youtube.com/watch?v=", "");
+        videoID = videoID.Replace("https://youtu.be/", "");
+        videoID = videoID.Substring(0, 11);
+
+        return $"https://www.youtube.com/embed/{videoID}";
+    }
+}

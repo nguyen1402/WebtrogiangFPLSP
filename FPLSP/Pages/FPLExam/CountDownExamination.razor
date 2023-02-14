@@ -1,0 +1,269 @@
+﻿@page "/countdownexamnination/{GetIduser}"
+@using AntDesign
+@using FPLSP.Repositories.Interfaces.FPLExam;
+@using FPLSP.Server.Data.SeedWork
+
+@using FPLSP.Server.Domain.Entities.FPLExam;
+@using FPLSP.Server.Infrastructure.ViewModels.FPLExam;
+@using System.Timers;
+@inject NavigationManager NavigationManager;
+<div class="row">
+    <EditForm class="row mb-4" Model="countdownExamninationSearch" OnSubmit="SearchTask">
+
+        <div class="col-3">
+            @*<span>Sắp xếp ngày</span>
+            <InputSelect class="form-select" ValueExpression="@(()=>countdownExamninationSearch.TimeOderby)" Value="@countdownExamninationSearch.TimeOderby" ValueChanged="@((int value)=> SearchTimeOderby(value))">
+                <option value="0">Không sắp xếp</option>
+                <option value="1">Ngày bắt đầu tăng dần</option>
+                <option value="2">Ngày bắt đầu giảm dần</option>
+                <option value="3">Ngày kết thúc tăng dần</option>
+                <option value="4">Ngày kết thúc giảm dần</option>
+            </InputSelect>*@
+            <span>Ngày bắt đầu</span>
+            <InputDate class="form-select" @bind-Value="countdownExamninationSearch.StartTime">
+
+            </InputDate>
+        </div>
+        <div class="col-3">
+            
+            <span>Ngày kết thúc</span>
+            <InputDate class="form-select" @bind-Value="countdownExamninationSearch.EndTime">
+            </InputDate>
+        </div>
+        <div class="col-4">
+            <span>Tìm kiếm theo tên môn</span>
+            <div class="input-group mb-3">
+                <InputText placeholder="Nhập Tên môn ..." class="form-control" @bind-Value="countdownExamninationSearch.SubjectName"></InputText>
+                <div class="input-group-append pl-1">
+                    <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+                </div>
+            </div>
+        </div>
+        <div class=" col-2">
+            <span></span>
+            <div class="input-group mb-3 mt-4">
+                <div class="input-group-append pl-1">
+                    <button type="button" @onclick="Clear" class="btn btn-primary">Làm Mới</button>
+                </div>
+            </div>
+        </div>
+
+    </EditForm>
+
+    @foreach (var x in _lstShedules.OrderByDescending(c => (c.StartTime - DateTime.Now).TotalMinutes <= 20 && DateTime.Now <= c.EndTime))
+    {
+        <div class="col-lg-3 mt-3">
+            <div class="blog text-dark">
+                <div class="title-box">
+                    <h3>
+                        @x.SubjectName
+                    </h3>
+                    <hr />
+                    @if ((x.StartTime - DateTime.Now).TotalMinutes <= 20 && DateTime.Now <= x.EndTime)
+                    {
+                        <Button Type="Primary" @onclick="()=>Joiner(x.SecretKey,x.IdLecturter)" class="align-self-middle read_more_btn" style="border-radius:10px;">
+                            Vào Phòng Thi
+                        </Button>
+                    }
+                    else if (x.EndTime < DateTime.Now)
+                    {
+                        <div class="clock">
+                            <span>Đã Kế Thúc</span>
+                        </div>
+                    }
+                    @if (x.EndTime > DateTime.Now && (x.StartTime - DateTime.Now).TotalMinutes > 20)
+                    {
+                        <div class="clock">
+                            <span>Sắp Bắt Đầu</span>
+                        </div>
+                    }
+
+                </div>
+                <div class="intro mt-3">
+                    <div>
+                        <i class="fa fa-calendar"></i>
+                        <Text Class="text-dark">Thời gian bắt đầu: @x.StartTime </Text>
+                    </div>
+
+                    <space></space>
+                    <div>
+                        <i class="fa fa-calendar"></i>
+                        <Text Class="text-dark">Thời gian kết thúc :@x.EndTime </Text>
+                    </div>
+                </div>
+                <div class="color-overlay"></div>
+            </div>
+        </div>
+
+    }
+    <div class="card-footer text-muted">
+        <div class="row mt-3">
+
+            <span>
+                <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+            </span>
+
+        </div>
+    </div>
+</div>
+@code {
+    private System.Timers.Timer _timer = null!;
+    private int _secondsToRun = 0;
+    [Parameter]
+    public string GetIduser { get; set; }
+    [Inject]
+    public ISupervisorExamRoomRepocs _supervisorExamRoomRepocs { get; set; }
+    protected string Time { get; set; } = "00:00:00";
+    private List<ExamRoomSupervisorViewModel> _lstShedules = new List<ExamRoomSupervisorViewModel>();
+    private List<ExamRoomSupervisorViewModel> _lstShedulesFlag = new List<ExamRoomSupervisorViewModel>();
+    [Parameter]
+    public EventCallback TimerOut { get; set; }
+    public MetaData MetaData { get; set; } = new MetaData();
+    public CountdownExamninationSearch countdownExamninationSearch = new CountdownExamninationSearch();
+    public async Task Start(int secondsToRun, ExamRoomSupervisorViewModel examRoomSupervisorViewModel)
+    {
+        _secondsToRun = secondsToRun;
+
+        if (_secondsToRun > 0)
+        {
+            examRoomSupervisorViewModel.CountDown = TimeSpan.FromSeconds(_secondsToRun).ToString(@"d\:hh\:mm\:ss");
+            StateHasChanged();
+            _timer.Start();
+
+        }
+
+    }
+    private async Task SelectedPage(int page)
+    {
+        countdownExamninationSearch.PageNumber = page;
+        await GetTasksSearch();
+    }
+
+    private async Task SearchTask(EditContext context)
+    {
+        await GetTasksSearch();
+    }
+    private async Task Clear()
+    {
+        countdownExamninationSearch = new CountdownExamninationSearch();
+        await GetTasksSearch();
+    }
+    private async Task SearchSubjectName(string SubjectName)
+    {
+        countdownExamninationSearch.SubjectName = SubjectName;
+        await SearchTask(null);
+    }
+    private async Task SearchTimeOderby(int TimeOderby)
+    {
+        countdownExamninationSearch.TimeOderby = TimeOderby;
+        await SearchTask(null);
+    }
+
+    private async Task GetTasksSearch()
+    {
+        _lstShedules = _lstShedulesFlag;
+        if (!string.IsNullOrEmpty(countdownExamninationSearch.SubjectName))
+        {
+            _lstShedules = _lstShedules.Where(c => c.SubjectName.ToLower().Contains(countdownExamninationSearch.SubjectName.ToLower())).ToList();
+        }
+        if (countdownExamninationSearch.TimeOderby != 0)
+        {
+            if (countdownExamninationSearch.TimeOderby == 1)
+            {
+                _lstShedules = _lstShedules.OrderBy(c => c.StartTime).ToList();
+            }
+            else if (countdownExamninationSearch.TimeOderby == 2)
+            {
+                _lstShedules = _lstShedules.OrderByDescending(c => c.StartTime).ToList();
+            }
+            else if (countdownExamninationSearch.TimeOderby == 3)
+            {
+                _lstShedules = _lstShedules.OrderBy(c => c.EndTime).ToList();
+            }
+            else if (countdownExamninationSearch.TimeOderby == 4)
+            {
+                _lstShedules = _lstShedules.OrderByDescending(c => c.EndTime).ToList();
+            }
+            //_lstShedules = countdownExamninationSearch.TimeOderby == 1 ? _lstShedules.OrderBy(c => c.StartTime).ToList() :
+            //countdownExamninationSearch.TimeOderby == 2 ? _lstShedules.OrderByDescending(c => c.StartTime).ToList() :
+            //countdownExamninationSearch.TimeOderby == 3 ? _lstShedules.OrderBy(c => c.EndTime).ToList() :
+            //countdownExamninationSearch.TimeOderby == 4 ? _lstShedules.OrderByDescending(c => c.EndTime).ToList() : _lstShedules;
+        }
+        if (countdownExamninationSearch.StartTime != null && countdownExamninationSearch.EndTime != null)
+        {
+            _lstShedules = _lstShedules.Where(c => c.StartTime >= countdownExamninationSearch.StartTime && c.EndTime.Date <= countdownExamninationSearch.EndTime).ToList();
+        }
+        var data = _lstShedules.Skip((countdownExamninationSearch.PageNumber - 1) * countdownExamninationSearch.PageSize).Take(countdownExamninationSearch.PageSize).ToList();
+        var lstpage = new PageList<ExamRoomSupervisorViewModel>(data,
+            _lstShedules.Count(),
+            countdownExamninationSearch.PageNumber,
+            countdownExamninationSearch.PageSize);
+        _lstShedules = lstpage.Items;
+        MetaData = lstpage.MetaData;
+    }
+    private async Task Joiner(string key, Guid id)
+    {
+        NavigationManager.NavigateTo($"/onlineroomhandler/{key}/{id.ToString()}", true);
+    }
+    public void Stop()
+    {
+        _timer.Stop();
+    }
+    protected async override Task OnInitializedAsync()
+    {
+        _lstShedules = await _supervisorExamRoomRepocs.GetSupervisorById(GetIduser);
+        _lstShedulesFlag = await _supervisorExamRoomRepocs.GetSupervisorById(GetIduser);
+        await GetTasksSearch();
+    }
+    private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
+    {
+        _secondsToRun--;
+
+        await InvokeAsync(() =>
+        {
+            Time = TimeSpan.FromSeconds(_secondsToRun).ToString(@"d\:hh\:mm\:ss");
+            StateHasChanged();
+        });
+
+        if (_secondsToRun <= 0)
+        {
+            _timer.Stop();
+            await TimerOut.InvokeAsync();
+        }
+    }
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+
+            using var periodicTimer = new PeriodicTimer(TimeSpan.FromSeconds(15));
+            while (await periodicTimer.WaitForNextTickAsync())
+            {
+                //cứ 5s là làm mới màn này 1 lần
+
+
+                Console.WriteLine("refresh");
+                _lstShedules = await _supervisorExamRoomRepocs.GetSupervisorById(GetIduser);
+                _lstShedulesFlag = await _supervisorExamRoomRepocs.GetSupervisorById(GetIduser);
+
+                await InvokeAsync(() =>
+      {
+
+          StateHasChanged();
+      });
+
+            }
+
+        }
+
+        //foreach (var x in _lstShedules)
+        //{
+        //    _timer = new System.Timers.Timer(1000);
+        //    _timer.Elapsed += OnTimedEvent;
+        //    _timer.AutoReset = true;
+        //    var totalseconds = Convert.ToInt32((x.StartTime - DateTime.Now).TotalSeconds);
+        //    await Start(totalseconds, x);
+        //}
+    }
+}

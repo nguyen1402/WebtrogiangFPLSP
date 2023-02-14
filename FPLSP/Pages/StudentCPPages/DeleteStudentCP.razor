@@ -1,0 +1,76 @@
+﻿@page "/deleteStudentCP/{Id}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.StudentCPDtos
+
+<h3>Xóa Sinh Viên</h3>
+
+@if (student != null)
+{
+    <div class="form-group">
+
+        <img src="/Image/StudentCP/@student.ImageUrl" alt="@student.ImageUrl" height=190 width=170>
+
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Mã Sinh Viên: <b>@student.StudentCode</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Tên Sinh Viên: <b>@student.StudentName</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Email: <b>@student.Email</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Số điện thoại: <b>@student.PhoneNumber</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-2">
+                <EditForm Model="student" OnValidSubmit="Delete" class="card card-body bg-light mt-3">
+                    <DataAnnotationsValidator />
+                    <div class="form-group row">
+                        <label for="name" class="row">
+                            <p>
+                                <b style="color : red">Bạn có muốn xóa không ?</b>
+                            </p>
+                        </label>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-2 text-center">
+                            <button type="submit" class="btn btn-danger">Xóa</button>
+                        </div>
+                        <div class="col-md-10 text-center">
+                            <a href="/MainStudentsCP" class="btn btn-primary">Quay Lại</a>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                
+            </div>
+        </div>
+
+    </div>
+}
+@code {
+    public StudentCPDtos student;
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+    [Inject]
+    IStudentCPApiClient _iStudentCPApiClient { get; set; }
+    [Parameter]
+    public string Id { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        student = await _iStudentCPApiClient.GetStudentById(Guid.Parse(Id));
+        student.Status = 1;
+    }
+    private async Task Delete()
+    {
+        await _iStudentCPApiClient.UpdateStudentCP(student);
+        Navigation.NavigateTo("/MainStudentsCP");
+    }
+}

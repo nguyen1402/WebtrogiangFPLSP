@@ -1,0 +1,186 @@
+﻿@page "/ListLessonClassUP/{idclass}/{specializedId}/{lecuId}/{subjectId}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.LessonUP
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+<div class="row">
+
+    <div class="col-md-2 text-center">
+        <a @onclick="Quaylai" class="btn btn-danger">Quay lại</a>
+    </div>
+    <div class="col-lg-10">
+        <ListLessonClassUPSeach OnSearch="SearchLessonUP"></ListLessonClassUPSeach>
+    </div>
+</div>
+@if (_lstLessonUPs == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    @if (_lstLessonUPs.Any())
+    {
+        <div class="mt-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="row">
+                        @if (_lstLessonUPs != null)
+                        {
+                            @foreach (var item in _lstLessonUPs.OrderBy(c => c.LessonCode))
+                            {
+                                <div class="col-lg-3 mb-5 single-product-item">
+                                    <div class="card border-2 border-info">
+                                        <div class="row ">
+                                            <div class="card-body text-center">
+                                                <h5 class="my-3">Tên bài : @item.LessonName</h5>
+                                                <div class="d-flex justify-content-center mb-2">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <a class="btn btn-info " type="button" title="Xét thời gian" @onclick="() => SubmitHomeWorksCreate(item.Id)">
+                                                                <i class="bi bi-alarm"></i>
+                                                            </a>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <a class="btn btn-success " type="button" title="Thêm bài tập" @onclick="() => RedirectToThembaitap(item.Id)">
+                                                                <i class="bi bi-plus-circle-fill"></i>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <h3>Danh sách rỗng !</h3>
+                        }
+                    </div>
+                </div>
+                <div class="card-footer text-muted">
+                    <div class="row mt-3">
+
+                        <span>
+                            <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+                        </span>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <h5> Không tìm thấy danh sách bài học UP</h5>
+    }
+}
+@code{
+
+    [Parameter]
+        public string specializedId { get; set; }
+        [Parameter]
+        public string lecuId { get; set; }
+        [Parameter]
+        public string subjectId { get; set; }
+
+        [Parameter]
+        public string idclass { get; set; }
+
+        [Inject] private ILessonUPRepo _LessonUPRepo { get; set; }
+        [Inject] public NavigationManager NavigationManager { get; set; }
+        [Inject] private ISubjectUPRepo _subjectUPRepo { get; set; }
+
+        private List<SubjectDto> _lstsubjectDtos { get; set; }
+
+        public MetaData MetaData { get; set; } = new MetaData();
+
+        private List<LessonUPViewModel> _lstLessonUPs;
+
+        private LessonUPListSearch _LessonUPSearch = new LessonUPListSearch();
+
+        [CascadingParameter]
+        private Error Error { get; set; }
+
+        private Guid deleteID { get; set; }
+
+        protected Comfirmation DeleteConfirmation { get; set; }
+
+        protected override async Task OnInitializedAsync()
+        {
+            _lstsubjectDtos = await _subjectUPRepo.GetAllSubjectAsync();
+            await GetTasks();
+        }
+
+        public async Task SearchLessonUP(LessonUPListSearch LessonUPSearch)
+        {
+            _LessonUPSearch = LessonUPSearch;
+            await GetTasks();
+        }
+
+        public void OnDelete(Guid id)
+        {
+            deleteID = id;
+            DeleteConfirmation.show();
+        }
+
+        public async Task OnConfirmDelete(bool deleteConfirmed)
+        {
+            if (deleteConfirmed)
+            {
+                var result = await _LessonUPRepo.Delete(deleteID);
+                if (result)
+                {
+                    await GetTasks();
+                }
+            }
+        }
+
+        private async Task GetTasks()
+        {
+            try
+            {
+                var pagingResponse =  await _LessonUPRepo.GetAll();
+                _lstLessonUPs =  pagingResponse.Where(c => c.SubjectId == Guid.Parse(subjectId)).OrderBy(c =>Convert.ToInt32(c.LessonName.Substring(3,3))).ToList();
+                //MetaData = pagingResponse.MetaData;
+            }
+            catch (Exception ex)
+            {
+                Error.ProcessError(ex);
+            }
+        }
+
+        private async Task SelectedPage(int page)
+        {
+            _LessonUPSearch.PageNumber = page;
+            await GetTasks();
+        }
+
+        private void SubmitHomeWorksCreate(Guid idlesson)
+        {
+
+            var url = Path.Combine($"/SubmitHomeWorksCreate/{idclass}/{lecuId}/{subjectId}/{specializedId}/{idlesson}");
+            NavigationManager.NavigateTo(url);
+        }
+        private void RedirectToChitiet(Guid idlesson)
+        {
+
+            var url = Path.Combine($"/SubmitHomeWorksList/{idclass}/{lecuId}/{subjectId}/{specializedId}/{idlesson}");
+            NavigationManager.NavigateTo(url);
+        }
+        private void RedirectToThembaitap(Guid idlesson)
+        {
+
+            var url = Path.Combine($"/HomeWorklist/{idclass}/{lecuId}/{subjectId}/{specializedId}/{idlesson}");
+            NavigationManager.NavigateTo(url);
+        }
+        private void Quaylai()
+        {
+            var url = Path.Combine($"/StudentStatisticsChitiet/{idclass}/{specializedId}/{lecuId}/{subjectId}");
+            NavigationManager.NavigateTo(url);
+        }
+        
+}

@@ -1,0 +1,55 @@
+﻿.container {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    text-align: center;
+}
+
+.column {
+    flex-basis: 14%;
+    border-radius: 50px 0 50px 0;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+    margin: 0 3%;
+}
+
+    .column img {
+        border-radius: 50px 0 50px 0;
+        height: 37vh;
+        width: 100%;
+        object-fit: cover;
+    }
+
+.layer {
+    background: transparent;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: 0.5s;
+}
+
+    .layer:hover {
+        background: rgb(225, 225, 225, 0.70);
+    }
+
+    .layer h3 {
+        width: 100%;
+        font-weight: 600;
+        color: #fff;
+        font-size: large;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        position: absolute;
+        opacity: 1;
+        transition: 0.3s;
+    }
+
+    .layer:hover h3 {
+        color: rgb(255, 106, 0);
+        bottom: 41%;
+        opacity: 1;
+    }

@@ -1,0 +1,213 @@
+@page "/createresourcelink/{idspecializedNonDecrypt}/{idsubjectNonDecrypt}/{idlessonNonDecrypt}"
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.ResourceLink
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+<div class="row">
+    <div class="col-4 ps-0"><h3 class="ps-0">Tạo Mới Link</h3></div>
+
+</div>
+<div class="row">
+
+    @if (ShowAuthError)
+    {
+        <div class="alert alert-danger" role="alert">
+            @Error
+        </div>
+    }
+    <EditForm Model="model" OnValidSubmit="Create" class="card card-body bg-light mt-1">
+        <DataAnnotationsValidator />
+
+        <div class="form-group">
+            <div class="row">
+                <div class="col-lg-5 pt-1 pl-5">
+                    @if (model.PathId() != null)
+                    {
+                        <iframe class="modal-xl" style="height: 308px;width:480px;padding-top: 10px;" src='https://www.youtube.com/embed/@model.PathId()' frameborder='0' allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe>
+                    }
+                    else
+                    {
+                        <h5>Video sẽ được hiển thị ở đây</h5>
+                    }
+                </div>
+                <div class="col-lg-7">
+                    <div class="form-group pt-2 ">
+                        <label for="name" class="form-label">Tiêu đề:</label>
+                        <div class="text-danger">
+                            <InputText class="form-control" @bind-Value="model.ResourcesTitle"></InputText>
+                            <ValidationMessage For="()=>model.ResourcesTitle"></ValidationMessage>
+                        </div>
+                    </div>
+                    <div class="form-group pt-2">
+                        <label for="name" class="form-label">Đường dẫn:</label>
+                        <div class="text-danger">
+                            <InputText class="form-control" @bind-Value="model.Path"></InputText>
+                            <ValidationMessage For="()=>model.Path"></ValidationMessage>
+                        </div>
+                    </div>
+                    <div class="form-group pt-2">
+                        <label for="name" class="form-label">Mô tả:</label>
+                        <div class="text-danger">
+                            <InputText class="form-control" @bind-Value="model.Descriptions"></InputText>
+                            <ValidationMessage For="()=>model.Descriptions"></ValidationMessage>
+                        </div>
+                    </div>
+                    <div class="form-group pt-2 ">
+                        <label for="name" class="form-label">Trạng thái:</label>
+                        <div class="text-danger">
+                            <InputSelect class="form-select" @bind-Value="model.Status">
+                                <option value="0">Không hoạt động</option>
+                                <option value="1">Đang Hoạt động</option>
+                            </InputSelect>
+                        </div>
+                    </div>
+                    <div class="form-group row pt-2">
+                        <label for="name" class="col-6 col-form-label float-end">Chọn môn:</label>
+                        <div>
+                            <InputSelect class="form-select" @bind-Value="model.IdSubject">
+                                <option value="00000000-0000-0000-0000-000000000000">Chọn môn </option>
+                                @if (lstSubjectDtos != null)
+                                {
+                                    @foreach (var item in lstSubjectDtos.OrderBy(c => c.SubjectName))
+                                    {
+                                        <option value="@item.Id">@item.SubjectName</option>
+                                    }
+                                }
+                            </InputSelect>
+                            <div class="text-danger"><ValidationMessage For="@(() => model.IdSubject)" /></div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-center pt-3 mb-2">
+                    <div class="p-2">
+                        <button type="submit" class="btn btn-success">Thêm Mới</button>
+                    </div>
+                    <div class="p-2">
+                        <a @onclick="()=> Lammoi()" class="btn btn-outline-primary">Làm Mới</a>
+                    </div>
+                    <div class="p-2">
+                        <a @onclick="()=>Quaylaitrangchu()" class="btn btn-outline-danger">Quay Lại</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </EditForm>
+</div>
+@code {
+    private ResourceLinkCreateVM model = new ResourceLinkCreateVM();
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    [Inject]
+    public IResourceLinkRepo _iResourcelinkClient { get; set; }
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+    [Parameter]
+    public string idspecializedNonDecrypt { get; set; }
+    [Parameter]
+    public string idsubjectNonDecrypt { get; set; }
+    [Parameter]
+    public string idlessonNonDecrypt { get; set; }
+    public string idspecialized = "";
+    public string idsubject = "";
+    public string idlesson = "";
+    [Inject] private IToastService _toastService { get; set; }
+    protected Comfirmation Confirmation { get; set; }
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    [Inject]
+    public ISubjectClient _iSubjectClient { get; set; }
+    List<SubjectDto> lstSubjectDtos = new List<SubjectDto>();
+
+    Uri uri;
+    string maxlevel = "";
+    string IdCoSo = "";
+    protected override async Task OnInitializedAsync()
+    {
+        uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (string.IsNullOrEmpty(uri.Query) == false)
+        {
+            var urifist = uri.Query.Split("?")[1];
+            maxlevel = _cryptoServices.Decrypt(urifist.Split("LDN01")[0].Replace("I0H", "/"));
+            IdCoSo = _cryptoServices.Decrypt(urifist.Split("LDN01")[1].Replace("I0H", "/"));
+        }
+        idspecialized = _cryptoServices.Decrypt(idspecializedNonDecrypt.Replace("I0H", "/"));
+        idsubject = _cryptoServices.Decrypt(idsubjectNonDecrypt.Replace("I0H", "/"));
+        idlesson = _cryptoServices.Decrypt(idlessonNonDecrypt.Replace("I0H", "/"));
+        lstSubjectDtos = await _iSubjectClient.GetAllSubjectByIdSpecialzed(Guid.Parse(idspecialized));
+        model.Status = 1;
+    }
+    private async Task Create()
+    {
+        var allResourceLink = await _iResourcelinkClient.GetAllAsync();
+        var title = allResourceLink.Where(p => p.ResourcesTitle == model.ResourcesTitle);
+        var path = allResourceLink.Where(p => p.Path == model.Path);
+        if (title.Count() > 0)
+        {
+            _toastService.ShowError("Tiêu đề đã tồn tại");
+            var url = Path.Combine("/createresourcelink/", _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idlesson).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+            Navigation.NavigateTo(url);
+        }
+        else
+        {
+            ShowAuthError = false;
+            var result = await _iResourcelinkClient.Create(model);
+
+            if (result != 1)
+            {
+                _toastService.ShowError("Lỗi! Vui lòng thử lại");
+                var url = Path.Combine("/createresourcelink/", _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idlesson).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+                Navigation.NavigateTo(url);
+            }
+            else
+            {
+                _toastService.ShowSuccess("Thêm mới thành công");
+
+                var url = Path.Combine("/resourcelink/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H"), _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H"), _cryptoServices.Encrypt((idlesson).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+                Navigation.NavigateTo(url);
+
+
+            }
+        }
+
+    }
+    private void Quaylaithemmoi()
+    {
+        var url = Path.Combine("/createresourcelink/", _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idlesson).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        Navigation.NavigateTo(url);
+    }
+    private void Quaylaitrangchu()
+    {
+        var url = Path.Combine("/resourcelink/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H"), _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H"), _cryptoServices.Encrypt((idlesson).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        Navigation.NavigateTo(url);
+    }
+    private void Lammoi()
+    {
+        model.ResourcesTitle = null;
+        model.Path = null;
+        model.Status = 1;
+        model.Descriptions = null;
+    }
+    public async Task OnConfirmation(bool confirmed)
+    {
+        if (confirmed)
+        {
+            var url = Path.Combine("/createresourcelink/", _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idlesson).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+
+            Navigation.NavigateTo(url);
+        }
+        else
+        {
+            var url = Path.Combine("/resourcelink/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H"), _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H"), _cryptoServices.Encrypt((idlesson).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+            Navigation.NavigateTo(url);
+        }
+    }
+}

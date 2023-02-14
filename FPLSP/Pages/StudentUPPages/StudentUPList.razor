@@ -1,0 +1,256 @@
+﻿@page "/StudentUPList"
+@using FPLSP.Components.StudentCPComponents
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos.StudentUPDtos
+@using FPLSP.Server.Infrastructure.ViewModels.StudentsUPVm
+@using Blazored.Toast.Services
+@attribute [Authorize(Roles = "LecturerFPLSP")]
+<div class="row">
+    <h3 class="ps-0">Danh Sách Sinh Viên</h3>
+</div>
+<div class="row pt-3">
+    <div class="col-3 ps-0" style="text-align: left;">
+        <a class="btn btn-danger me-3" href="">Quay Lại</a>
+        <a class="btn btn-outline-primary me-3" @onclick="() => RedirectToCreate()">Thêm sinh viên</a>
+        @*<a type="button" class="btn btn-danger" @onclick="()=>DeleteAll()">Xóa tất cả</a>*@
+    </div>
+    <div class="col-7 pe-5" stype="text-aline:center">
+        <StudentUPSearch OnSearch="SearchStudentUP"></StudentUPSearch>
+    </div>
+    <div class="col-2 ps-3">
+        <div class="dropdown-center">
+            <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Chức Năng
+            </button>
+            <ul class="dropdown-menu">
+                @*<li><a class="dropdown-item" @onclick="() => Undo()">Khôi Phục</a></li>*@
+                <li><a class="dropdown-item" @onclick="() => DeleteAll()">Xóa</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    @if (studentUpDtos != null)
+    {
+        <table class="table table-hover align-middle table-bordered mt-3" style="text-align:center">
+            <thead class="table-success">
+                <tr>
+                    <th><input type="checkbox" @bind="@Check" @onchange="EventArgs => { CheckAllExpense( EventArgs.Value);} " @bind:event="oninput"></th>
+                    <th stype="width:10%">Ảnh</th>
+                    <th stype="width:15%">Mã Sinh Viên</th>
+                    <th stype="width:20%">Tên Sinh Viên</th>
+                    <th stype="width:10%">Ngày Sinh</th>
+                    <th stype="width:15%">Email</th>
+                    <th stype="width:10%">Trạng thái</th>
+                    <th stype="width:20%">Chức năng</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in studentUpDtos)
+                {
+                    <tr>
+                        <td><input type="checkbox" checked=@item.IsChecked @onchange="()=>CheckManual(item.Id,item.IsChecked)"></td>
+                        <td><img src="@item.ImageUrl" onerror="this.src='./css/images/Others/logoFPT.png'" alt="@item.ImageUrl" height=100px width=100px style="object-fit:contain"></td>
+                        <td>@item.StudentCode</td>
+                        <td>@item.StudentName</td>
+                        <td>@item.DateOfBirth.Date</td>
+                        <td>@item.Email</td>
+                        @if (@item.Status == 0)
+                        {
+                            <td>Không hoạt động</td>
+                        }
+                        else
+                        {
+                            <td>Đang hoạt động</td>
+                        }
+                        <td class="text-center">
+                            <a class="btn btn-primary " type="button" title="Sửa" id="show-emp" @onclick="() => RedirectToUpdate(item.Id)">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a class="btn btn-danger " type="button" title="Xóa" @onclick="()=>DeleteStudent(item.Id)">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                            <a class="btn btn-info " type="button" title="Chức năng đang phát triển" @onclick="()=>RedirectToDetails(item.Id)">
+                                <i class="bi bi-book"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <span>
+            Loading......
+        </span>
+    }
+    <FPLSP.Components.Comfirmation @ref="DeleteConfirmation" ConfirmationMessage="Bạn chắc chắn xóa chứ?"
+                                   ConfirmationTitle="Xóa Sinh Viên"
+                                   ConfirmationChanged="OnConfirmationDelete"></FPLSP.Components.Comfirmation>
+</div>
+<div class="footer text-muted">
+    <div class="row mt-3">
+        <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+    </div>
+</div>
+
+@code
+{
+    [Inject] public IStudentUPRepo _studentUPRepo { get; set; }
+    [Inject] public NavigationManager NavigationManager { get; set; }
+    public List<StudentUpDto> studentUpDtos { get; set; } = new List<StudentUpDto>();
+
+    private PagingParameters _studentParameters = new PagingParameters();
+    public List<Guid> _removeStudents { get; set; } = new List<Guid>();
+    public MetaData MetaData { get; set; } = new MetaData();
+    public string Error { get; set; }
+    [Inject] public IToastService NotifiToastService { get; set; }
+    public bool Check { get; set; }
+    public int stt { get; set; }
+    public StudentRemovRangeVM RemovRange { get; set; }
+
+    protected Comfirmation DeleteConfirmation { get; set; }
+    private Guid Id = Guid.Empty;
+
+    private StudentUPListSearchVm studentUPListSearchVm = new StudentUPListSearchVm();
+
+    protected async override Task OnInitializedAsync()
+    {
+        await GetTasks();
+    }
+    private async void Undo()
+    {
+        studentUPListSearchVm = new StudentUPListSearchVm();
+        await GetTasks();
+    }
+    private void RedirectToDetails(Guid id)
+    {
+
+        var url = Path.Combine("/StudentUPDetails/", id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToUpdate(Guid id)
+    {
+
+        var url = Path.Combine("/StudentUPUpdate/", id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task RedirectToDelete(Guid id)
+    {
+        Id = id;
+        DeleteConfirmation.show();
+    }
+
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (deleteconfirmed && (Id == null || Id == Guid.Empty) && RemovRange.ListGuisId.Count == 0)
+        {
+            NotifiToastService.ShowError("Bạn chưa chọn học sinh!");
+            await GetTasks();
+            NavigationManager.NavigateTo($"/StudentUPList");
+        }
+        else if (deleteconfirmed && RemovRange != null)
+        {
+            var result = await _studentUPRepo.RemoveRangeStudentUP(RemovRange);
+            if (result == 1)
+            {
+                NotifiToastService.ShowSuccess("Xóa thành công");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/StudentUPList");
+            }
+            else
+            {
+                NotifiToastService.ShowError("Xóa thất bại");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/StudentUPList");
+            }
+            RemovRange = new StudentRemovRangeVM();
+        }
+        Check = false;
+    }
+
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _studentUPRepo.GetStudentUPList(studentUPListSearchVm);
+            studentUpDtos = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+            Check = false;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        studentUPListSearchVm.PageNumber = page;
+        await GetTasks();
+    }
+
+    public async Task SearchStudentUP(StudentUPListSearchVm studentUPListSearch)
+    {
+        studentUPListSearchVm = studentUPListSearch;
+        await GetTasks();
+    }
+    private void RedirectToCreate()
+    {
+        var url = Path.Combine("/StudentUPCreate");
+        NavigationManager.NavigateTo(url);
+    }
+
+    void CheckAllExpense(object checkValue)
+    {
+        stt = 0;
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            studentUpDtos.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            studentUpDtos.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+    async void DeleteAll()
+    {
+        RemovRange = new StudentRemovRangeVM();
+        stt = 0;
+        RemovRange.ListGuisId = studentUpDtos.Where(c => c.IsChecked == true).Select(c => c.Id).ToList();
+        DeleteConfirmation.show();
+        await GetTasks();
+    }
+    void CheckManual(Guid reportId, bool check)
+    {
+        stt = 0;
+        if (check == true)
+        {
+            foreach (var x in studentUpDtos.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in studentUpDtos.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    public async void DeleteStudent(Guid id)
+    {
+        RemovRange = new StudentRemovRangeVM();
+        RemovRange.ListGuisId.Add(id);
+        DeleteConfirmation.show();
+        await GetTasks();
+        Check = false;
+    }
+}
+

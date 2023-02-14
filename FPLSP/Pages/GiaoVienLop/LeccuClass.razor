@@ -1,0 +1,260 @@
+﻿@page "/Giaovien/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}"
+@using Blazored.Toast.Services
+@using FPLSP.Components.GiaoVienLopUPComponets
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Entities.UserParts
+@using FPLSP.Server.Infrastructure.ViewModels.GiaoVienTaoLop
+@using FPLSP.Server.Infrastructure.ViewModels.Subject
+@attribute [Authorize(Roles = "LecturerFPLSP")]
+<div class="row">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">Chuyên ngành: <a style="color:blue;box-shadow: 0 1px" @onclick="() => Quaylai()">@lstSpecAll.Where(c=>c.Id == Guid.Parse(specializedId)).Select(c=>c.SpecializationName).FirstOrDefault()</a> </li>
+            <li class="breadcrumb-item active" aria-current="page">Danh sách Lớp Môn: @SubjectUPList.Where(c=>c.Id == Guid.Parse(subjectId)).Select(c=>c.SubjectName).FirstOrDefault()</li>
+        </ol>
+    </nav>
+</div>
+<div class="row pt-3">
+    <div class="col-md-3">
+        <div class="col-md-6">
+            <a class="btn btn-outline-danger" @onclick="() => Quaylai()"><i class="bi bi-arrow-return-left" title="Quay lại"></i></a>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <GiaoVienLopUPCPSearch OnSearch="SearchTask"></GiaoVienLopUPCPSearch>
+    </div>
+    <div class="col-md-3">
+        <div class="row">
+            <div class="col-md-6">
+                <a class="btn btn-outline-primary" @onclick="()=> RedirectToCreat()">Thêm lớp</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    @if (fag == false)
+    {
+        <LoadingIndicator></LoadingIndicator>
+    }
+    else if (CPList.Count > 0)
+    {
+        <table class="table">
+            <thead class="text-center">
+                <tr>
+                    <th scope="col">Join Code</th>
+                    <th scope="col">Tên lớp</th>
+                    <th scope="col">Tòa </th>
+                    <th scope="col">Số lượng sinh viên</th>
+                </tr>
+            </thead>
+            <tbody class="text-center">
+                @foreach (var sj in CPList)
+                {
+                    <tr>
+                        <td class="align-middle">
+                            @sj.JoinCode
+                        </td>
+                        <td class="align-middle">
+                            @sj.ClassroomName
+                        </td>
+                        <td class="align-middle">
+                            @sj.Building
+                        </td>
+                        <td class="align-middle">
+                            @sj.Sinhvienthucte/@sj.StudentAmount
+                        </td>
+                        <td class="text-center">
+                            <a class="btn btn-outline-success " type="button" title="Chi Tiết Lớp" @onclick="() => RedirectToChitiet(_cryptoServices.Encrypt((sj.ClassId).ToString()))">
+                                Chi Tiết Lớp
+                            </a>
+                            @*<a class="btn btn-outline-primary" type="button" title="Thêm tài liệu tham khảo" @onclick="() => RedirectToThemlinktainguyen(sj.JoinCode)">
+                    <i class="bi bi-folder-plus"></i>
+                    </a>
+                    <a class="btn btn-outline-warning" type="button" title="Tài liệu tham khảo" @onclick="() => RedirectToKho(sj.JoinCode,sj.LectuterId)">
+                    <i class="bi bi-archive"></i>
+                    </a>*@
+                            <a class="btn btn-outline-danger " type="button" title="Xóa lớp" @onclick="() => Delete(sj.ClassId,sj.SubjectId)">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <Comfirmation ConfirmationMessage="Bạn có chắc muốn xóa không?"
+                  ConfirmationTitle="Xóa lớp"
+                  @ref="DeleteConfirmation"
+                  ConfirmationChanged="OnConfirmationDelete"></Comfirmation>
+    }
+    else
+    {
+        <h5>Danh sách lớp trống</h5>
+    }
+</div>
+<div class="footer text-muted">
+    <div class="row mt-3">
+
+        <span>
+            <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+        </span>
+
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string specializedIdNonDecrypt { get; set; }
+    [Parameter]
+    public string lecuIdNonDecrypt { get; set; }
+    [Parameter]
+    public string subjectIdNonDecrypt { get; set; }
+
+    public string specializedId = "";
+
+    public string lecuId = "";
+
+    public string subjectId = "";
+
+    public bool fag { get; set; } = false;
+
+    protected Comfirmation DeleteConfirmation { get; set; }
+
+    [Inject] private IToastService _toastService { get; set; }
+    public string _idSubject { get; set; }
+    public string _idClass { get; set; }
+    public List<ClassSubjectUPDto> CPList { get; set; } = new List<ClassSubjectUPDto>();
+    public MetaData MetaData { get; set; } = new MetaData();
+    private int encounter;
+    private SubjectServicesCPListSearch _parameters = new SubjectServicesCPListSearch();
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    [Inject]
+    public IClassSubjectApiClient _iClassSubjectApiClient { get; set; }
+    public string Error { get; set; }
+
+    public List<SpecializedDto> lstSpecAll { get; set; } = new List<SpecializedDto>();
+    [Inject]
+    public ISpecializedCPRepo _iSpecializedClient { get; set; }
+
+    [Inject] public ISubjectUPRepo _subjectUPRepo { get; set; }
+    public List<SubjectDto> SubjectUPList { get; set; } = new List<SubjectDto>();
+    public List<ClassUp> _lstClassUps { get; set; } = new List<ClassUp>();
+    private SubjectListSearch SubjectListSearch = new SubjectListSearch();
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        lecuId = _cryptoServices.Decrypt(lecuIdNonDecrypt.Replace("I0H", "/"));
+        subjectId = _cryptoServices.Decrypt(subjectIdNonDecrypt.Replace("I0H", "/"));
+        specializedId = _cryptoServices.Decrypt(specializedIdNonDecrypt.Replace("I0H", "/"));
+        //    _specialized = await _iClassSubjectApiClient.GetbyId(Guid.Parse(idspecialized), Guid.Parse(id));
+        await GetTasks();
+    }
+    public async Task SearchTask(SubjectServicesCPListSearch lessonContentListSearch)
+    {
+        _parameters = lessonContentListSearch;
+        await GetTasks();
+    }
+    private async Task RedirectToCreat()
+    {
+        var url = Path.Combine($"/Creat/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task RedirectToChitiet(string idclass)
+    {
+        string a = "";
+        a = idclass.Replace("/", "I0H");
+        var url = Path.Combine($"/ViewChiTitet/{a}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+
+    //private async Task RedirectToThemlinktainguyen(string joincode)
+    //{
+    //    var url = Path.Combine($"/resoucrelinkforstudent/{joincode}/Giaovien=={specializedId}=={lecuId}=={subjectId}");
+    //    NavigationManager.NavigateTo(url);
+    //}
+    //private async Task RedirectToKho(string joincode, Guid? idLecturer)
+    //{
+    //    var url = Path.Combine($"/news/{joincode}/{idLecturer}");
+    //    NavigationManager.NavigateTo(url);
+    //}
+
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (deleteconfirmed && _idSubject == null)
+        {
+            _toastService.ShowError("Bạn đã bỏ xóa !");
+            await GetTasks();
+            NavigationManager.NavigateTo($"/Giaovien/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        }
+        else if (deleteconfirmed && _idSubject != null)
+        {
+            var result = await _iClassSubjectApiClient.Delete(Guid.Parse(_idClass), Guid.Parse(_idSubject));
+            if (result == 1)
+            {
+                _toastService.ShowSuccess("Xóa thành công");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/Giaovien/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/Giaovien/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+            }
+        }
+        _idSubject = null;
+    }
+    private async Task Delete(Guid? idclass, Guid? idsubject)
+    {
+        _idClass = idclass.ToString();
+        _idSubject = idsubject.ToString();
+        DeleteConfirmation.show();
+    }
+
+    //private async Task RedirectToDetailsClassLeccu(Guid? idclass)
+    //{
+    //    var url = Path.Combine($"/DetailsClassLeccu/{idclass}/{specializedId}/{lecuId}/{subjectId}");
+    //    NavigationManager.NavigateTo(url);
+    //}
+    private async Task Quaylai()
+    {
+        var url = Path.Combine($"/LectuterSpecializedSubjectls/{lecuIdNonDecrypt}/{specializedIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task GetTasks()
+    {
+        try
+        {
+            fag = false;
+            for (var i = 0; i < 15; i++)
+            {
+                encounter = i;
+            }
+            var SubjectUPListpagingResponse1 = await _subjectUPRepo.GetSubjects(Guid.Parse(specializedId), SubjectListSearch);
+            SubjectUPList = SubjectUPListpagingResponse1.Items;
+            lstSpecAll = await _iSpecializedClient.GetAll();
+            _lstClassUps = await _iClassSubjectApiClient.GetlstClassUP(Guid.Parse(subjectId));
+            var pagingResponse = await _iClassSubjectApiClient.GetPagingParamets(Guid.Parse(subjectId), Guid.Parse(lecuId), Guid.Parse(specializedId), _parameters);
+            CPList = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+            fag = true;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _parameters.PageNumber = page;
+        await GetTasks();
+    }
+}

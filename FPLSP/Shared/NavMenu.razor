@@ -1,0 +1,702 @@
+﻿@using AntDesign
+@using Blazored.LocalStorage
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@inject UserManager<UserSignIn> _userManager
+@inject ILocalStorageService _localStorageService;
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using FPLSP.Server.Infrastructure.ViewModels
+@using IdentityServer4
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+@using Microsoft.AspNetCore.DataProtection;
+@using Microsoft.AspNetCore.Identity
+@using System.Text.RegularExpressions
+@inject NavigationManager NavigationManager
+@inject ProtectedSessionStorage ProtectedSessionStore
+@attribute [Authorize(Roles = "AdminCore,AdminCS,LecturerFPLSP,Lecturer,DirectorOfTraining,Staff,HeadOfDepartment")]
+<div class="row navbar navbar-dark d-flex align-items-center" style="padding-left:10px;">
+    <img src="https://fpt-poly-poc.s3-ap-southeast-1.amazonaws.com/cbh6a-4ltn1.svg" alt=""
+         height="52" class="navbar-brand">
+</div>
+<div class="d-flex align-items-center mb-4 pl-1">
+
+    <div class="ms-2">
+        <h6 class="mb-0 fw-bold text-center mt-4">@fistusername</h6><br>
+        <span class="mb-0">Cơ sở: @TrainingDisplay</span><br>
+        <span class="mb-0"> Quyền: @RoleDisPlay</span>
+    </div>
+</div>
+<div>
+
+    <Menu Style=" width: auto;"
+          DefaultSelectedKeys=@(new[]{"1"})
+          DefaultOpenKeys=@(new[]{"sub1"})
+          Mode=this.mode
+          Theme=this.theme>
+        @*  dành cho admin core*@
+        <AuthorizeView Roles="AdminCore" Policy="FPLSP">
+            <Authorized>
+                <a style="color:black;" href="/admin-dashboard/@_cryptoServices.Encrypt(MaxlevelOfRole.ToString().Replace("/", "I0H" ))/@_cryptoServices.Encrypt(@getIdCoSo.ToString().Replace("/", "I0H" ))">
+                    <MenuItem Key="1">
+                        <div class="row">
+                            <div class="col-2">
+
+                                <i class="fa fa-tachometer-alt me-2"></i>
+                            </div>
+                            <div class="col-10">
+                                Dashboard
+                            </div>
+                        </div>
+                    </MenuItem>
+                </a>
+            </Authorized>
+        </AuthorizeView>
+
+        @* dành cho admin cơ sở*@
+        <AuthorizeView Roles="AdminCS" Policy="FPLSP">
+            <Authorized>
+                <a style="color:black;" href="/admin-dashboard/@_cryptoServices.Encrypt(MaxlevelOfRole.ToString().Replace("/", "I0H" ))/@_cryptoServices.Encrypt(@getIdCoSo.ToString().Replace("/", "I0H" ))">
+                    <MenuItem Key="2">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa fa-tachometer-alt me-2"></i>
+                            </div>
+                            <div class="col-10">
+                                Dashboard
+                            </div>
+                        </div>
+
+                    </MenuItem>
+                </a>
+                <a style="color:black;" href="/createclass">
+                    <MenuItem Key="3">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                            </div>
+                            <div class="col-10">
+                                Tạo Lớp Học Mẫu
+                            </div>
+                        </div>
+                    </MenuItem>
+                </a>
+                <a style="color:black;" href="/lecturercp/@getIdCoSo">
+                    <MenuItem Key="4">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-chalkboard-user"></i>
+                            </div>
+                            <div class="col-10">
+                                Quản Lý Giảng Viên
+                            </div>
+                        </div>
+                    </MenuItem>
+                </a>
+            </Authorized>
+        </AuthorizeView>
+
+        @*   dành cho giảng viên của fplsp*@
+        <AuthorizeView Roles="LecturerFPLSP" Policy="FPLSP">
+            <Authorized>
+
+                <SubMenu Key="sub1" Style="color:black" Title="Chuyên ngành" OnTitleClick="() => RedirecToAllClass()">
+                    @{
+                        int s = 100;
+                    }
+                    @foreach (var item in _lstAll.Where(c => c.Level == 0))
+                    {
+
+                        if (_lstAll.Any(c => item.Id == c.IdSpeciality))
+                        {
+                            <SubMenu Key="sub1-2" Title="@(item.SpecializationName)">
+                                @{
+                                    int t = 30;
+                                }
+                                @foreach (var item1 in _lstAll.Where(c => c.Level == 1 && c.IdSpeciality == item.Id))
+                                {
+                                    <MenuItem Key="@t.ToString()" Style="color:black" Class="nav-link" @onclick="() => RedirecToSpec(_cryptoServices.Encrypt((item1.Id).ToString()))">@(item1.SpecializationName)</MenuItem>
+                                    t++;
+                                }
+                            </SubMenu>
+                        }
+                        else
+                        {
+                            <MenuItem Style="color:black" Class="nav-link" @onclick="() => RedirecToSpec(_cryptoServices.Encrypt((item.Id).ToString()))" Key="@s.ToString()">@(item.SpecializationName)</MenuItem>
+                        }
+                        s++;
+
+                    }
+
+                </SubMenu>
+                <a style="color:black;" href="/homework/@fistusernamemahoa">
+                    <MenuItem Key="8">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-book-open-reader"></i>
+                            </div>
+                            <div class="col-10">
+                                Giao Bài Tập
+                            </div>
+                        </div>
+                    </MenuItem>
+                </a>
+            </Authorized>
+        </AuthorizeView>
+
+
+        @*   dành cho admin core và admin cơ sở*@
+        <AuthorizeView Roles="AdminCore,AdminCS" Policy="FPLSP">
+            <Authorized>
+                <a style="color:black;" href="listtf?@_cryptoServices.Encrypt((MaxlevelOfRole).ToString()).Replace("/", "I0H" )LDN01@_cryptoServices.Encrypt((getIdCoSo).ToString()).Replace("/", "I0H" )">
+                    <MenuItem Key="99">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-school"></i>
+                            </div>
+                            <div class="col-10">
+                                Cở sở
+                            </div>
+                        </div>
+
+                    </MenuItem>
+                </a>
+                <a style="color:black;" href="/SpecializedCP/@_cryptoServices.Encrypt(MaxlevelOfRole.ToString())/@_cryptoServices.Encrypt(@getIdCoSo.ToString())">
+                    <MenuItem Key="98">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-bars"></i>
+                            </div>
+                            <div class="col-10">
+                                Chuyên ngành
+                            </div>
+                        </div>
+
+                    </MenuItem>
+                </a>
+            </Authorized>
+        </AuthorizeView>
+
+         @*   dành cho admin core và admin cơ sở*@
+        <AuthorizeView Roles="AdminCore,AdminCS" Policy="FPLSP">
+            <Authorized>
+                <a style="color:black;" href="listuseriden/@_cryptoServices.Encrypt(MaxlevelOfRole.ToString()).Replace("/", "I0H")/@_cryptoServices.Encrypt(@getIdCoSo.ToString()).Replace("/", "I0H")">
+                    <MenuItem Key="74">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-bars"></i>
+                            </div>
+                            <div class="col-10">
+                                Phân quyền
+                            </div>
+                        </div>
+
+                    </MenuItem>
+                </a>
+            </Authorized>
+        </AuthorizeView>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        @*dành cho trưởng phòng đào tạo*@
+        <AuthorizeView Roles="DirectorOfTraining" Policy="CabinProject">
+            <Authorized>
+                <a style="color:black;" href="/Cabin/directorOfTraining/@_cryptoServices.Encrypt(getIdCoSo.ToString()).Replace("/", "cabin" )">
+                    <MenuItem Key="9">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-light fa-calendar-days"></i>
+                            </div>
+                            <div class="col-10">
+                                Quản Lý Lịch Dạy
+                            </div>
+                        </div>
+                    </MenuItem>
+                </a>
+                <a style="color:black;" href="/specializedgroup"
+                    <MenuItem Key="10">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-layer-group"></i>
+                            </div>
+                            <div class="col-10">
+                                Nhóm Chuyên Ngành
+                            </div>
+                        </div>
+
+                    </MenuItem>
+                </a>
+                <a style="color:black;" href="/SpecializedCP/@_cryptoServices.Encrypt(MaxlevelOfRole.ToString())/@_cryptoServices.Encrypt(@getIdCoSo.ToString())">
+                    <MenuItem Key="98">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-bars"></i>
+                            </div>
+                            <div class="col-10">
+                                Chuyên ngành
+                            </div>
+                        </div>
+
+                    </MenuItem>
+                </a>
+                <a style="color:black;" href="/semesterblock">
+                    <MenuItem Key="11">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fab fa-slack"></i>
+                            </div>
+                            <div class="col-10">
+                                Quản Lý Block, Kì Học
+                            </div>
+                        </div>
+
+                    </MenuItem>
+                </a>
+                <a style="color:black;" href="/managecabin/@_cryptoServices.Encrypt(getIdCoSo.ToString()).Replace("/", "cabin" )">
+
+                    <MenuItem Key="12">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fab fa-buromobelexperte"></i>
+                            </div>
+                            <div class="col-10">
+                                Quản Lý Cabin
+                            </div>
+                        </div>
+                    </MenuItem>
+                </a>
+                <a style="color:black;" href="/importteachingschedule/@_cryptoServices.Encrypt(IdUser).Replace("/", "cabin" )/@_cryptoServices.Encrypt(IdTrain).Replace("/", "cabin" )">
+                    <MenuItem Key="13">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fas fa-file-upload"></i>
+                            </div>
+                            <div class="col-10">
+                                Import Lịch Dạy
+                            </div>
+                        </div>
+                    </MenuItem>
+                </a>
+                @if (getlistrole != null)
+                {
+                    _savevaluesofRole.Clear();
+                    if (getlistrole.ToList().Any(c => c == "DirectorOfTraining"))
+                    {
+                        _savevaluesofRole.Add(5);
+                    }
+                    else if (getlistrole.ToList().Any(c => c == "Staff"))
+                    {
+                        _savevaluesofRole.Add(3);
+                    }
+                    else if (getlistrole.ToList().Any(c => c == "Lecturer"))
+                    {
+                        _savevaluesofRole.Add(1);
+                    }
+                    else if (getlistrole.ToList().Any(c => c == "Student"))
+                    {
+                        _savevaluesofRole.Add(0);
+                    }
+                    MaxlevelOfRole = _savevaluesofRole.Max();
+                }
+                <a style="color:black;" href="/listuseridenOfCabin/@_cryptoServices.Encrypt(MaxlevelOfRole.ToString()).Replace("/", "cabin")/@_cryptoServices.Encrypt(@getIdCoSo.ToString()).Replace("/", "cabin" )">
+                    <MenuItem Key="2000">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-gears"></i>
+                            </div>
+                            <div class="col-10">
+                                Cài đặt
+                            </div>
+                        </div>
+                    </MenuItem>
+                </a>
+            </Authorized>
+        </AuthorizeView>
+
+        @* dành cho giảng viên thường booking cabin*@
+        <AuthorizeView Roles="Lecturer" Policy="CabinProject">
+            <Authorized>
+
+                <a style="color:black;" href="/Cabin/lecturer/@_cryptoServices.Encrypt(IdUser.ToString()).Replace("/", "cabin" )">
+                    <MenuItem Key="14">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-chalkboard-user"></i>
+                            </div>
+                            <div class="col-10">
+                                Xem Lịch Dạy
+                            </div>
+                        </div>
+                    </MenuItem>
+                </a>
+            </Authorized>
+        </AuthorizeView>
+
+
+
+        @*phân quyền dành staff và DirectorOfTraining*@
+        <AuthorizeView Roles="Staff" Policy="CabinProject">
+            <Authorized>
+
+                <a style="color:black;" href="/BookingRequest/@_cryptoServices.Encrypt(getIdCoSo.ToString()).Replace("/", "cabin" )">
+                    <MenuItem Key="15">
+                        <div class="row">
+                            <div class="col-2">
+                                <Icon Type="mail" Theme="outline"></Icon>
+                            </div>
+                            <div class="col-10">
+                                Quản Lý Request
+                            </div>
+                        </div>
+                    </MenuItem>
+                </a>
+                @if (getlistrole != null)
+                {
+                    _savevaluesofRole.Clear();
+                    if (getlistrole.ToList().Any(c => c == "DirectorOfTraining"))
+                    {
+                        _savevaluesofRole.Add(5);
+                    }
+                    else if (getlistrole.ToList().Any(c => c == "Staff"))
+                    {
+                        _savevaluesofRole.Add(3);
+                    }
+                    else if (getlistrole.ToList().Any(c => c == "Lecturer"))
+                    {
+                        _savevaluesofRole.Add(1);
+                    }
+                    else if (getlistrole.ToList().Any(c => c == "Student"))
+                    {
+                        _savevaluesofRole.Add(0);
+                    }
+                    MaxlevelOfRole = _savevaluesofRole.Max();
+                }
+                <a style="color:black;" href="/listuseridenOfCabin/@_cryptoServices.Encrypt(MaxlevelOfRole.ToString()).Replace("/", "cabin")/@_cryptoServices.Encrypt(@getIdCoSo.ToString()).Replace("/", "cabin" )">
+                    <MenuItem Key="2000">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-gears"></i>
+                            </div>
+                            <div class="col-10">
+                                Cài đặt
+                            </div>
+                        </div>
+                    </MenuItem>
+                </a>
+            </Authorized>
+        </AuthorizeView>
+        @*dành cho fplexam*@
+        <AuthorizeView Roles="TBM FPLExam">
+            <Authorized>
+                <a style="color:black;" href="/overviewsubject/@_cryptoServices.Encrypt("TBM FPLExam")/@_cryptoServices.Encrypt(IdUser)">
+                    <MenuItem Key="128" >
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-school"></i>
+                            </div>
+                            <div class="col-10">
+                                Môn Học
+                            </div>
+                        </div>
+
+                    </MenuItem>
+                </a>
+            </Authorized>
+        </AuthorizeView>
+
+        <AuthorizeView Roles="GV FPLExam">
+            <Authorized>
+                <a style="color:black;" @onclick="()=>ForceReloadSubjetGV(IdUser)">
+                    <MenuItem Key="22">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-school"></i>
+                            </div>
+                            <div class="col-10">
+                                Môn Học
+                            </div>
+                        </div>
+                    </MenuItem>
+                </a>
+         
+                <a style="color:black;" @onclick="()=>ForceExamRoomGV(IdUser)">
+                    <MenuItem Key="88"Class="mt-2">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-school"></i>
+                            </div>
+                            <div class="col-10">
+                                Danh Sách Phòng Thi
+                            </div>
+                        </div>
+
+                    </MenuItem>
+                </a>
+            </Authorized>
+        </AuthorizeView>
+
+        <AuthorizeView Roles="SV FPLExam">
+            <Authorized>
+                <a style="color:black;" @onclick="()=>ForceReloadExamRoomStu(IdUser)">
+                    <MenuItem Key="78">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-school"></i>
+                            </div>
+                            <div class="col-10">
+                                Phòng Thi Hiện Tại
+                            </div>
+                        </div>
+                    </MenuItem>
+                </a>
+           
+                <a style="color:black;" @onclick="()=>JoinRoom(IdUser)">
+                    <MenuItem Key="123" Class="mt-2">
+                        <div class="row">
+                            <div class="col-2">
+                                <i class="fa-solid fa-school"></i>
+                            </div>
+                            <div class="col-10">
+                                Tham Gia Phòng Thi
+                            </div>
+                        </div>
+
+                    </MenuItem>
+                </a>
+            </Authorized>
+        </AuthorizeView>
+    </Menu>
+
+</div>
+
+@code {
+    [Inject] public IHttpContextAccessor _httpContextAccessor { get; set; }
+    [Inject] public IToastService _toastService { get; set; }
+    [Inject] public UserManager<UserSignIn> _Usermanager { get; set; }
+
+    [Inject]
+    public IRoleUserIdentityRepo _roleUserIdentityRepo { get; set; }
+    private List<IdentityRole> _lstRole = new List<IdentityRole>();
+    private PagingParameters _pagingParameters = new PagingParameters();
+    public MetaData MetaData { get; set; } = new MetaData();
+    [Inject] public IUserIdentityRepo _UserIdentityRepo { get; set; }
+    [Inject] public IStudentUPRepo _StudentRepo { get; set; }
+    [Inject] public IDashboardClient _StudentClient { get; set; }
+    private List<UserInListRoles> _lstUsers = new List<UserInListRoles>();
+    private List<string> _lstRoless = new List<string>();
+    private int MaxlevelOfRole;
+    private LecturersCP ileture = new LecturersCP();
+    private string RoleDisPlay = "";
+    private string TrainingDisplay = "";
+    private string fistusername = "";
+    private Guid IdGV = Guid.Empty;
+    private string IdTrain = "169a0425-7e5a-4057-9748-32f1cf3c1479"; //Chưa chọn được cơ sở nên fake id cứng
+    private List<int> _savevaluesofRole = new List<int>();
+    private UserInListRoles userRole = new UserInListRoles();
+    [Inject] public NavigationManager navigationManager { get; set; }
+    private TrainingFacilitiesCPViewModel trainingFacilities = new TrainingFacilitiesCPViewModel();
+    [Inject] public ILecturersCPRepo _lecturersCPRepo { get; set; }
+    [Inject] public ITrainingFacilitiesCPRepo _trainingFacilitiesCP { get; set; }
+    [Inject] public ILectuterSpecializedCPCilents _lecturespecializedCPCilents { get; set; }
+    [Inject] public ISpecializedCPRepo _specializedCPRepo { get; set; }
+    private List<SpecializedDto> _lstAll = new List<SpecializedDto>();
+    [Inject]
+    public AuthenticationStateProvider AuthenticationState { get; set; }
+    string patern = "^([a-z]{3,13}[0-9]{0,3}@fpt-edu-vn)$";
+    private Guid getIdCoSo;
+    private string imageUser = "";
+    private string IdUser = "";
+    //[Inject]
+    //public  IDataProtector _protector { get; set; }
+    //[Inject]
+    //public IDataProtectionProvider protector { get; set; }
+    //private HashParameterValues hashParameterValues = new HashParameterValues();
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    private string fistusernamemahoa = "";
+    /// <summary>
+    /// Sử dụng AntDesign
+
+    RenderFragment sub1Title =
+    @<span>
+        <Icon Type="appstore" Theme="outline"></Icon>
+        Chuyên ngành
+    </span>;
+
+    RenderFragment sub2Title =
+    @<span>
+        <Icon Type="setting" Theme="outline"></Icon>
+        Chuyên ngành
+        </span>
+    ;
+
+    MenuMode mode = MenuMode.Inline;
+    MenuTheme theme = MenuTheme.Light;
+
+    void changeMode(bool value)
+    {
+        this.mode = value ? MenuMode.Vertical : MenuMode.Inline;
+    }
+
+    void changeTheme(bool value)
+    {
+        this.theme = value ? MenuTheme.Dark : MenuTheme.Light;
+    }
+    /// </summary>
+    private UserSignIn userAuthen = new UserSignIn();
+    //
+    private IList<string?> getlistrole = new List<string>();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+
+        var  authState = await authenticationStateTask;
+        var user = authState.User;
+
+
+        if (user.Identity.IsAuthenticated)
+        {
+            fistusername = user.Claims.ToList()[4].Value.ToString();
+            imageUser = user.Claims.ToList()[6].Value.ToString();
+            userAuthen = _Usermanager.Users.ToList().Find(c => c.Email == fistusername);
+
+            fistusernamemahoa = _cryptoServices.Encrypt(fistusername).Replace("/", "I0H");
+            getlistrole = await _Usermanager.GetRolesAsync(userAuthen);
+            getIdCoSo = userAuthen.IdTrainingFacility;
+            IdUser = userAuthen.Id;
+            RoleDisPlay = String.Join(" , ", getlistrole.ToArray());
+
+
+            //lấy ra tên cơ sở đào tạo
+            trainingFacilities = await _trainingFacilitiesCP.GetTrainingFacilityListById(userAuthen.IdTrainingFacility);
+            TrainingDisplay = trainingFacilities.TrainingInstitutionName;
+            // lấy ra quyền to nhất của role để xét quyền phục vụ cho chức năng cấp quyền
+            //các quyền được xếp theo thứ tự giảm dần, quyền có số càng lớn thì quyền càng lớn
+            //AdminCore(7),AdminCS(6),DirectorOfTraining(5),HeadOfDepartment(4),Staff(3),Lecturer(2),Student(1)
+            if (getlistrole.ToList().Any(c => c == "AdminCore"))
+            {
+
+                _savevaluesofRole.Add(7);
+            }
+            else if (getlistrole.ToList().Any(c => c == "AdminCS"))
+            {
+                _savevaluesofRole.Add(6);
+            }
+            else if (getlistrole.ToList().Any(c => c == "DirectorOfTraining"))
+            {
+                _savevaluesofRole.Add(5);
+            }
+            else if (getlistrole.ToList().Any(c => c == "HeadOfDepartment"))
+            {
+                _savevaluesofRole.Add(4);
+            }
+            else if (getlistrole.ToList().Any(c => c == "Staff"))
+            {
+                _savevaluesofRole.Add(3);
+            }
+            else if (getlistrole.ToList().Any(c => c == "LecturerFPLSP"))
+            {
+                _savevaluesofRole.Add(2);
+                var letspec = await _lecturespecializedCPCilents.GetAllAsync();
+                var lstIdspec = letspec.Where(c => c.Idlecturers == Guid.Parse(IdUser)).Select(c => c.Idspecialized);
+                var lstspec = await _specializedCPRepo.GetAll();
+                _lstAll = lstspec.Where(c => lstIdspec.Contains(c.Id)).ToList();
+            }
+            else if (getlistrole.ToList().Any(c => c == "Lecturer"))
+            {
+                _savevaluesofRole.Add(1);
+            }
+            else if (getlistrole.ToList().Any(c => c == "Student"))
+            {
+                _savevaluesofRole.Add(0);
+            }
+            //sau đó chọn ra 1 quyền to nhất để thực hiện các chức năng
+            MaxlevelOfRole = _savevaluesofRole.Max();
+
+        }
+        else
+        {
+
+            fistusername = "ViewerUser";
+        }
+    }
+    private async Task ForceReloadExamRoomStu(string IdUser)
+    {
+        NavigationManager.NavigateTo($"/allofexaminationstudent/{IdUser}", true);
+    }
+    private async Task JoinRoom(string IdUser)
+    {
+        NavigationManager.NavigateTo($"/loadingpage/{IdUser}", true);
+    }
+    private async Task ForceExamRoomGV(string IdUser)
+    {
+        NavigationManager.NavigateTo($"/countdownexamnination/{IdUser}", true);
+    }
+    private async Task ForceReloadSubjetGV(string IdUser)
+    {
+        NavigationManager.NavigateTo($"/overviewsubject/{_cryptoServices.Encrypt("GV FPLExam")}/{_cryptoServices.Encrypt(IdUser)}", true);
+    }
+
+
+
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        //if (firstRender)
+        //{
+        //      var result = await ProtectedSessionStore.GetAsync<string>("User");
+        //      Console.WriteLine(result.Value.ToString());
+        //    fistusername = result.Value.ToString();
+        //}
+       
+    }
+    private async Task<string> GetUserName()
+    {
+
+
+        return fistusername;
+    }
+    private async Task RedirecToSpec(string id)
+    {
+        string a = "";
+        string b = "";
+        a = _cryptoServices.Encrypt(IdUser).Replace("/", "I0H");
+        b = id.Replace("/", "I0H");
+        navigationManager.NavigateTo($"/AllDanhSachLopOfLecucu/{a}");
+        navigationManager.NavigateTo($"/LectuterSpecializedSubjectls/{a}/{b}");
+    }
+    private async Task RedirecToAllClass()
+    {
+        string a = "";
+        a = _cryptoServices.Encrypt(IdUser).Replace("/", "I0H");
+        navigationManager.NavigateTo($"/AllDanhSachLopOfLecucu/{a}");
+        navigationManager.NavigateTo($"/AllDanhSachLopOfLecucu/{a}");
+    }
+
+}
+
+
+
+
+
+
+

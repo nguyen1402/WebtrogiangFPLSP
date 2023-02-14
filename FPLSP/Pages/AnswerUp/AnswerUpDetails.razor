@@ -1,0 +1,63 @@
+﻿@page "/answerup/details/{Id}"
+<h3>AnswerUpDetails</h3>
+@using Blazored.Toast
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.QuizQuestionUPDto
+@using FPLSP.Server.Infrastructure.ViewModels.AnswerUp
+@using FPLSP.Server.Infrastructure.ViewModels.QuizQuestionUp
+<PageTitle>FPLSP | Elearning</PageTitle>
+<div class="row"
+<EditForm Model="@answer">
+     <div class="mb-3">
+        <label>QuestionTital</label>
+        <InputSelect class="form-control" @bind-Value="quizQuestionUpVm.Id">
+                @foreach (var item in quizQuestionUpDto)
+                    {
+                    <option value="@item.Id">@item.QuestionTital</option>
+                }
+        </InputSelect>
+        <ValidationMessage For="()=>quizQuestionUpVm.QuestionTital"></ValidationMessage></div>
+    <div class="mb-3">
+        <div class="col">
+        <label>Answer</label>
+        <InputText class="form-control" @bind-Value=@answer.Answer></InputText>
+    </div>
+      </div>
+    <div class="col"><button class="btn btn-info" @onclick="Update">Sửa</button>
+        <button class="btn btn-danger" @onclick="Delete">Xóa</button>
+        <button class="btn btn-outline-danger"><a href="/answerup">Thoát</a></button>
+        </div>
+</EditForm>
+</div>
+@code {
+    [Parameter]
+    public string Id { set; get; }
+    [Inject] IQuizQuestionUPRepo _quizQuestionUPRepo { get; set; }
+    [Inject] IAnswerUPRepo _answerUPRepo { get; set; }
+    [Inject] NavigationManager NavigationManager { get; set; }
+    AnswerUpVm answer = new AnswerUpVm();
+    QuizQuestionUpVm quizQuestionUpVm = new QuizQuestionUpVm();
+    List<QuizQuestionUpDto> quizQuestionUpDto = new List<QuizQuestionUpDto>();
+    protected async override Task OnInitializedAsync()
+    {
+        answer = await _answerUPRepo.GetDetails(Id);
+        string quizId = Convert.ToString(answer.QuizQuestionId);
+        quizQuestionUpVm = await _quizQuestionUPRepo.GetDetails(quizId);
+        quizQuestionUpDto = await _quizQuestionUPRepo.GetAll();
+    }
+    protected async Task Update()
+    {
+        answer.QuizQuestionId = quizQuestionUpVm.Id;
+        if (await _answerUPRepo.Update(Id, answer))
+        {
+            NavigationManager.NavigateTo("/answerup");
+        }
+    }
+    protected async Task Delete()
+    {
+        if (await _answerUPRepo.Delete(Id))
+        {
+            NavigationManager.NavigateTo("/answerup");
+        }
+    }
+}

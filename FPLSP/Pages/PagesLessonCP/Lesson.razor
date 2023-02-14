@@ -1,0 +1,346 @@
+﻿@page "/lesson/{idspec}/{idsubject}"
+@using Blazored.Toast.Services
+@using FPLSP.Components
+@using FPLSP.Components.LessonCP
+@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Lesson
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<div class="row">
+    <h3 class="ps-0">Danh sách bài học của môn : @subject.SubjectCode - @subject.SubjectName</h3>
+</div>
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/SpecializedCP">Chuyên ngành</a></li>
+        <li class="breadcrumb-item"><a href="/subjects/@idspec">@namespecialized</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@subject.SubjectName</li>
+    </ol>
+</nav>
+<div class="row pt-3">
+    <div class="col-3 ps-0">
+        <a class="btn btn-outline-danger me-3" @onclick="() => Quaylai()">Quay Lại</a>
+        <a class="btn btn-primary me-3" @onclick="() => RedirectToCreat()">Thêm Bài Học</a>
+    </div>
+    <div class="col-7 ps-0">
+        <div class="row">
+            <div class="col-4">
+                <EditForm Model="_parameters">
+                    <div class="col-12">
+                        <InputSelect ValueExpression="@(()=>_parameters.Status)" Value="@_parameters.Status" ValueChanged="@((int newValue) => ChangeValue(newValue))" class="form-select">
+                            <option value="3">Tất cả</option>
+                            <option value="0">Không hoạt động</option>
+                            <option value="1">Đang hoạt động</option>
+                        </InputSelect>
+                    </div>
+                </EditForm>
+            </div>
+            <div class="col-8">
+                <EditForm Model="_parameters">
+                    <div class="row">
+                        <div class="col-6 ps-0 pe-0">
+                            <InputText placeholder="Nhập tên bài học" class="form-control" @bind-Value="_parameters.Name"></InputText>
+                        </div>
+                        <div class="col-6">
+                            <button @onclick="() => TimKiem()" class="btn btn-primary">Tìm kiếm</button>
+                            <button class="btn btn-outline-success ms-2" @onclick="() => Undo()">Làm mới</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+    <div class="col-2 ps-3">
+        <div class="dropdown-center">
+            <button class="btn btn-info ps-4 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Chức Năng
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" @onclick="() => DeleteAll()">Đổi trạng thái</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+@if (ListLesson.Count > 0 || (tg = DateTime.Now - time).Days < 7)
+{
+    <div class="row">
+
+        <table class="table table-hover align-middle table-bordered mt-3" style="text-align:center">
+            <thead class="table-success">
+                <tr>
+                    <th><input type="checkbox" @bind="@Check" @onchange="EventArgs => { CheckAllExpense( EventArgs.Value); } " @bind:event="oninput"></th>
+                    <th width="25%">Tên bài học</th>
+                    <th width="25%">Mô tả</th>
+                    <th width="25%">Trạng thái</th>
+                    <th width="25%">Chức năng</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in ListLesson)
+                {
+                    <tr>
+                        <td><input type="checkbox" checked=@item.IsChecked @onchange="()=>CheckManual(item.Id,item.IsChecked)"></td>
+                        <td>@item.LessonName</td>
+                        <td>@item.Descriptions</td>
+                        @if (@item.Status == 0)
+                        {
+                            <td>Không hoạt động</td>
+                        }
+                        else
+                        {
+                            <td>Đang hoạt động</td>
+                        }
+                        <td class="text-center">
+                            <a class="btn btn-info " type="button" title="Nội dung bài học" @onclick="()=>RedirectToLessonContent(idspec,idsubject,item.Id)">
+                                <i class="bi bi-blockquote-left"></i>
+                            </a>
+                            <a class="btn btn-primary " type="button" title="Sửa" id="show-emp"
+                       @onclick="() => RedirectToUpdate(idspec,idsubject,item.Id)">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a class="btn btn-danger " type="button" title="Đổi trạng thái" @onclick="()=>DeleteLesson(item.Id)">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </a>
+
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <Comfirmation ConfirmationMessage="Bạn có chắc muốn đổi trạng thái không?"
+                  ConfirmationTitle="Đổi trạng thái bài học"
+                  @ref="DeleteConfirmation"
+                  ConfirmationChanged="OnConfirmationDelete"></Comfirmation>
+    </div>
+    <div class="footer text-muted">
+        <div class="row mt-3">
+
+            <span>
+                <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+            </span>
+
+        </div>
+    </div>
+}
+else
+{
+    <span>
+        <LoadingIndicator></LoadingIndicator>
+    </span>
+}
+@code {
+    public List<LessonDto> ListLesson { get; set; } = new List<LessonDto>();
+    public MetaData MetaData { get; set; } = new MetaData();
+    public DateTime time { get; set; }
+    public TimeSpan tg;
+    private LessonListSearch _parameters = new LessonListSearch();
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    [Inject]
+    public ILessonCPRepo _iLessonClient { get; set; }
+
+    private SubjectDto subject { get; set; } = new SubjectDto();
+    [Inject]
+    public ISubjectClient _iSubjectClient { get; set; }
+    protected Comfirmation DeleteConfirmation { get; set; }
+
+    private List<Guid> _removeLesson = new List<Guid>();
+
+    private int stt = 0;
+
+    [Parameter]
+    public string Error { get; set; }
+
+    [Parameter]
+    public string idsubject { get; set; }
+    [Parameter]
+    public string idspec { get; set; }
+
+    private bool Check = false;
+    [Inject] private IToastService _toastService { get; set; }
+
+    private string _idLesson;
+    public SpecializedDto specializedDto { get; set; } = new SpecializedDto();
+    string namespecialized { get; set; }
+    [Inject]
+    public ISpecializedCPRepo _iSpecialized { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+
+        specializedDto = await _iSpecialized.GetbyId(Guid.Empty, Guid.Parse(idspec));
+        namespecialized = specializedDto.SpecializationName;
+        subject = await _iSubjectClient.GetSubjectbyId(Guid.Parse(idsubject));
+        _parameters.Status = 3;
+        await GetTasks();
+    }
+
+    public async Task SearchTask(LessonListSearch lessonListSearch)
+    {
+        _parameters = lessonListSearch;
+        _parameters.PageNumber = 1;
+        Check = false;
+        await GetTasks();
+    }
+    private async Task Undo()
+    {
+        _parameters.Name = "";
+        _parameters.Status = 3;
+        _parameters.PageNumber = 1;
+        await GetTasks();
+
+    }
+    private async Task TimKiem()
+    {
+        await GetTasks();
+    }
+    private async Task ChangeValue(int value)
+    {
+        _parameters.Status = value;
+        _parameters.Name = _parameters.Name;
+        await GetTasks();
+    }
+    private async Task RedirectToCreat()
+    {
+        var url = Path.Combine("/createlesson/" + idspec + "/" + idsubject.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToUpdate(string idspecialzed, string idsubjects, Guid id)
+    {
+
+        var url = Path.Combine("/updatelesson/" + idspecialzed + "/" + idsubjects + "/" + id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task RedirectToLessonContent(string idspec, string idsubject, Guid id)
+    {
+        var url = Path.Combine("/lessoncontent/", idspec, idsubject.ToString(), id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _iLessonClient.GetLessons(Guid.Parse(idsubject), _parameters);
+            ListLesson = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+            time = DateTime.Now;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/subjects/", idspec);
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task SelectedPage(int page)
+    {
+        _parameters.PageNumber = page;
+        Check = false;
+        await GetTasks();
+    }
+
+    public async Task OnDelete(Guid id)
+    {
+        _idLesson = id.ToString();
+        DeleteConfirmation.show();
+    }
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+
+        stt = 0;
+        if (deleteconfirmed && _idLesson == null && _removeLesson.Count == 0)
+        {
+            _toastService.ShowError("Bạn chưa chọn đối tượng để đổi trạng thái");
+            await GetTasks();
+            NavigationManager.NavigateTo($"/lesson/{idspec}/{idsubject}");
+        }
+        else if (deleteconfirmed && _idLesson != null)
+        {
+            var result = await _iLessonClient.Delete(Guid.Parse(_idLesson));
+            if (result == 1)
+            {
+                _toastService.ShowSuccess("Đổi trạng thái thành công");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/lesson/{idspec}/{idsubject}");
+            }
+            else
+            {
+                _toastService.ShowError("Đổi trạng thái thất bại");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/lesson/{idspec}/{idsubject}");
+            }
+        }
+        else if (deleteconfirmed && _removeLesson != null)
+        {
+
+            var result = await _iLessonClient.RemoveListLessonCP(_removeLesson);
+            if (result)
+            {
+                _toastService.ShowSuccess("Đổi trạng thái thành công");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/lesson/{idspec}/{idsubject}");
+            }
+            else
+            {
+                _toastService.ShowError("Đổi trạng thái thất bại");
+
+                await GetTasks();
+                NavigationManager.NavigateTo($"/lesson/{idspec}/{idsubject}");
+            }
+        }
+        _idLesson = null;
+        _removeLesson = null;
+        Check = false;
+    }
+    public void DeleteLesson(Guid id)
+    {
+        _idLesson = id.ToString();
+        DeleteConfirmation.show();
+    }
+    void CheckManual(Guid reportId, bool check)
+    {
+        stt = 0;
+        if (check == true)
+        {
+            foreach (var x in ListLesson.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in ListLesson.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    void DeleteAll()
+    {
+        stt = 0;
+        _removeLesson = ListLesson.Where(c => c.IsChecked == true).Select(c => c.Id).ToList();
+        DeleteConfirmation.show();
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        stt = 0;
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            ListLesson.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            ListLesson.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+}
+
+
+
+

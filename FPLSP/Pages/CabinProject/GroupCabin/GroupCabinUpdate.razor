@@ -1,0 +1,96 @@
+﻿@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces.CabinProject
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.Cabin
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.GroupCabin
+<h3></h3>
+<MudDialog>
+    <DialogContent>
+<EditForm Model="groupCabinViewModel" class="card card-body bg-light">
+    <DataAnnotationsValidator />
+    <div class="form-group">
+        <div class="row">
+            <div class="form-group pt-2 col-md-6 ">
+                <label class="form-label">Tên Cabin:</label>
+                <div class="text-danger">
+                  
+
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-6 ">
+                <label class="form-label">Ngày bắt đầu:</label>
+                <div class="text-danger">
+                    <InputDate class="form-control" @bind-Value="groupCabinViewModel.StartTime"></InputDate>
+                    <ValidationMessage For="()=>groupCabinViewModel.StartTime"></ValidationMessage>
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-6 ">
+                <label class="form-label">Ngày kết thúc:</label>
+                <div class="text-danger">
+                    <InputDate class="form-control" @bind-Value="groupCabinViewModel.EndTime">
+
+                    </InputDate>
+                    <ValidationMessage For="()=>groupCabinViewModel.EndTime"></ValidationMessage>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="d-flex justify-content-center mb-2">
+                <div class="p-2">
+                            <a type="button" class="btn btn-outline-danger" @onclick="()=>Submit()">Đóng</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</EditForm>
+    </DialogContent>
+</MudDialog>
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    void Submit() => MudDialog.Close(DialogResult.Ok(true));
+    void Cancel() => MudDialog.Cancel();
+    [Parameter] public string idSpec { get; set; }
+    [Parameter] public string idCabin { get; set; }
+    [Inject] public ICabinRepo cabinRepo { get; set; }
+    [Inject] public IGroupCabinRepo grcabinRepo { get; set; }
+    [Inject] public IToastService ToastService { get; set; }
+    GroupCabinUpdateViewModel groupCabinUpdateViewModel = new GroupCabinUpdateViewModel();
+    GroupCabinViewModel groupCabinViewModel = new GroupCabinViewModel();
+    CabinViewModel CabinViewModel = new CabinViewModel();
+    List<CabinViewModel> cbvm = new List<CabinViewModel>();
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTask();
+    }
+    private async Task GetTask(){
+        cbvm = await cabinRepo.GetAllCabinAsync();
+        cbvm = cbvm.Where(x => x.Status == 0).ToList();
+        groupCabinViewModel = await grcabinRepo.GetGroupCabinListById(idSpec,idCabin);
+        CabinViewModel = await cabinRepo.GetCabinListById(idCabin);
+    }
+    private async void Update()
+    {
+        if (groupCabinViewModel.IdCabin.ToString() == "00000000-0000-0000-0000-000000000000")
+        {
+            return;
+        }
+        CabinViewModel = await cabinRepo.GetCabinListById(groupCabinViewModel.IdCabin.ToString());
+        groupCabinUpdateViewModel.GroupCabinName = CabinViewModel.CabinName;
+        groupCabinUpdateViewModel.IdSpec = groupCabinViewModel.IdSpec;
+        groupCabinUpdateViewModel.IdCabin = groupCabinViewModel.IdCabin;
+        groupCabinUpdateViewModel.IndexOfGroupCabin = groupCabinViewModel.IndexOfGroupCabin;
+        groupCabinUpdateViewModel.Status = groupCabinViewModel.Status;
+        groupCabinUpdateViewModel.DateOfGrouping = groupCabinViewModel.DateOfGrouping;
+        groupCabinUpdateViewModel.StartTime = groupCabinViewModel.StartTime;
+        groupCabinUpdateViewModel.EndTime = groupCabinViewModel.EndTime;
+
+        var check = await grcabinRepo.UpdateGroupCabin(Guid.Parse(idSpec), Guid.Parse(idCabin),groupCabinUpdateViewModel);
+        if (check)
+        {
+            ToastService.ShowSuccess("Sửa thành công");
+        }
+        else
+        {
+            ToastService.ShowError("Sửa thất bại");
+        }
+    }
+}

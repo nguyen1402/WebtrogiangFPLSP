@@ -1,0 +1,31 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels
+<EditForm Model="@classSearchDTO" OnSubmit="@SearchForm">
+    <div class="row">
+        <div class="col-6 ps-0 pe-0">
+            <InputText placeholder="Nhập tên lớp" class="form-control" @bind-Value="classSearchDTO.ClassroomName"></InputText>
+        </div>
+        <div class="col-6">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+            <button class="btn btn-outline-primary me-2" stype="border:3px double Green" @onclick="() => Undo()">Làm mới</button>
+        </div>
+    </div>
+
+</EditForm>
+
+@code
+{
+    [Parameter] public EventCallback<ClassSearchDTO> OnSearch { get; set; }
+
+    private ClassSearchDTO classSearchDTO = new ClassSearchDTO();
+ 
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(classSearchDTO);
+    }
+    public async void Undo()
+    {
+        classSearchDTO = new ClassSearchDTO();
+        classSearchDTO.PageNumber = 1;
+        await OnSearch.InvokeAsync(classSearchDTO);
+    }
+}

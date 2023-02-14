@@ -1,0 +1,327 @@
+﻿
+body {
+    font-family: "Roboto", sans-serif;
+    background: #EFF1F3;
+}
+
+.heading-line {
+    text-align: center;
+    position: relative;
+    padding: 9px 0;
+}
+
+    .heading-line:after {
+        content: "";
+        height: 2px;
+        width: 90%;
+        background-color: #29B6F6;
+        position: absolute;
+        bottom: 0;
+        left: 30px;
+    }
+
+.notification-ui_dd-content {
+    margin-bottom: 30px;
+}
+
+.notification-list {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    padding: 20px;
+    padding-bottom: 0px;
+    padding-top: 0;
+    margin-bottom: 8px;
+    background: #fff;
+    box-shadow: 0 2px 3px rgb(0 0 0 / 10%);
+}
+
+.notification-list--unread {
+    border-left: 4px solid #29B6F6;
+    background-color: #e9ecef63;
+    border-radius: 2px;
+    margin: 0 0 8px 0;
+    background-color: #f6f9ff;
+}
+
+    .notification-list--unread:hover {
+        background-color: gainsboro;
+    }
+
+.notification-list .notification-list_content {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+}
+
+
+    .notification-list .notification-list_content .notification-list_detail p {
+        margin-bottom: 5px;
+        line-height: 1.2;
+    }
+
+/*.notification-list .notification-list_feature-img img {
+    height: 48px;
+    width: 48px;
+    border-radius: 5px;
+    margin-left: 20px;
+}
+*/
+
+.notice-room {
+    position: fixed;
+    height: 86%;
+    right: 10px;
+    overflow-x: hidden;
+    width: 42.8%;
+    overflow-y: auto;
+}
+
+.baophong {
+    /*min-height: 100vh;*/
+    margin: 0;
+    box-shadow: 0px 8px 15px #0a58ca52;
+    border-radius: 5px;
+}
+
+* {
+    /*    font-family: "Montserrat", sans-serif !important;*/
+    box-sizing: border-box;
+}
+
+
+.notice-envelope {
+    height: 86%;
+    position: fixed;
+    float: left;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-radius: 5px;
+    width: 37.833333%;
+    box-shadow: 0px 8px 15px #0a58ca52;
+}
+
+.notice-envelope1 {
+    height: 60%;
+    position: fixed;
+    float: left;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 37.833333%;
+    /* box-shadow: 0px 8px 15px #0a58ca52;*/
+}
+
+.row {
+    display: flex;
+    justify-content: center;
+}
+
+
+.selected {
+    text-align: center;
+    padding: 0 10px;
+    background-color: #444451a8;
+    color: #fff;
+    line-height: 50px;
+    width: 200px;
+    margin: 30px;
+    border-radius: 10px;
+    background-color: #ffa502;
+}
+
+.font-sendingtime {
+    font-size: x-small;
+    margin-top: -20px;
+    margin-bottom: 7px;
+    text-align: right;
+}
+
+.name-cabins {
+    text-align: center;
+    margin-top: 20px;
+    /*color: #f27125;*/
+}
+
+.indexs {
+    font-weight: bolder;
+    line-height: 11px;
+    margin-bottom: 0;
+    padding-top: 7px;
+    margin-left: -45px;
+    /* padding-top: 10px; */
+    text-decoration: underline;
+}
+
+.baongoai {
+    height: 86vh;
+    margin-left: -15px;
+}
+
+.hr-room {
+    background-color: #0a58ca;
+    margin: 10px;
+}
+
+.paging {
+    bottom: 8px;
+    width: 37.8%;
+    position: fixed;
+    border-radius: 5px;
+}
+
+/*Hủy phòng*/
+.container {
+    position: relative;
+    width: 190px;
+    height: fit-content;
+    margin-top: 30px;
+}
+
+.card {
+    position: relative;
+    width: 190px;
+    height: fit-content;
+    background: white;
+    padding: 16px;
+    border: 1px solid #232323;
+    transition: all .5s ease-in-out;
+}
+
+.card-hidden {
+    display: flex;
+    transform: translateY(200%);
+    flex-direction: column;
+    gap: .5rem;
+    transition: transform .5s ease-in, opacity .3s ease-in;
+    opacity: 0;
+}
+
+.card-border {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 12px;
+    top: 0;
+    border: 1px dashed #232323;
+    border-radius: 8px;
+    z-index: -1;
+}
+
+/*Hovers*/
+.card {
+    transform: translate(-9px, -9px);
+    border-color: #5bc0eb;
+}
+
+    .card:hover {
+        transform: translate(-12px, -12px);
+    }
+
+    .card .card-hidden {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    .card .title {
+        transform: translateY(200%);
+    }
+
+/*Text*/
+.title {
+    position: absolute;
+    bottom: 1rem;
+    color: #0a58ca9c;
+    transition: transform .25s ease-out;
+}
+
+/*Button*/
+.button {
+    padding: 8px;
+    background-color: #5bc0eb;
+    cursor: pointer;
+}
+
+    .button:hover {
+        background-color: #53aed4;
+    }
+
+
+/*Button cabin*/
+
+.roomRequest {
+    text-align: center;
+    padding: 0 10px;
+    color: #fff;
+    line-height: 40px;
+    width: 175px;
+    margin: 10px;
+    border-radius: 10px;
+    box-shadow: 0px 8px 15px #0a58ca52;
+    cursor: pointer;
+    background-color: #0a58ca9c;
+    font-weight: 700;
+    font-family: Helvetica,"sans-serif";
+    transition: all .2s;
+    padding: 10px 20px;
+    border-radius: 40px;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    font-size: 15px;
+}
+
+    .roomRequest:hover {
+        background: #ffa502;
+    }
+
+    .roomRequest > h4 {
+        width: 34px;
+        margin-left: 10px;
+        transition: transform .3s ease-in-out;
+    }
+
+    .roomRequest:hover h4 {
+        transform: translateX(5px);
+    }
+
+    .roomRequest:active {
+        transform: scale(0.95);
+    }
+
+.hethan {
+    background-image: url("./Image/CabinProject/hethanbackground.png");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+}
+
+.undo {
+    border: 1px solid;
+    border-radius: 5px;
+    margin: 5px 0;
+}
+
+.close-undo:hover {
+    color: #444746;
+    font-weight: bolder;
+}
+
+.undo:hover {
+    -webkit-font-smoothing: antialiased;
+    box-sizing: border-box;
+    background: #2c7ff9;
+    font-weight: bolder;
+}
+
+.undo-bag {
+    color: white;
+    display: block;
+    position: absolute;
+    bottom: 68px;
+    background-color: #0d6efda3;
+    box-shadow: 0px 8px 7px rgb(0 0 0 / 17%);
+    transition: opacity 1s ease;
+}

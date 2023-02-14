@@ -1,0 +1,235 @@
+﻿@page "/getvideoUP/{idsubject}/{lessonId}/{lessonContenId}/{idstudent}/{backUrl}"
+@*{}/{idls}/{lessonContenId}/{linkid}/{code}/{name}url cũ *@
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.LessonContentUP
+@using FPLSP.Server.Infrastructure.ViewModels.ResourceLinkUP
+@using FPLSP.Server.Infrastructure.ViewModels.VideoHistoryVm
+@using Microsoft.AspNetCore.Components
+@using Newtonsoft.Json.Linq
+@using System.Net
+@attribute [Authorize(Roles = "Student")]
+@layout MainLayout2
+<div class="pad">
+    <a href="@backUrl" class="btn btn-danger">Quay Lại</a>
+
+    @if (videohistory != null || videoID != null)
+    {
+@*            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/listsubjects">Môn:@nameSubject </a></li>
+                    <li class="breadcrumb-item"><a href="/lessonUP/@lessonId">@nameLesson</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">@(videohistory.LessonContentCode) - @lesssonContentDto.LessonContentName</li>
+                </ol>
+            </nav>
+*@          <h5>Môn: @nameSubject - @nameLesson - Nội Dung: @lesssonContentDto.LessonContentName</h5>
+
+            <div class="row">
+                <div class="col-lg-10">
+                @*<a type="button" class="btn btn-danger " href="/lessonContentUP/@idsj/@idls">Quay lại</a>*@
+                </div>
+                <div class="row col-lg-2 ">
+                    <div class="col-lg-3"></div>
+                    <div class="col-lg-9">
+@*                    @if (!videohistory.IsBookMarked)
+                    {
+                                <a type="button" @onclick="@WatchLate"> <i class="far fa-bookmark"> </i> Xem sau </a>
+                    }
+                    else
+                    {
+                                <a type="button" @onclick="@Remove"> <i class="fas fa-bookmark"></i> Bỏ xem sau </a>
+                    }
+*@                    </div>
+                </div>
+            </div>
+            <div class="row" style=" padding-top: 30px;">
+                <div class="col-lg-1">
+                   @* <a type="button" class="btn btn-outline-danger" @onclick="ComeBack" title="Bài trước">
+                        PRE
+                    </a>*@
+                </div>
+                <div class="col-lg-10 d-flex justify-content-center">
+                    <iframe class="modal-xl" style="margin-left: 40px;height: 700px;padding-top: 10px;" src='https://www.youtube.com/embed/@videoID' frameborder='0' allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe>
+                </div>
+                <div class="col-lg-1">
+                  @*  <a type="button" class="btn btn-outline-danger" @onclick="Next" title="Bài sau">
+                        NEXT
+                    </a>*@
+                </div>
+            </div>
+        @*        <div class="d-flex justify-content-center mb-2">
+    <div class="d-flex justify-content-center mb-2">
+    <div class="p-3">
+    <a type="button" class="btn btn-outline-danger" @onclick="ComeBack">Previous</a>
+    </div>
+    <div class="p-3"> <a type="button" class="btn btn-outline-danger" @onclick="Next">Next </a></div>
+    </div>
+    </div>
+    *@      }
+    else
+    {
+            <LoadingIndicator></LoadingIndicator>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string backUrl { get; set; }
+
+    [Inject] private IResourceLinkUPRepo _resourceLinkUPRepo { get; set; }
+    [Inject] private IToastService ToastService { get; set; }
+    [Inject] private ILessonContentUPRepo _lessonContentUP { get; set; }
+    [Inject] private IVideoHistoryRepo _videoHistoryRepo { get; set; }
+    [Inject] private ILessonUPRepo _lessonUPRepo { get; set; }
+
+    private string nameLesson = string.Empty;
+
+    [Inject] private ISubjectUPRepo _subjectUPRepo { get; set; }
+
+    private string nameSubject = string.Empty;
+
+    private List<ResourceLinkUPViewModel> lstvideo { get; set; } = new List<ResourceLinkUPViewModel>();
+    private List<LessonContentUPViewModel> lstLessonContent { get; set; } = new List<LessonContentUPViewModel>();
+    private LessonContentUPViewModel lesssonContentDto { get; set; } = new LessonContentUPViewModel();
+    private VideoHistoryCreateRequest _videoHistoryCreate { get; set; } = new VideoHistoryCreateRequest();
+    private VideoHistoryUpdateRequest _videoHistoryUpdate { get; set; } = new VideoHistoryUpdateRequest();
+
+    public bool check { get; set; }
+    public string videoID { get; set; }
+    [Parameter]
+    public string lessonContenId { get; set; }
+    [Parameter]
+    public string idsubject { get; set; }
+    [Parameter]
+    public string idstudent { get; set; }
+    [Parameter]
+    public string lessonId { get; set; }
+    public VideoHistoryViewModel videohistory { get; set; } = new VideoHistoryViewModel();
+    private string a = "";
+
+    private int b = 0;
+    public int Duration { get; set; }
+    public DateTime startTime { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        backUrl = backUrl.Replace("==", "/");
+        await getTask();
+        OnPlay();
+        getVideoDuration(videohistory.Path);
+    }
+
+    private async Task getTask()
+    {
+        //if (!check)
+        //{
+        var lesson = await _lessonUPRepo.GetById(lessonId);
+        nameLesson = lesson.LessonCode + "-" + lesson.LessonName;
+        var subject = await _subjectUPRepo.GetSubjectbyId(Guid.Parse(idsubject));
+        nameSubject = subject.SubjectCode + "-" + subject.SubjectName;
+        //}
+        //else
+        //{
+        //    video = lstvideo.FirstOrDefault(c => c.Id == lesssonContentDto.ResuorceLinkId);
+        //    check = false;
+        //}
+        _videoHistoryCreate.IsBookMarked = true;
+        _videoHistoryCreate.Status = 0;
+        _videoHistoryCreate.IdStudent = Guid.Parse(idstudent); //idstudent
+        _videoHistoryCreate.IdLessonContent = Guid.Parse(lessonContenId);
+        var x = await _videoHistoryRepo.Create(_videoHistoryCreate);
+        if (x = true)
+        {
+            videohistory = await _videoHistoryRepo.GetById(idstudent.ToString(), lessonContenId);
+        }
+    }
+    private async void WatchLate()
+    {
+        _videoHistoryUpdate.IsBookMarked = true;
+        _videoHistoryRepo.Update(Guid.Parse(idstudent), Guid.Parse(lessonContenId), _videoHistoryUpdate);
+        videohistory.IsBookMarked = true;
+        getTask();
+
+    }
+    private async void Remove()
+    {
+        _videoHistoryUpdate.IsBookMarked = false;
+        _videoHistoryRepo.Update(Guid.Parse(idstudent), Guid.Parse(lessonContenId), _videoHistoryUpdate);
+        videohistory.IsBookMarked = false;
+        getTask();
+    }
+    private async void Next()
+    {
+        //if (startTime != default(DateTime))
+        //{
+        //    var skipTime = DateTime.Now;
+        //    var seconds = (skipTime - startTime).TotalSeconds;
+        //    if (seconds < Duration * 0.8)
+        //    {
+        //        ToastService.ShowError("Bạn phải xem tối thiểu 80% thời lượng video trước khi sang bài mới");
+        //    }
+        //    else
+        //    {
+
+        a = videohistory.LessonContentCode.Substring(videohistory.LessonContentCode.Length - 1, 1);
+        b = int.Parse(a);
+        b++;
+
+        lesssonContentDto = lstLessonContent.FirstOrDefault(c => c.LessonContentCode == ($"Phần {b}"));
+        if (lesssonContentDto == null)
+        {
+            b = b - 1;
+            lesssonContentDto = lstLessonContent.FirstOrDefault(c => c.LessonContentCode == ($"Phần {b}"));
+        }
+        videohistory.LessonContentCode = "Phần " + b;
+        check = true;
+        OnInitializedAsync();
+        //    }
+        //}
+        //else
+        //{
+        //    ToastService.ShowError("Bạn phải xem tối thiểu 80% thời lượng video trước khi sang bài mới");
+        //}
+
+    }
+    private void ComeBack()
+    {
+        if (b < 1)
+        {
+            a = videohistory.LessonContentCode.Substring(videohistory.LessonContentCode.Length - 1, 1);
+            b = int.Parse(a);
+            lesssonContentDto = lstLessonContent.FirstOrDefault(c => c.LessonContentCode == ($"Phần {b}"));
+        }
+        if (b > 1)
+        {
+            b--;
+            lesssonContentDto = lstLessonContent.FirstOrDefault(c => c.LessonContentCode == ($"Phần {b}"));
+        }
+
+        videohistory.LessonContentCode = "Phần " + b;
+        check = true;
+        OnInitializedAsync();
+    }
+    //Kiểm tra thời lượng xem
+    public void OnPlay()
+    {
+        startTime = DateTime.Now;
+    }
+
+    public void getVideoDuration(string url)
+    {
+        videoID = url.Replace("https://www.youtube.com/embed/", "");
+        videoID = videoID.Replace("https://www.youtube.com/watch?v=", "");
+        videoID = videoID.Replace("https://youtu.be/", "");
+        videoID = videoID.Substring(0, 11);
+        string youtubeKey = "AIzaSyBy4O1cM43Zesp03-h1YTjj1JAhNmwEw9k";
+        WebClient myDownloader = new WebClient();
+        myDownloader.Encoding = System.Text.Encoding.UTF8;
+
+        string jsonResponse = myDownloader.DownloadString(
+        "https://www.googleapis.com/youtube/v3/videos?id=" + videoID + "&key=" + youtubeKey + "&part=contentDetails");
+
+        dynamic dynamicObject = JObject.Parse(jsonResponse);
+        string tmp = dynamicObject.items[0].contentDetails.duration;
+        Duration = Convert.ToInt32(System.Xml.XmlConvert.ToTimeSpan(tmp).TotalSeconds);
+    }
+}

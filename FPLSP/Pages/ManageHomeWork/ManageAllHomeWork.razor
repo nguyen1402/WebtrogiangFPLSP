@@ -1,0 +1,79 @@
+﻿@page "/manageallhomework/{lecturerId}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Repositories.Services
+@using FPLSP.Server.Domain.Entities.UserParts
+@using FPLSP.Server.Infrastructure.ViewModels
+@using FPLSP.Server.Infrastructure.ViewModels.LessonUP 
+@using Microsoft.AspNetCore.Components
+
+@foreach (var classUP in _lstClassUP)
+{
+    <MudPaper Width="940px" Elevation="0">
+        <MudTreeView T="string" ExpandOnClick="true" Hover="true">
+            <div class="row m-0">p
+                <div class="col-lg-11">
+                    <MudTreeViewItem Value="@(classUP.ClassroomName +"-"+ classUP.SubjectName)">
+                        @if (_lstLesson.Any(c => c.SubjectId == classUP.SubjectId))
+                        {
+                            @foreach (var lesson in _lstLesson.Where(c => c.SubjectId == classUP.SubjectId).ToList())
+                            {
+                                if (_lstSubmitHomework.Any(c => c.IdClass == classUP.Id && c.IdSubject == Guid.Parse(classUP.SubjectId.ToString()) && c.IdLesson == lesson.Id))
+                                {
+                                    @foreach (var homeWork in GetHomeWorksInClass(classUP.Id, Guid.Parse(classUP.SubjectId.ToString()), lesson.Id))
+                                    {
+                                        <div class="list-group-item d-flex align-items-center">
+                                            <div class="flex-fill d-flex justify-content-start">
+                                                <div class="text-dark font-weight-600"><strong>@lesson.LessonName</strong></div>
+                                            </div>
+                                            <button class="btn btn-outline-warning" onclick="">Chi Tiết</button>
+                                            <button class="btn btn-outline-success" onclick="">Chỉnh Sửa</button>
+                                        </div>
+
+                                    }
+                                }
+                            }
+                        }
+                    </MudTreeViewItem>
+                </div>
+            </div>
+        </MudTreeView>
+    </MudPaper>
+}
+
+@code{
+    [Parameter]
+    public string lecturerId { get; set; }
+
+    [Inject]
+    ITaskRepositories<ClassUPViewModel> _classUPRepo { get; set; }
+    private List<ClassUPViewModel> _lstClassUP { get; set; } = new List<ClassUPViewModel>();
+    [Inject]
+    ILessonUPRepo _lessonUPRepo { get; set; }
+    private List<LessonUPViewModel> _lstLesson { get; set; } = new List<LessonUPViewModel>();
+    [Inject]
+    ISubmitHomeworkForStudentRepo _submitHomeworkRepo { get; set; }
+    private List<SubmitHomeWork> _lstSubmitHomework { get; set; } = new List<SubmitHomeWork>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _lstClassUP = await _classUPRepo.GetAllClass();
+        _lstClassUP = _lstClassUP.Where(c => c.HomeroomLecturerId == Guid.Parse(lecturerId)).ToList();
+
+        _lstLesson = await _lessonUPRepo.GetAll();
+        _lstSubmitHomework = await _submitHomeworkRepo.Student_GetAllAsync();
+    }
+
+    private List<SubmitHomeWork> GetHomeWorksInClass(Guid classId, Guid subjectId, Guid lessonId)
+    {
+        return _lstSubmitHomework.Where(c => c.IdClass == classId && c.IdSubject == subjectId && c.IdLesson == lessonId).ToList();
+    }
+
+    private async Task UpdateHomeWork()
+    {
+
+    }
+    private async Task DeleteHomeWork()
+    {
+
+    }
+}

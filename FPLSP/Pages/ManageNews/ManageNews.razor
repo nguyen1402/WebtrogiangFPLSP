@@ -1,0 +1,262 @@
+﻿@page "/news/{joinCodeNonDecrypt}/{idUserNonDecrypt}/{subjectIdNonDecrypt}/{specializedIdNonDecrypt}/{idclassNonDecrypt}"
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Dtos.StudentStatisticVM
+@using FPLSP.Server.Infrastructure.ViewModels
+@using FPLSP.Server.Infrastructure.ViewModels.NewFeed
+@attribute [Authorize(Roles = "LecturerFPLSP")]
+<div class="row">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">Chuyên ngành: <a style="color:blue;box-shadow: 0 1px" @onclick="() => ResToSpec()"> @lstSpecAll.Where(c=>c.Id == Guid.Parse(specializedId)).Select(c=>c.SpecializationName).FirstOrDefault()</a></li>
+            <li class="breadcrumb-item">Môn :<a style="color:blue;box-shadow: 0 1px" @onclick="() => Mon()">@thongtinlop.NameMon</a></li>
+            <li class="breadcrumb-item">Lớp :<a style="color:blue;box-shadow: 0 1px" @onclick="() => RedirectToDetails()">@thongtinlop.NameClass</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Kho tài liệu</li>
+        </ol>
+    </nav>
+</div>
+<div class="row pt-3">
+    <div class="col-md-4">
+        @if (@thongtinlop != null)
+        {
+                                                    <h4>
+                                                        Môn : <b>@thongtinlop.NameMon</b> - Lớp <b>@thongtinlop.NameClass</b>
+                                                    </h4>
+        }
+    </div>
+
+    <div class="col-5"></div>
+    <div class="col-2 pl-15">
+        <a class="btn btn-outline-primary" title="Thêm tài liệu" @onclick="()=> RedirectToAddTaiLieu()">Thêm tài liệu</a>
+    </div>
+    <div class="col-1">
+        <a class="btn btn-outline-danger" @onclick="() => Quaylai()"><i class="bi bi-arrow-return-right"></i></a>
+    </div>
+</div>
+
+@if (_lstNews == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    @if (_lstNews.Count() == 0)
+    {
+        <h3 class="text-muted">Lớp học chưa có link tài nguyên</h3>
+    }
+    else
+    {
+        @foreach (var news in _lstNews.Where(c => c.Image == "Resource").OrderBy(c => c.CratedTime))
+        {
+            <div class="rounded border border-primary my-2">
+                <div class="m-4">
+                <p class="my-2" style="font-weight: bold; text-decoration: underline;">Tài nguyên @(countNews++):</p>
+                <EditForm Model="@news">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="row m-0 p-0">
+                        <div class="col-lg-10">
+                            <div class="row">
+                                <div class="form-group pt-2 col-md-6">
+                                    <label for="name" class="col-md-5 col-form-label">Tiêu đề:</label>
+                                    <div class="col-md-12">
+                                        <InputText class="form-control" readonly=@_isNotLecturer @bind-Value="news.Title"></InputText>
+                                        <ValidationMessage For="@(() => news.Title)" />
+                                    </div>
+                                </div>
+                                <div class="form-group pt-2 col-md-6">
+                                    <label for="name" class="col-md-5 col-form-label">Link tài nguyên:</label>
+                                    <div class="col-md-12">
+                                        <InputText class="form-control" readonly=@_isNotLecturer @bind-Value="news.Content"></InputText>
+                                        <ValidationMessage For="@(() => news.Content)" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="form-group pt-2 col-md-6">
+                                    <label for="name" class="col-md-5 col-form-label">Người tạo:</label>
+                                    <div class="col-md-12">
+                                        <InputText class="form-control" readonly @bind-Value="classSearch.HomeroomLecturer"></InputText>
+                                    </div>
+                                </div>
+                                <div class="form-group pt-2 col-md-6">
+                                    <label for="name" class="col-md-5 col-form-label">Ngày tạo:</label>
+                                    <div class="col-md-12">
+                                        <InputDate class="form-control" readonly @bind-Value="news.CratedTime"></InputDate>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2" hidden=@_isNotLecturer>
+                            @if (news.Status == 0)
+                            {
+                                <button class="btn btn-outline-warning" @onclick="@(() => ShowOrHide(news.Id))">Ẩn</button>
+                            }
+                            @if (news.Status == 1)
+                            {
+                                <button class="btn btn-outline-success" @onclick="@(() => ShowOrHide(news.Id))">Hiện</button>
+                            }
+                            <button class="btn btn-outline-primary mx-2" @onclick="@(() => Update(news.Id, news))">Chỉnh Sửa</button>
+                        </div>
+                    </div>
+                </EditForm>
+                </div>
+            </div>
+        }
+    }
+}
+
+@code {
+    [Parameter]
+    public string joinCodeNonDecrypt { get; set; }
+    [Parameter]
+    public string idUserNonDecrypt { get; set; }
+    [Parameter]
+    public string specializedIdNonDecrypt { get; set; }
+    [Parameter]
+    public string subjectIdNonDecrypt { get; set; }
+    [Parameter]
+    public string idclassNonDecrypt { get; set; }
+
+
+    public string joinCode = "";
+
+    public string idUser = "";
+    
+    public string specializedId = "";
+    
+    public string subjectId = "";
+    
+    public string idclass = "";
+
+    [Inject] NavigationManager navigationManager { get; set; }
+    [Inject] IToastService _toast { get; set; }
+    [Inject] private INewFeedRepo _newFeedRepo { get; set; }
+    private Thongtinlop thongtinlop = new Thongtinlop();
+    
+
+    [Inject]
+    public IStudentUPRepo _iStudentUPRepo { get; set; }
+    [Inject]
+    public ISpecializedCPRepo _iSpecializedClient { get; set; }
+    [Inject]
+    private ITaskRepositories<ClassUPViewModel> _classRepositories { get; set; }
+    CreateClassVM classSearch = new CreateClassVM();
+
+    List<NewFeedOverView> _lstNews;
+
+    private bool _isNotLecturer { get; set; }
+    private byte countNews = 1;
+
+
+    public List<SpecializedDto> lstSpecAll { get; set; } = new List<SpecializedDto>();
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    public ManageNews()
+    {
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        idUser = _cryptoServices.Decrypt(idUserNonDecrypt.Replace("I0H", "/"));
+        subjectId = _cryptoServices.Decrypt(subjectIdNonDecrypt.Replace("I0H", "/"));
+        specializedId = _cryptoServices.Decrypt(specializedIdNonDecrypt.Replace("I0H", "/"));
+        joinCode = _cryptoServices.Decrypt(joinCodeNonDecrypt.Replace("I0H", "/"));
+        idclass = _cryptoServices.Decrypt(idclassNonDecrypt.Replace("I0H", "/"));
+
+        thongtinlop = await _iStudentUPRepo.Thongtinlop(Guid.Parse(idclass), Guid.Parse(subjectId));
+        lstSpecAll = await _iSpecializedClient.GetAll();
+        countNews = 1;
+        classSearch = await _classRepositories.GetClassById(joinCode);
+
+        _lstNews = await _newFeedRepo.GetListNewForClass(classSearch.Id, classSearch.SubjectId);
+        await CheckUser(classSearch.HomeroomLecturerId, Guid.Parse(idUser));
+    }
+
+    private async Task CheckUser(Guid idLecturer, Guid idUserInput)
+    {
+        _isNotLecturer = (idLecturer != idUserInput);
+
+        if (_isNotLecturer)
+        {
+            _lstNews = _lstNews.Where(c => c.Status == 0).ToList();
+        }
+    }
+
+    protected async Task ShowOrHide(Guid idNews)
+    {
+        var newsSearch = _lstNews.Where(c => c.Id == idNews).FirstOrDefault();
+
+        if (newsSearch.Status == 0)
+        {
+            newsSearch.Status = 1;
+        }
+        else
+        {
+            newsSearch.Status = 0;
+        }
+
+        await Update(idNews, newsSearch);
+    }
+
+    private async Task Update(Guid idNews, NewFeedOverView newFeedOverView)
+    {
+        var res = await _newFeedRepo.UpdateNewFeed(idNews, new NewFeedVM()
+                        {
+                            Id = newFeedOverView.Id,
+                            Title = newFeedOverView.Title,
+                            Content = newFeedOverView.Content,
+                            IdLesson = newFeedOverView.IdLesson,
+                            Image = newFeedOverView.Image,
+                            Status = newFeedOverView.Status,
+                            CratedTime = newFeedOverView.CratedTime,
+                            EndDate = newFeedOverView.EndDate,
+                            Priority = newFeedOverView.Priority,
+                            IsReaded = newFeedOverView.IsReaded,
+                            IdUser = newFeedOverView.IdUser,
+                            IdClass = newFeedOverView.IdClass,
+                            IdSubject = newFeedOverView.IdSubject,
+                            IdTypeOfNewFeed = newFeedOverView.IdTypeOfNewFeed,
+                        });
+        if (res)
+        {
+            _toast.ShowSuccess($"Cập Nhật link tài nguyên thành công");
+            await this.OnInitializedAsync();
+        }
+        else
+        {
+            _toast.ShowError($"Cập Nhật link tài nguyên thất bại");
+            await this.OnInitializedAsync();
+        }
+    }
+
+    private async Task Quaylai()
+    {
+        var url = Path.Combine($"/ViewChiTitet/{idclassNonDecrypt}/{specializedIdNonDecrypt}/{idUserNonDecrypt}/{subjectIdNonDecrypt}");
+        navigationManager.NavigateTo(url);
+    }
+    private async Task ResToSpec()
+    {
+        var url = Path.Combine($"/LectuterSpecializedSubjectls/{idUserNonDecrypt}/{specializedIdNonDecrypt}");
+        navigationManager.NavigateTo(url);
+    }
+    private async Task Mon()
+    {
+        var url = Path.Combine($"/Giaovien/{specializedIdNonDecrypt}/{idUserNonDecrypt}/{subjectIdNonDecrypt}");
+        navigationManager.NavigateTo(url);
+    }
+    private async Task RedirectToDetails()
+    {
+        var url = Path.Combine($"/ViewChiTitet/{idclassNonDecrypt}/{specializedIdNonDecrypt}/{idUserNonDecrypt}/{subjectIdNonDecrypt}");
+        navigationManager.NavigateTo(url);
+    }
+
+    private async Task RedirectToAddTaiLieu()
+    {
+        var url = Path.Combine($"/resoucrelinkforstudent/{joinCodeNonDecrypt}/{idclassNonDecrypt}/{specializedIdNonDecrypt}/{idUserNonDecrypt}/{subjectIdNonDecrypt}");
+        navigationManager.NavigateTo(url);
+    }
+}

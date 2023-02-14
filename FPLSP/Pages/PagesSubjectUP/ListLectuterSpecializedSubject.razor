@@ -1,0 +1,299 @@
+@page "/LectuterSpecializedSubjectls/{lecuidNonDe}/{specidNonDe}"
+@using Blazored.LocalStorage
+@using Blazored.Toast.Services
+@using FPLSP.Components.GiaoVienLopUPComponets
+@using FPLSP.Components.SubjectUP
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels
+@using FPLSP.Server.Infrastructure.ViewModels.GiaoVienTaoLop
+@using FPLSP.Server.Infrastructure.ViewModels.Subject
+@inject ILocalStorageService _localStorageService;
+@if (_lstlecspecsb != null)
+{
+
+    @if (model != null)
+    {
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">Chuyên ngành</li>
+                <li class="breadcrumb-item active" aria-current="page">@model.SpecializationName</li>
+            </ol>
+        </nav>
+
+    }
+}
+
+@if (_lstlecspecsb != null)
+{
+
+    @if (model != null)
+    {
+        <h3>Chuyên ngành : @model.SpecializationName</h3>
+    }
+}
+
+
+<div class="row">
+    <p class="pt-2"><b>Danh sách lớp đã tạo</b></p>
+</div>
+<div class="col-md-5">
+    <GiaoVienLopUPCPSearch OnSearch="SearchTask2"></GiaoVienLopUPCPSearch>
+</div>
+
+<div class="mt-3">
+    <div class="card text-center ">
+        <div class="card-body">
+            <div class="row">
+                @if (fag == false)
+                {
+                    <LoadingIndicator></LoadingIndicator>
+                }
+                else if (CPList.Count > 0)
+                {
+                    @foreach (var iteam in CPList.OrderByDescending(c => c.CreatedDayClass))
+                    {
+                        <div class="col-lg-2 mb-5 single-product-item">
+                            <div class="card border-2 border-info" style="height :304px">
+                                <div class="row ">
+                                    <div class="card-body" style="display: flex;
+                                     flex-direction: column;">
+                                        <h5 class="my-3">Tên lớp: @iteam.ClassroomName</h5>
+                                        <h7 class="my-3">Môn học: @iteam.SubjectName</h7>
+                                        @*<p class="text-muted mb-1">Mã lớp : @iteam.ClassroomCode</p>*@
+                                        <p class="text-muted mb-1">Join Code : @iteam.JoinCode</p>
+                                        <p class="text-muted mb-1">Ngày tạo : @iteam.CreatedDayClass.Day/@iteam.CreatedDayClass.Month/@iteam.CreatedDayClass.Year</p>
+                                        <p class="text-muted mb-1">Tổng số : @iteam.Sinhvienthucte/@iteam.StudentAmount</p>
+                                    </div>
+                                </div>
+                                <button class="align-self-middle btn btn-lg btn-block btn-primary btn-warning" style=" margin-top: auto;" @onclick="() => RedirectToChitiet(_cryptoServices.Encrypt((iteam.ClassId).ToString()), _cryptoServices.Encrypt((iteam.SubjectId).ToString()))">Chi tiết</button>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <h5>Danh sách lớp trống</h5>
+                }
+            </div>
+        </div>
+        <div class="card-footer text-muted">
+            <div class="row mt-3">
+
+                <span>
+                    <Pagingation MetaData="MetaData2" Spread="2" SelectedPage="SelectedPage2"></Pagingation>
+                </span>
+
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row pt-2">
+    <p><b>Danh sách môn học</b></p>
+</div>
+<div class="col-md-5">
+    <ListLectuterSpecializedSubjectSeach OnSearch="SearchTask"></ListLectuterSpecializedSubjectSeach>
+</div>
+@if (fag2 == false)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else if (_lstlecspecsb.Count() > 0)
+{
+    <div class="mt-3">
+        <div class="card text-center">
+            <div class="card-body" style="display: flex;
+  flex-direction: column;">
+                <div class="row">
+                    @foreach (var lecspec in _lstlecspecsb)
+                    {
+                        <div class="col-lg-3 mb-5 single-product-item">
+                            <div class="card border-2 border-info" style="height :400px">
+                                <div class="row ">
+                                    <div class="card-body text-center">
+                                        @if (lecspec.ImageUrl == null)
+                                        {
+                                            <img src="./css/images/LecturerCP/defaultAVT.png" onerror="this.src='./css/images/Others/logoFPT.png'" alt="avatar" class="rounded-circle" style="height: 178px; width: 178px; object-fit: cover;">
+                                        }
+                                        else
+                                        {
+                                            <img src="@lecspec.ImageUrl" alt="avatar" onerror="this.src='./css/images/Others/logoFPT.png'" style="height: 178px; width: 178px; object-fit: cover;">
+                                        }
+                                        <h5 class="my-3">Môn học: @lecspec.SubjectName</h5>
+                                        <p class="text-muted mb-1">Giảng viên : @lecspec.LecturersName</p>
+                                        <p class="text-muted mb-1">Chuyên Ngành: @lecspec.SpecializationName</p>
+
+                                    </div>
+                                </div>
+
+                                <button class="align-self-middle btn btn-lg btn-block btn-primary btn-warning" style=" margin-top: auto;" @onclick="()=>ListLopHoc(_cryptoServices.Encrypt((lecspec.SpecializedId).ToString()),_cryptoServices.Encrypt((lecspec.LectuterId).ToString()),_cryptoServices.Encrypt((lecspec.SubjectId).ToString()))">Lớp Dạy</button>
+
+
+                                @*<a class="btn btn-primary" @onclick="()=>LectuterSpecializedSubjectls(lecspec.Key.Id)">Môn học</a>*@
+
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="card-footer text-muted">
+                <div class="row mt-3">
+
+                    <span>
+                        <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+                    </span>
+
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <h5>Danh sách môn trống</h5>
+}
+
+@code {
+
+
+    [Inject]
+    public ISubjectUPRepo _subjectUPRepo { get; set; }
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+    private List<LectuterSpecializedSubjectVM> _lstlecspecsb = new List<LectuterSpecializedSubjectVM>();
+    public MetaData MetaData { get; set; } = new MetaData();
+    public MetaData MetaData2 { get; set; } = new MetaData();
+
+    private SubjectListSearch SubjectListSearch = new SubjectListSearch();
+    private int encounter;
+
+
+    private string lecuid = "";
+
+    private string specid = "";
+    public bool fag { get; set; } = false;
+    public bool fag2 { get; set; } = false;
+    [Parameter]
+    public string lecuidNonDe { get; set; }
+    [Parameter]
+    public string specidNonDe { get; set; }
+    public List<ClassSubjectUPDto> CPList { get; set; } = new List<ClassSubjectUPDto>();
+
+    private SubjectServicesCPListSearch _parameters = new SubjectServicesCPListSearch();
+    [Inject] private IToastService ToastService { get; set; }
+    [Inject]
+    public IClassSubjectApiClient _iClassSubjectApiClient { get; set; }
+    private SpecializedDto model;
+    [Inject]
+    public ISpecializedUPRepo _iSpecializedClient { get; set; }
+
+    [Inject] public IUserIdentityRepo _UserIdentityRepo { get; set; }
+
+    private UserInListRoles userRole = new UserInListRoles();
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        lecuid = _cryptoServices.Decrypt(lecuidNonDe.Replace("I0H", "/"));
+        specid = _cryptoServices.Decrypt(specidNonDe.Replace("I0H", "/"));
+        await GetTasks();
+        await GetTasksLopDaTonTai();
+    }
+
+    public async Task SearchTask(SubjectListSearch subjectListSearch)
+    {
+        SubjectListSearch = subjectListSearch;
+        await GetTasks();
+
+    }
+
+    public async Task SearchTask2(SubjectServicesCPListSearch lessonContentListSearch)
+    {
+        _parameters = lessonContentListSearch;
+        await GetTasksLopDaTonTai();
+    }
+
+    private async Task GetTasks()
+    {
+        try
+        {
+            fag2 = false;
+            for (var i = 0; i < 15; i++)
+            {
+                encounter = i;
+            }
+            var pagingResponse = await _subjectUPRepo.GetAllLectuterSpecializedSubject(SubjectListSearch, Guid.Parse(lecuid), Guid.Parse(specid));
+            _lstlecspecsb = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+            fag2 = true;
+        }
+        catch (Exception ex)
+        {
+            _lstlecspecsb = null;
+        }
+
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        SubjectListSearch.PageNumber = page;
+        await GetTasks();
+    }
+    private async Task SelectedPage2(int page)
+    {
+        _parameters.PageNumber = page;
+        await GetTasksLopDaTonTai();
+    }
+
+    private async Task GetTasksLopDaTonTai()
+    {
+        try
+        {
+            fag = false;
+            for (var i = 0; i < 15; i++)
+            {
+                encounter = i;
+            }
+            var pagingResponse = await _iClassSubjectApiClient.GetPagingParamets(Guid.Empty, Guid.Parse(lecuid), Guid.Parse(specid), _parameters);
+            CPList = pagingResponse.Items;
+            MetaData2 = pagingResponse.MetaData;
+            fag = true;
+        }
+        catch (Exception ex)
+        {
+            CPList = null;
+        }
+
+    }
+    private async Task RedirectToChitiet(string idclass, string subjectId)
+    {
+        if (userRole.ListRoles.FirstOrDefault() == "AdminCore")
+        {
+            ToastService.ShowError("Bạn không có quyền truy cập");
+            return;
+        }
+        string a = "";
+        string b = "";
+        a = idclass.Replace("/", "I0H");
+        b = subjectId.Replace("/", "I0H");
+        var url = Path.Combine($"/ViewChiTitet/{a}/{specidNonDe}/{lecuidNonDe}/{b}");
+        Navigation.NavigateTo(url);
+    }
+    private async Task ListLopHoc(string specializedId, string lecuId, string subjectId)
+    {
+        if (userRole.ListRoles.FirstOrDefault() == "AdminCore")
+        {
+            ToastService.ShowError("Bạn không có quyền truy cập");
+            return;
+        }
+        string a = "";
+        string b = "";
+        string c = "";
+        a = specializedId.Replace("/", "I0H");
+        b = lecuId.Replace("/", "I0H");
+        c = subjectId.Replace("/", "I0H");
+        Navigation.NavigateTo($"/Giaovien/{a}/{b}/{c}");
+    }
+}

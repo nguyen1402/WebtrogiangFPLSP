@@ -1,0 +1,206 @@
+﻿@page "/groupcabin/{idSpec}"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Repositories.Interfaces.CabinProject
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.GroupCabin
+@inject IDialogService DialogService
+@attribute [Authorize(Roles = "DirectorOfTraining")]
+@if (gcabin == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+
+
+@*    <div class="row">
+        <div class="col-lg-10">
+
+            <div class="pl-16">
+            </div>
+        </div>
+        <div class="col-lg-2 mt-2">
+             <MudButton @onclick="OpenDialog" Variant="Variant.Filled" Style="background-color:orangered;color:whitesmoke" class="float-end">
+        <GroupCabinAdd idSpec=@idSpec ConfirmationChanged="OnAdd" ></GroupCabinAdd>
+        Thêm cabin vào nhóm ngành <br>@namespec
+        </MudButton>
+        </div>
+    </div>*@
+    <div class="row mt-2">
+        <div class="table-responsive ">
+            <table class="table table-light table-bordered">
+                <thead>
+                    <tr>
+
+                        <th width="10%">
+                            Cabin
+                        </th>
+                        <th width="10%">
+                            Ngày tạo
+                        </th>
+                        @* <th width="10%">Ngày bắt đầu trong nhóm ngành</th>
+                    <th width="10%">Ngày kết thúc trong nhóm ngành</th>*@
+                        <th width="10%">
+                            Trạng thái
+                        </th>
+                        <th class="col-lg-15">Tính năng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in gcabin)
+                    {
+                        <tr>
+                            <td>
+                                @item.CabinName
+                            </td>
+                            <td>
+                                @item.DateOfGrouping.ToString("dd/MM/yyyy")
+                            </td>
+                            @* <td>
+                    @item.StartTime.ToString("dd/MM/yyyy")
+                    </td>
+                    <td>
+                    @item.EndTime.ToString("dd/MM/yyyy")
+                    </td>*@
+
+                            @if (item.Status == 0)
+                            {
+                                <td>
+                                    Đang hoạt động
+                                </td>
+                            }
+                            else if (item.Status == 1)
+                            {
+                                <td>
+                                    Đã dừng hoạt động
+                                </td>
+                            }
+                            else
+                            {
+                                <td>
+                                    Bảo trì
+                                </td>
+                            }
+                            <td>
+                                <div class="d-flex justify-content-center mb-2">
+                                    <div class=" pl-1">
+                                        <button class="btn btn-danger " type="button" @onclick="()=>Delete(item.IdCabin)" title="Xóa">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+
+                    }
+                </tbody>
+            </table>
+            <div class="d-flex justify-content-center mb-2">
+                <div class="row">
+                    <div class="col-11 align-self-center">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="d-flex justify-content-center mb-2">
+        <div class="row">
+            <div class="col-11 align-self-center">
+                <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+            </div>
+        </div>
+    </div>
+
+    <Comfirmation ConfirmationMessage="Bạn muốn xóa không?"
+              ConfirmationTitle="Xác nhận"
+              ConfirmationChanged="OnConfirmationDelete " @ref="DeleteConfirmation"></Comfirmation>
+
+}
+@code {
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    [Parameter] public string idSpec { get; set; }
+    public Guid idCabinDel { get; set; }
+    protected GroupCabinAdd GroupCabinAdd { get; set; }
+    protected Comfirmation DeleteConfirmation { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    [Inject] private IGroupCabinRepo _groupCabinRepo { get; set; }
+    [Inject] private ICabinRepo _CabinRepo { get; set; }
+    [Inject] private ISpecializedUPRepo _specializedUPRepo { get; set; }
+    string namespec;
+    List<GroupCabinViewModel> groupCabinViewModel = new List<GroupCabinViewModel>();
+    GroupCabinSearchViewModel groupCabinSearchViewModel = new GroupCabinSearchViewModel();
+    List<GroupCabinListVM> gcabin;
+    protected override async Task OnInitializedAsync()
+    {
+
+        await GetTask();
+    }
+    public async Task GetTask()
+    {
+        var getName = await _specializedUPRepo.GetByIdSpec(Guid.Parse(idSpec));
+        namespec = getName.SpecializationName;
+        var groupViewModel = await _groupCabinRepo.GetGroupCabinListSearch(groupCabinSearchViewModel);
+        var cabinvm = await _CabinRepo.GetAllCabinAsync();
+        cabinvm = cabinvm.Where(x => x.Status != 1).ToList();
+        groupCabinViewModel = groupViewModel.Items.Where(x => x.IdSpec == Guid.Parse(idSpec)).ToList();
+
+        MetaData = groupViewModel.MetaData;
+        gcabin = (from a in cabinvm
+                  join b in groupCabinViewModel
+                  on a.Id equals b.IdCabin
+                  select new GroupCabinListVM
+                      {
+                          IdCabin = a.Id,
+                          CabinName = a.CabinName,
+                          DateOfGrouping = b.DateOfGrouping,
+                          StartTime = b.StartTime,
+                          EndTime = b.EndTime,
+                          Status = b.Status,
+                      }).ToList();
+
+    }
+    private void OpenDialog()
+    {
+        MudBlazor.DialogOptions closeOnEscapeKey = new MudBlazor.DialogOptions() { CloseOnEscapeKey = true };
+        var parameters = new DialogParameters();
+        parameters.Add("idSpec", $"{idSpec}");
+        DialogService.Show<GroupCabinAdd>("", parameters, closeOnEscapeKey);
+
+    }
+    private async Task OnAdd(bool deleteconfirmed)
+    {
+        if (deleteconfirmed)
+        {
+            await GetTask();
+        }
+    }
+    private async Task SelectedPage(int page)
+    {
+        groupCabinSearchViewModel.PageNumber = page;
+        await GetTask();
+    }
+    private void Delete(Guid Id)
+    {
+        idCabinDel = Id;
+        DeleteConfirmation.show();
+    }
+
+    private async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (deleteconfirmed)
+        {
+            var check = await _groupCabinRepo.DeleteGroupCabin(Guid.Parse(idSpec), idCabinDel);
+            if (check)
+            {
+                await GetTask();
+                _toastService.ShowSuccess("Xóa thành công");
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+            }
+        }
+    }
+}

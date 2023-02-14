@@ -1,0 +1,422 @@
+﻿@page "/lessoncontent/{idspecialized}/{idsubject}/{idlesson}"
+@using Blazored.Toast.Services
+@using FPLSP.Components
+@using FPLSP.Components.LessoncontentCP
+@using FPLSP.Components.Subject
+@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.LessonContentCP
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<div class="row">
+    <h3 class="ps-0">Danh sách nội dung bài học của bài : @nameLesson</h3>
+</div>
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/SpecializedCP">Chuyên ngành</a></li>
+        <li class="breadcrumb-item"><a href="/subjects/@idspecialized">@namespecialized</a></li>
+        <li class="breadcrumb-item"><a href="/lesson/@idspecialized/@idsubject">@subject.SubjectName</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@nameLesson</li>
+    </ol>
+</nav>
+<div class="row pt-3">
+    <div class="col-3 ps-0">
+        <a class="btn btn-outline-danger me-3" @onclick="() => Quaylai()">Quay Lại</a>
+        <a class="btn btn-primary me-3" @onclick="() => RedirectToCreat()">Thêm nội dung</a>
+    </div>
+    <div class="col-7 ps-0">
+        <div class="row">
+            <div class="col-4">
+                <EditForm Model="_parameters">
+                    <div class="col-12">
+                        <InputSelect ValueExpression="@(()=>_parameters.Status)" Value="@_parameters.Status" ValueChanged="@((int newValue) => ChangeValue(newValue))" class="form-select">
+                            <option value="3">Tất cả</option>
+                            <option value="0">Không hoạt động</option>
+                            <option value="1">Đang hoạt động</option>
+                        </InputSelect>
+                    </div>
+                </EditForm>
+            </div>
+            <div class="col-8">
+                <EditForm Model="_parameters">
+                    <div class="row">
+                        <div class="col-6 ps-0 pe-0">
+                            <InputText placeholder="Nhập tên nội dung bài học" class="form-control" @bind-Value="_parameters.Name"></InputText>
+                        </div>
+                        <div class="col-6">
+                            <button @onclick="() => TimKiem()" class="btn btn-primary">Tìm kiếm</button>
+                            <button class="btn btn-outline-success ms-2" @onclick="() => Undo()">Làm mới</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+    <div class="col-2 ps-3">
+        <div class="dropdown-center">
+            <button class="btn btn-info ps-4 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Chức Năng
+            </button>
+            <ul class="dropdown-menu">
+                <li><a type="button" class="btn dropdown-item" @onclick="() => linkbaihoc()">Link bài học</a></li>
+                <li><a type="button" class="btn dropdown-item" @onclick="() => DeleteAll()">Đổi trạng thái</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+@if (ListLessonContent.Count > 0 || (tg = DateTime.Now - time).Days < 7)
+{
+    <div class="row">
+
+        <table class="table table-hover align-middle table-bordered mt-3" style="text-align:center">
+            <thead class="table-success">
+                <tr>
+                    <th><input type="checkbox" @bind="@Check" @onchange="EventArgs => { CheckAllExpense( EventArgs.Value); } " @bind:event="oninput"></th>
+                    <th width="5%">Vị trí</th>
+                    <th width="20%">Tên nội dung bài học</th>
+                    <th width="20%">Nội dung bài học</th>
+                    <th width="20%">Tiêu đề link nội dung bài học</th>
+                    <th width="15%">Trạng thái</th>
+                    <th width="20%">Chức năng</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in ListLessonContent)
+                {
+                    <tr>
+                        <td><input type="checkbox" checked=@item.IsChecked @onchange="()=>CheckManual(item.Id,item.IsChecked)"></td>
+                        <td>@item.Index</td>
+                        <td>@item.LessonContentName</td>
+                        <td>@item.Content</td>
+                        <td>@item.TitleLink</td>
+                        @if (@item.Status == 0)
+                        {
+                            <td>Không hoạt động</td>
+                        }
+                        else
+                        {
+                            <td>Đang hoạt động</td>
+                        }
+                        <td class="text-center">
+                            <a class="btn btn-info " type="button" title="Tăng vị trí" @onclick="()=>Upto(item.Id)">
+                                <i class="bi bi-arrow-up-square"></i>
+                            </a>
+                            <a class="btn btn-info " type="button" title="Giảm vị trí" @onclick="()=>Down(item.Id)">
+                                <i class="bi bi-arrow-down-square-fill"></i>
+                            </a>
+                            <a class="btn btn-primary " type="button" title="Sửa" id="show-emp"
+                       @onclick="() => RedirectToUpdate(item.Id)">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a class="btn btn-danger " type="button" title="Đổi trạng thái" @onclick="()=>DeleteLesson(item.Id)">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </a>
+
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <Comfirmation ConfirmationMessage="Bạn có chắc muốn đổi trạng thái không không?"
+                  ConfirmationTitle="Đổi trạng thái"
+                  @ref="DeleteConfirmation"
+                  ConfirmationChanged="OnConfirmationDelete"></Comfirmation>
+    </div>
+    <div class="footer text-muted">
+        <div class="row mt-3">
+
+            <span>
+                <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+            </span>
+
+        </div>
+    </div>
+}
+else
+{
+    <span>
+        <LoadingIndicator></LoadingIndicator>
+    </span>
+}
+@code {
+    public List<LessonContentDto> ListLessonContent { get; set; } = new List<LessonContentDto>();
+    public MetaData MetaData { get; set; } = new MetaData();
+    public LessonContentUpdateVM lessonContent;
+    private LessonContentListSearch _parameters = new LessonContentListSearch();
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    [Inject]
+    public ILessonContentCPRepo _iLessonContentClient { get; set; }
+
+    private SubjectDto subject { get; set; } = new SubjectDto();
+
+    [Inject]
+    public ISubjectClient _iSubjectClient { get; set; }
+    private LessonDto lesson { get; set; } = new LessonDto();
+    [Inject]
+    public ILessonCPRepo _iLessonClient { get; set; }
+    public string Error { get; set; }
+    [Parameter]
+    public string idsubject { get; set; }
+    [Parameter]
+    public string idlesson { get; set; }
+    [Parameter]
+    public string idspecialized { get; set; }
+    public DateTime time { get; set; }
+    public TimeSpan tg;
+    private bool Check = false;
+    private int stt = 0;
+    protected Comfirmation DeleteConfirmation { get; set; }
+    private List<Guid> _removeLesoncontent = new List<Guid>();
+    [Inject] private IToastService _toastService { get; set; }
+    private string _idLessoncontent;
+    private string nameLesson;
+    private string codeLesson;
+    public SpecializedDto specializedDto { get; set; } = new SpecializedDto();
+    string namespecialized { get; set; }
+    [Inject]
+    public ISpecializedCPRepo _iSpecialized { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+
+        specializedDto = await _iSpecialized.GetbyId(Guid.Empty, Guid.Parse(idspecialized));
+        namespecialized = specializedDto.SpecializationName;
+        subject = await _iSubjectClient.GetSubjectbyId(Guid.Parse(idsubject));
+        lesson = await _iLessonClient.GetbyId(Guid.Parse(idlesson));
+        nameLesson = lesson.LessonName;
+        codeLesson = lesson.LessonCode;
+        _parameters.Status = 1;
+        await GetTasks();
+
+    }
+    public async Task SearchTask(LessonContentListSearch lessonContentListSearch)
+    {
+        _parameters = lessonContentListSearch;
+        _parameters.PageNumber = 1;
+        Check = false;
+        await GetTasks();
+    }
+    private async Task Undo()
+    {
+        _parameters.Name = "";
+        _parameters.Status = 3;
+        _parameters.PageNumber = 1;
+        await GetTasks();
+
+    }
+    private async Task Upto(Guid id)
+    {
+        lessonContent = await _iLessonContentClient.GetbyId(id);
+        lessonContent.Index += 1;
+        var result = await _iLessonContentClient.Update(id, lessonContent);
+        if (result != 1)
+        {
+            _toastService.ShowError("lỗi! Vui lòng thử lại");
+
+        }
+        else
+        {
+            _toastService.ShowSuccess("Tăng lên thành công");
+
+        }
+        await GetTasks();
+
+    }
+    private async Task Down(Guid id)
+    {
+        lessonContent = await _iLessonContentClient.GetbyId(id);
+        if (lessonContent.Index == 1)
+        {
+            _toastService.ShowError("Đã ở mức thấp nhất");
+
+        }
+        else
+        {
+            lessonContent.Index -= 1;
+            var result = await _iLessonContentClient.Update(id, lessonContent);
+            if (result != 1)
+            {
+                _toastService.ShowError("lỗi! Vui lòng thử lại");
+
+            }
+            else
+            {
+                _toastService.ShowSuccess("Giảm xuống thành công");
+            }
+
+        }
+        await GetTasks();
+
+    }
+    private async Task TimKiem()
+    {
+        await GetTasks();
+    }
+    private async Task ChangeValue(int value)
+    {
+        _parameters.Status = value;
+        _parameters.Name = _parameters.Name;
+        await GetTasks();
+    }
+    private void linkbaihoc()
+    {
+        var url = Path.Combine("/resourcelink/", idspecialized, idsubject, idlesson);
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToVideo(Guid? idRsLink, Guid? idLessonConten)
+    {
+        var url = Path.Combine("/lessonContentVideo/", idRsLink.ToString(), idLessonConten.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task RedirectToCreat()
+    {
+        var url = Path.Combine("/createlessoncontent/", idspecialized, idsubject.ToString(), idlesson.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToDetails(Guid id)
+    {
+        var url = Path.Combine("/detailsds/", idsubject.ToString(), id.ToString(), idlesson.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToUpdate(Guid id)
+    {
+
+        var url = Path.Combine("/leesoncontentupdate/" + idspecialized + "/" + idsubject + "/" + idlesson + "/" + id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task RedirectToDelete(Guid id)
+    {
+        var url = Path.Combine("/leesoncontentdelete/", idsubject.ToString(), id.ToString(), idlesson.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task RedirectToLesson()
+    {
+        var url = Path.Combine("/lesson/", idsubject.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _iLessonContentClient.GetLessons(Guid.Parse(idlesson), _parameters);
+            ListLessonContent = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+            time = DateTime.Now;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/lesson/", idspecialized, idsubject);
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _parameters.PageNumber = page;
+        Check = false;
+        await GetTasks();
+    }
+    public async Task OnDelete(Guid id)
+    {
+        _idLessoncontent = id.ToString();
+        DeleteConfirmation.show();
+    }
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+
+        stt = 0;
+        if (deleteconfirmed && _idLessoncontent == null && _removeLesoncontent.Count == 0)
+        {
+            _toastService.ShowError("Bạn chưa chọn đối tượng để đổi trạng thái");
+            await GetTasks();
+            //NavigationManager.NavigateTo($"/lesson/{idspec}/{idsubject}");
+        }
+        else if (deleteconfirmed && _idLessoncontent != null)
+        {
+            var result = await _iLessonContentClient.Delete(Guid.Parse(_idLessoncontent));
+            if (result == 1)
+            {
+                _toastService.ShowSuccess("Đổi trạng thái thành công");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/lessoncontent/{idspecialized}/{idsubject}/{idlesson}");
+            }
+            else
+            {
+                _toastService.ShowError("Đổi trạng thái thất bại");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/lessoncontent/{idspecialized}/{idsubject}/{idlesson}");
+            }
+        }
+        else if (deleteconfirmed && _removeLesoncontent != null)
+        {
+
+            var result = await _iLessonContentClient.RemoveListLessonContentCP(_removeLesoncontent);
+            if (result)
+            {
+                _toastService.ShowSuccess("Đổi trạng thái thành công");
+                await GetTasks();
+                NavigationManager.NavigateTo($"/lessoncontent/{idspecialized}/{idsubject}/{idlesson}");
+            }
+            else
+            {
+                _toastService.ShowError("Đổi trạng thái thất bại");
+
+                await GetTasks();
+                NavigationManager.NavigateTo($"/lessoncontent/{idspecialized}/{idsubject}/{idlesson}");
+            }
+        }
+        _idLessoncontent = null;
+        _removeLesoncontent = null;
+        Check = false;
+    }
+    public void DeleteLesson(Guid id)
+    {
+        _idLessoncontent = id.ToString();
+        DeleteConfirmation.show();
+    }
+    void CheckManual(Guid reportId, bool check)
+    {
+        stt = 0;
+        if (check == true)
+        {
+            foreach (var x in ListLessonContent.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in ListLessonContent.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    void DeleteAll()
+    {
+        stt = 0;
+        _removeLesoncontent = ListLessonContent.Where(c => c.IsChecked == true).Select(c => c.Id).ToList();
+        DeleteConfirmation.show();
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        stt = 0;
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            ListLessonContent.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            ListLessonContent.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+}

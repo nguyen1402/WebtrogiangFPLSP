@@ -1,0 +1,2171 @@
+﻿@page "/makeanexaminationroom/{getIdSubjectNonDecrpyt}/{IdLecture}/{Current}"
+@using AntDesign;
+@using BlazorInputFile
+@using FPLSP.Data.FPLExam;
+@using System.ComponentModel.DataAnnotations;
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories.Interfaces.CabinProject;
+@using FPLSP.Repositories.Interfaces;
+@using FPLSP.Repositories.Interfaces.FPLExam;
+@using FPLSP.Server.Domain.Dtos;
+@using FPLSP.Server.Domain.Entities.CoresParts;
+@using FPLSP.Server.Domain.Entities.FPLExam;
+@using FPLSP.Server.Infrastructure.ViewModels.FPLExam;
+@using Microsoft.AspNetCore.Identity;
+@using System.Text.RegularExpressions
+@inject IJSRuntime JSRuntime
+@inject IMessageService message
+@inject SweetAlertService Swal;
+<div class="row d-flex justify-content-center">
+</div>
+
+<div class="row m-2">
+    <div class="col-6">
+        <div class="row">
+
+            <div class="col-3">
+                <div class="btn-container">
+                    <button @onclick="RedirectToBackManage" class="tired">
+                        <span class="text">Quay Lại</span>
+                        <div class="icon-container">
+                            <div class="icon icon--left">
+                                <svg>
+                                    <use xlink:href="#arrow-right"></use>
+                                </svg>
+                            </div>
+                            <div class="icon icon--right">
+                                <svg>
+                                    <use xlink:href="#arrow-right"></use>
+                                </svg>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="col-9"> </div>
+</div>
+
+<div>
+    <Steps Current="current">
+        @foreach (var item in steps)
+        {
+            <Step Subtitle="@item.Content" Title="@item.Title" />
+        }
+    </Steps>
+
+    <div class="steps-content">
+
+        @if (current == 0)
+        {
+            <Spin Spinning=@IsShowLoading Delay=500 Tip="Loading........Vui lòng chờ trong giây lát">
+
+                <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                    <DataAnnotationsValidator />
+                    <MudGrid Class="mb-3">
+                        <MudItem xs="12" sm="12">
+                            <MudCard>
+                                <MudCardContent>
+                                    <MudTextField Label="Môn Thi " ReadOnly=true
+                                              @bind-Value="getSUbject.SubjectName" For="@(() => getSUbject.SubjectName)" />
+
+
+                                    <MudAutocomplete T="string" Validation="@(new Func<string, IEnumerable<string>>(ValidateForBlock))" OpenIcon="@Icons.Material.Filled.Search" Class="mt-3" Required Label="Block - Kì" @bind-Value="model.BlockSemesterName" AdornmentColor="MudBlazor.Color.Secondary" ResetValueOnEmptyText="true" CoerceValue="@coerceValue" SearchFunc="@SearchBlockSemester" Variant="Variant.Outlined" ShowProgressIndicator="true" ProgressIndicatorColor="SelectedColor" />
+                                    <MudAutocomplete T="string" Validation="@(new Func<string, IEnumerable<string>>(ValidateForTrain))" OpenIcon="@Icons.Material.Filled.Search" Class="mt-3" Required Label="Cơ Sở" @bind-Value="model.TrainingName" AdornmentColor="MudBlazor.Color.Secondary" ResetValueOnEmptyText="true" CoerceValue="@coerceValue" SearchFunc="@SearchTrain" Variant="Variant.Outlined" ShowProgressIndicator="true" ProgressIndicatorColor="SelectedColor" />
+
+                                    @* <div class="d-flex">
+                                <MudRadioGroup SelectedOption=0 SelectedOptionChanged="OnSelectedOptionChanged" Class="mt-3" T="int" Required="true" RequiredError="Trạng Thái Bắt Buộc">
+                                <MudRadio Option="@(0)"><span>Hoạt Động</span></MudRadio>
+                                </MudRadioGroup>
+                                </div>*@
+
+                                    <MudTextField Class="mt-3" Label="Ghi Chú"
+                                              @bind-Value="model.Note" For="@(() => model.Note)" />
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    </MudGrid>
+                </EditForm>
+            </Spin>
+        }
+        @if (current == 1)
+        {
+
+
+
+            <MudPaper MinHeight="500px" Elevation="8">
+                <Spin WrapperClassName="wrapping" Spinning=@LoadingMain Tip="Loading........Vui lòng chờ trong giây lát">
+
+
+                    <div class="wrapping">
+
+
+                        <div class="row">
+
+                            <EditForm class="row mb-4" Model="createExaminationRoomSearch" OnSubmit="SearchTask">
+
+                                <div class="col-3">
+                                    @*<span>Sắp xếp ngày</span>
+                                <InputSelect class="form-select" ValueExpression="@(()=>createExaminationRoomSearch.TimeOderby)" Value="@createExaminationRoomSearch.TimeOderby" ValueChanged="@((int value)=> SearchTimeOderby(value))">
+                                <option value="0">Không sắp xếp</option>
+                                <option value="1">Ngày bắt đầu tăng dần</option>
+                                <option value="2">Ngày bắt đầu giảm dần</option>
+                                <option value="3">Ngày kết thúc tăng dần</option>
+                                <option value="4">Ngày kết thúc giảm dần</option>
+                                </InputSelect>*@
+                                    <span>Ngày bắt đầu</span>
+                                    <InputDate class="form-select" @bind-Value="createExaminationRoomSearch.StartTime">
+
+                                    </InputDate>
+                                </div>
+                                <div class="col-3">
+
+                                    <span>Ngày kết thúc</span>
+                                    <InputDate class="form-select" @bind-Value="createExaminationRoomSearch.EndTime">
+                                    </InputDate>
+                                </div>
+                                <div class="col-4">
+                                    <span>Tìm kiếm theo tên giảng viên</span>
+                                    <div class="input-group mb-3">
+                                        <InputText placeholder="Nhập Tên môn ..." class="form-control" @bind-Value="createExaminationRoomSearch.LectureName"></InputText>
+                                        <div class="input-group-append pl-1">
+                                            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class=" col-2">
+                                    <span></span>
+                                    <div class="input-group mb-3 mt-4">
+                                        <div class="input-group-append pl-1">
+                                            <button type="button" @onclick="Clear" class="btn btn-primary">Làm Mới</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </EditForm>
+
+                            <label class="text-center mb-3">Danh Sách Đề Thi Chính Thức : @_lstRoomDetailViews.Count()</label>
+                            @if (_lstRoomDetailViews.Count() > 0)
+                            {
+                                @foreach (var x in _lstRoomDetailViews.Where(c => c.IdSemester == Guid.Parse(getIdSemester) && c.IdBlock == Guid.Parse(getIdBlock)).ToList().OrderByDescending(c => c.Status))
+                                {
+
+                                    @if (!x.IsEditing)
+                                    {
+                                        @if (x.EndTime < DateTime.Now)
+                                        {
+                                            <div id="@x.SecretKey" class="col-lg-3 mb-3 mt-5">
+                                                <div class="d-flex justify-content-start" style="height:95%">
+                                                    <div class="carder" style="--cards:4;width:100%;height:100px;">
+                                                        <div class="child">
+                                                            <div class="row">
+
+
+                                                                <div class="col-12 mt-2">
+                                                                    <span class="fs-5">Đề đã hết hạn</span>
+                                                                </div>
+                                                                <MudIconButton Class="ps-1" OnClick="()=>DeleteInstane(x)" Icon="@Icons.Filled.DeleteForever" Size="Size.Medium" Color="MudBlazor.Color.Dark" aria-label="add to favorite" style="margin-right:-60px;"></MudIconButton>
+
+
+                                                            </div>
+                                                            <div class="">
+                                                                <span>
+                                                                    Danh Sách Giám Thị : @foreach (var name in x.ListSupervisorID)
+                                                                    {
+                                                                        for (int i = 0; i < _lstUser.Where(c => c.Id == name.ToString()).Count(); i++)
+                                                                        {
+                                                                            <div>@_lstUser.Where(c => c.Id == name.ToString()).ToList()[i].Email</div>
+                                                                        }
+
+                                                                    }
+                                                                </span>
+
+                                                            </div>
+                                                            <div class="mt-2">
+                                                                <span>Tên File Đề Thi :@x.ExamFileName</span>
+                                                            </div>
+                                                            <div>
+                                                                <span>Thời Lượng Thi :@x.TotalTimeOfExam p </span>
+                                                            </div>
+                                                            <div>
+                                                                <span>Thời gian bắt đầu :@x.StartTime.ToString("HH:mm") - @x.StartTime.ToShortDateString() </span>
+                                                            </div>
+                                                            <div>
+                                                                <span>Thời gian kết thúc :@x.EndTime.ToString("HH:mm") - @x.EndTime.ToShortDateString()</span>
+                                                            </div>
+                                                            <div>
+
+                                                                <span>Mật Khẩu : @x.SecretKey  </span>
+                                                            </div>
+                                                            <div class="mt-2">
+
+                                                                <Button Type="primary" style="position:fixed;
+margin-top:auto;width:100%;left:0;bottom:0" OnClick="()=>ShowExamPdfFile(x.IdExamFile)">
+                                                                    Xem Đề : @x.ExamFileName
+                                                                </Button>
+                                                                <Modal Title="@("Đề Thi :"+" " + x.ExamFileName+ "|" + " "+"Môn Học :" +" " + x.SubjectName)"
+                                                   Visible="@_visible"
+                                                   OnOk="@HandleOk"
+                                                   DefaultMaximized=true
+                                                   OnCancel="@HandleCancel"
+                                                   ConfirmLoading="@_confirmLoading">
+                                                                    <embed src="@pdfContent#toolbar=0" width="100%" height="1400px;" />
+                                                                </Modal>
+
+
+
+                                                            </div>
+
+
+                                                        </div>
+                                                        <div class="child"></div>
+                                                        <div class="child"></div>
+                                                        <div class="child"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+
+                                        else if (x.StartTime <= DateTime.Now && DateTime.Now < x.EndTime)
+                                        {
+                                            <div id="@x.SecretKey" class="col-lg-3 mb-3 mt-5">
+                                                <div class="d-flex justify-content-start" style="height:95%">
+                                                    <div class="carder" style="--cards:4;width:100%;height:100px;">
+                                                        <div class="child">
+                                                            <div class="row">
+                                                                @if (x.ListSupervisorID.Count() == 0)
+                                                                {
+                                                                    <div class="col-4">
+                                                                        <span class="text-danger">Cảnh Báo</span>
+                                                                    </div>
+
+                                                                    <div class="col-8 ps-5">
+
+                                                                        <MudIconButton Class="mx-1" OnClick="()=>EnableEditing(true,x)" Icon="@Icons.Filled.ModeEditOutline" Size="Size.Medium" Color="MudBlazor.Color.Dark" aria-label="add to favorite"></MudIconButton>
+
+                                                                        <MudIconButton Class="ps-1" OnClick="()=>DeleteInstane(x)" Icon="@Icons.Filled.DeleteForever" Size="Size.Medium" Color="MudBlazor.Color.Dark" aria-label="add to favorite" style="margin-right:-60px;"></MudIconButton>
+
+                                                                    </div>
+
+                                                                }
+                                                                else
+                                                                {
+                                                                    <div class="col-12 mt-2">
+                                                                        <span class="fs-5">Đang thi</span>
+                                                                    </div>
+                                                                }
+                                                                
+
+                                                            </div>
+                                                            <div class="">
+                                                                <span>
+                                                                   Giám Thị : @foreach (var name in x.ListSupervisorID)
+                                                                    {
+                                                                        for (int i = 0; i < _lstUser.Where(c => c.Id == name.ToString()).Count(); i++)
+                                                                        {
+                                                                            <div>@_lstUser.Where(c => c.Id == name.ToString()).ToList()[i].Email</div>
+                                                                        }
+
+                                                                    }
+                                                                </span>
+
+                                                            </div>
+                                                            <div class="mt-2">
+                                                                <span>Tên File Đề Thi :@x.ExamFileName</span>
+                                                            </div>
+                                                            <div>
+                                                                <span>Thời Lượng Thi :@x.TotalTimeOfExam p </span>
+                                                            </div>
+                                                            <div>
+                                                                <span>Thời gian bắt đầu :@x.StartTime.ToString("HH:mm") - @x.StartTime.ToShortDateString() </span>
+                                                            </div>
+                                                            <div>
+                                                                <span>Thời gian kết thúc :@x.EndTime.ToString("HH:mm") - @x.EndTime.ToShortDateString()</span>
+                                                            </div>
+                                                            <div>
+
+                                                                <span>Mật Khẩu : @x.SecretKey  </span>
+                                                            </div>
+                                                            <div class="mt-2">
+
+                                                                <Button Type="primary" style="position:fixed;
+margin-top:auto;width:100%;left:0;bottom:0" OnClick="()=>ShowExamPdfFile(x.IdExamFile)">
+                                                                    Xem Đề : @x.ExamFileName
+                                                                </Button>
+                                                                <Modal Title="@("Đề Thi :"+" " + x.ExamFileName+ "|" + " "+"Môn Học :" +" " + x.SubjectName)"
+                                                   Visible="@_visible"
+                                                   OnOk="@HandleOk"
+                                                   DefaultMaximized=true
+                                                   OnCancel="@HandleCancel"
+                                                   ConfirmLoading="@_confirmLoading">
+                                                                    <embed src="@pdfContent#toolbar=0" width="100%" height="1400px;" />
+                                                                </Modal>
+
+
+
+                                                            </div>
+
+
+                                                        </div>
+                                                        <div class="child"></div>
+                                                        <div class="child"></div>
+                                                        <div class="child"></div>
+
+
+
+
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        }
+                                        else
+                                        {
+                                            @if (x.Status == 6)
+                                            {
+                                                <div id="@x.SecretKey" class="col-lg-3 mb-3 mt-5">
+                                                    <div class="d-flex justify-content-start" style="height:95%">
+                                                        <div class="carder" style="--cards:4;width:100%;height:100px;">
+                                                            <div class="child">
+                                                                <div class="row">
+
+                                                                    <div class="col-4">
+                                                                        <span>Chưa có giám thị</span>
+                                                                    </div>
+
+                                                                    <div class="col-8 ps-5">
+                                                                        @if (x.Status == 6)
+                                                                        {
+                                                                            <MudIconButton Class="mx-1" OnClick="()=>EnableEditing(true,x)" Icon="@Icons.Filled.ModeEditOutline" Size="Size.Medium" Color="MudBlazor.Color.Dark" aria-label="add to favorite"></MudIconButton>
+                                                                        }
+                                                                        <MudIconButton Class="ps-1" OnClick="()=>DeleteInstane(x)" Icon="@Icons.Filled.DeleteForever" Size="Size.Medium" Color="MudBlazor.Color.Dark" aria-label="add to favorite" style="margin-right:-60px;"></MudIconButton>
+
+                                                                    </div>
+
+                                                                </div>
+                                                                <div class="">
+                                                                    <span>
+                                                                         Giám Thị : @foreach (var name in x.ListSupervisorID)
+                                                                        {
+                                                                            for (int i = 0; i < _lstUser.Where(c => c.Id == name.ToString()).Count(); i++)
+                                                                            {
+                                                                                <div>@_lstUser.Where(c => c.Id == name.ToString()).ToList()[i].Email</div>
+                                                                            }
+                                                                        }
+                                                                    </span>
+
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <span>Tên File Đề Thi :@x.ExamFileName</span>
+                                                                </div>
+                                                                <div>
+                                                                    <span>Thời Lượng Thi :@x.TotalTimeOfExam p </span>
+                                                                </div>
+                                                                <div>
+                                                                    <span>Thời gian bắt đầu :@x.StartTime.ToString("HH:mm") - @x.StartTime.ToShortDateString() </span>
+                                                                </div>
+                                                                <div>
+                                                                    <span>Thời gian kết thúc :@x.EndTime.ToString("HH:mm") - @x.EndTime.ToShortDateString()</span>
+                                                                </div>
+                                                                <div>
+
+                                                                    <span>Mật Khẩu : @x.SecretKey  </span>
+                                                                </div>
+                                                                <div class="mt-2">
+
+                                                                    <Button Type="primary" style="position:fixed;
+margin-top:auto;width:100%;left:0;bottom:0" OnClick="()=>ShowExamPdfFile(x.IdExamFile)">
+                                                                        Xem Đề : @x.ExamFileName
+                                                                    </Button>
+                                                                    <Modal Title="@("Đề Thi :"+" " + x.ExamFileName+ "|" + " "+"Môn Học :" +" " + x.SubjectName)"
+                                                   Visible="@_visible"
+                                                   OnOk="@HandleOk"
+                                                   DefaultMaximized=true
+                                                   OnCancel="@HandleCancel"
+                                                   ConfirmLoading="@_confirmLoading">
+                                                                        <embed src="@pdfContent#toolbar=0" width="100%" height="1400px;" />
+                                                                    </Modal>
+
+
+
+                                                                </div>
+
+
+                                                            </div>
+                                                            <div class="child"></div>
+                                                            <div class="child"></div>
+                                                            <div class="child"></div>
+
+
+
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div id="@x.SecretKey" class="col-lg-3 mb-3 mt-5">
+                                                    <div class="d-flex justify-content-start" style="height:95%">
+                                                        <div class="carder" style="--cards:4;width:100%;height:100px;">
+                                                            <div class="child">
+                                                                <div class="row">
+
+                                                                    <div class="col-4">
+                                                                    </div>
+
+                                                                    <div class="col-8 ps-5">
+                                                                       
+                                                                            <MudIconButton Class="mx-1" OnClick="()=>EnableEditing(true,x)" Icon="@Icons.Filled.ModeEditOutline" Size="Size.Medium" Color="MudBlazor.Color.Dark" aria-label="add to favorite"></MudIconButton>
+                                                                        
+                                                                        <MudIconButton Class="ps-1" OnClick="()=>DeleteInstane(x)" Icon="@Icons.Filled.DeleteForever" Size="Size.Medium" Color="MudBlazor.Color.Dark" aria-label="add to favorite" style="margin-right:-60px;"></MudIconButton>
+
+                                                                    </div>
+
+                                                                </div>
+                                                                <div class="">
+                                                                    <span>
+                                                                       Giám Thị : @foreach (var name in x.ListSupervisorID)
+                                                                        {
+                                                                            for (int i = 0; i < _lstUser.Where(c => c.Id == name.ToString()).Count(); i++)
+                                                                            {
+                                                                                <div>@_lstUser.Where(c => c.Id == name.ToString()).ToList()[i].Email</div>
+                                                                            }
+                                                                        }
+                                                                    </span>
+
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <span>Tên File Đề Thi :@x.ExamFileName</span>
+                                                                </div>
+                                                                <div>
+                                                                    <span>Thời Lượng Thi :@x.TotalTimeOfExam p </span>
+                                                                </div>
+                                                                <div>
+                                                                    <span>Thời gian bắt đầu :@x.StartTime.ToString("HH:mm") - @x.StartTime.ToShortDateString() </span>
+                                                                </div>
+                                                                <div>
+                                                                    <span>Thời gian kết thúc :@x.EndTime.ToString("HH:mm") - @x.EndTime.ToShortDateString()</span>
+                                                                </div>
+                                                                <div>
+
+                                                                    <span>Mật Khẩu : @x.SecretKey  </span>
+                                                                </div>
+                                                                <div class="mt-2">
+
+                                                                    <Button Type="primary" style="position:fixed;
+margin-top:auto;width:100%;left:0;bottom:0" OnClick="()=>ShowExamPdfFile(x.IdExamFile)">
+                                                                        Xem Đề : @x.ExamFileName
+                                                                    </Button>
+                                                                    <Modal Title="@("Đề Thi :"+" " + x.ExamFileName+ "|" + " "+"Môn Học :" +" " + x.SubjectName)"
+                                                   Visible="@_visible"
+                                                   OnOk="@HandleOk"
+                                                   DefaultMaximized=true
+                                                   OnCancel="@HandleCancel"
+                                                   ConfirmLoading="@_confirmLoading">
+                                                                        <embed src="@pdfContent#toolbar=0" width="100%" height="1400px;" />
+                                                                    </Modal>
+
+
+
+                                                                </div>
+
+
+                                                            </div>
+                                                            <div class="child"></div>
+                                                            <div class="child"></div>
+                                                            <div class="child"></div>
+
+
+
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <EditForm Model="@x" OnValidSubmit="OnValidSubmit">
+                                            <div class="col-lg-3 mabt">
+                                                <div class="d-flex justify-content-start" style="height:80%">
+                                                    <div class="carder" style="--cards:4;width:100%;height:270px;">
+                                                        <div class="childedit">
+                                                            <div class="row">
+                                                                <div class="col-lg-9">
+                                                                    <h6 class="col-lg-9 d-flex justify-content-middle"> Đề thi môn : @getSUbject.SubjectName</h6>
+                                                                </div>
+                                                                <div class="col-lg-3 ps-5 d-flex justify-content-end">
+                                                                    <MudIconButton OnClick="()=>UpdateInstance(x)" Icon="@Icons.Filled.Check" Size="Size.Large" Color="MudBlazor.Color.Success" aria-label="add to favorite"></MudIconButton>
+                                                                    <MudIconButton OnClick="()=>CancelInStance(x)" Icon="@Icons.Filled.Cancel" Size="Size.Large" Color="MudBlazor.Color.Error" aria-label="add to favorite" style="margin-right:-90px;"></MudIconButton>
+
+                                                                </div>
+
+
+                                                            </div>
+
+
+                                                            <div class="">
+                                                                <span>Tên File Đề Thi : @x.ExamFileName</span>
+
+                                                            </div>
+                                                            <div class="">
+                                                                <span>
+                                                                  Giám Thị :@foreach (var name in x.ListSupervisorID)
+                                                                    {
+                                                                        @foreach (var user in _lstUser.Where(c => c.Id == name.ToString()))
+                                                                        {
+                                                                            <MudChip OnClick="()=>RemoveUser(user.Id)" Color="MudBlazor.Color.Surface" Text="@user.Email" Icon=@Icons.Filled.Delete Class="text-wrap mb-2" />
+                                                                        }
+
+                                                                    }
+                                                                </span>
+
+                                                            </div>
+                                                            <div>
+                                                                <MudTextField Label="Thời lượng làm dề thi"
+                                                              @bind-Value="x.TotalTimeOfExam" For="@(() => x.TotalTimeOfExam)" />
+
+                                                            </div>
+
+                                                            <div>
+                                                                <MudTimePicker Label="Chọn Giờ Bắt Đầu" @bind-Time="@timeSpanStart" />
+                                                                <MudDatePicker Label="Ngày Bắt Đầu" Editable="true" @bind-Date="@StartDate" Mask="@(new DateMask("dd.MM.yyyy"))" DateFormat="dd.MM.yyyy" />
+                                                            </div>
+                                                            <div>
+                                                                <MudTimePicker Label="Giờ Kết Thúc" @bind-Time="@timeSpanEnd" />
+                                                                <MudDatePicker Label="Ngày Kết Thúc" Editable="true" @bind-Date="@EndDate" Mask="@(new DateMask("dd.MM.yyyy"))" DateFormat="dd.MM.yyyy" />
+
+                                                            </div>
+
+                                                            <div>
+                                                                <div class="row">
+                                                                    @if (_lstRoomDetailViewsDefautlt.Any(c => c.SecretKey == x.SecretKey) == false)
+                                                                    {
+                                                                        <div class="col-lg-10">
+                                                                            <MudTextField Label="Mật Khẩu :"
+                                                                      @bind-Value="x.SecretKey" For="@(() => x.SecretKey)" />
+                                                                        </div>
+                                                                        <div class="col-lg-2 col-lg-2 mt-4 me-0 d-flex justify-content-end p-0">
+                                                                            <MudIconButton Class="ps-2" OnClick="()=>ReloadPass(x)" Icon="@Icons.Filled.Autorenew" Size="Size.Medium" Color="MudBlazor.Color.Dark" aria-label="add to favorite"></MudIconButton>
+                                                                        </div>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <MudTextField Label="Mật Khẩu :"
+                                                                  @bind-Value="x.SecretKey" ReadOnly=true For="@(() => x.SecretKey)" />
+                                                                    }
+
+                                                                </div>
+
+
+                                                            </div>
+                                                            <MudAutocomplete T="string" OpenIcon="@Icons.Material.Filled.Search" @bind-Value="UserName" SelectOnClick=true AdornmentColor="MudBlazor.Color.Secondary" CoerceValue="@coerceValue" ResetValueOnEmptyText="true" Class="mt-5" Label="Tìm Kiếm Giám Thị" SearchFunc="@SearchSupervisor" Immediate="true" Variant="Variant.Outlined" Validation="@(new Func<string, IEnumerable<string>>(Validate))" ShowProgressIndicator="true" ProgressIndicatorColor="SelectedColor" />
+                                                        </div>
+                                                        <div class="childedit"></div>
+                                                        <div class="childedit"></div>
+                                                        <div class="childedit"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </EditForm>
+                                    }
+
+                                }
+                            }
+                            else
+                            {
+                                <Empty />
+                            }
+
+                        </div>
+
+                    </div>
+                </Spin>
+                <div class="row mt-5">
+                    <label>Danh Sách Các Đề Thi Hiện Có @_lstExamFile.Where(c => c.SubjectId == Guid.Parse(getIdSubject)).ToList().Count()</label>
+                    <div class="row mt-5">
+                        <div class="row">
+
+                            @if ((fileTypeError || fileSizeError || fileNameError))
+                            {
+
+                                @if (fileTypeError)
+                                {
+                                    <div class="alert alert-info" role="alert">
+                                        Chỉ Chấp Nhận File PDF | @ErrorFileName
+                                    </div>
+                                }
+                                @if (fileSizeError)
+                                {
+                                    <div class="alert alert-danger" role="alert">
+                                        File Tối Đa Có Kích Cỡ Dưới @MaxFileSizeMB MB. | @ErrorFileName
+                                    </div>
+
+                                }
+                                @if (fileNameError)
+                                {
+                                    <div class="alert alert-warning" role="alert">
+                                        Tên File Đã Tồn Tại Hoặc Tên File Đã Vượt quá 50 Kí Tự  | @ErrorFileName
+                                    </div>
+
+                                }
+                            }
+
+                        </div>
+
+                        <MudPaper Elevation="0" Width="99%" MinHeight="150px" Style="margin-top:100px;" Class="pa-4 ma-4 d-flex flex-column mud-background-gray rounded-lg">
+                            <MudChipSet AllClosable="true" OnClose="RemoveFile">
+                                <div class="row">
+                                    @foreach (var file in _lstExamFile.Where(c => c.SubjectId == Guid.Parse(getIdSubject)).ToList())
+                                    {
+                                        <div class="col-2">
+                                            <MudChip OnClick="()=>AddExamFile(file.Id)" Color="MudBlazor.Color.Surface" Text="@file.FileName" Icon=@Icons.Filled.Add Class="text-wrap mb-2" />
+                                        </div>
+                                    }
+                                </div>
+                            </MudChipSet>
+                        </MudPaper>
+                    </div>
+
+                </div>
+            </MudPaper>
+
+            <div clas="row mt-5">
+                <label class="text-danger mb-2">
+                    Tải Lên Đề Thi
+                </label>
+                <div class="dropzone @DragClass">
+                    <MudStack Style="width:100%;height:150px;">
+                        <BlazorInputFile.InputFile OnChange="OnInputFileChanged"
+                                               id="fileInput" multiple title=""
+                                               accept="application/pdf"
+                                               @ondragenter="@HandleDragEnter"
+                                               @ondragleave="@ClearDragClass"
+                                               @ondragend="@HandleDragLeave" />
+
+                        <span class="text-danger text-center mt-5">Kéo Thả File Tại Đây Hoặc Chọn</span>
+
+
+                    </MudStack>
+                </div>
+
+            </div>
+
+
+
+
+
+        }
+
+    </div>
+    @if (!IsShowLoading)
+    {
+        <div class="row d-flex justify-content-center mb-5">
+            <div class="steps-action d-flex justify-content-center">
+                @if (current > 0)
+                {
+                    <Button Type="primary" Class="mx-3" OnClick="OnPreClick">Quay Lại</Button>
+                }
+                @if (current < steps.Length - 1)
+                {
+                    <Button Type="primary" OnClick="OnNextClick">Tiếp Tục</Button>
+                }
+                @if (current == steps.Length - 1)
+                {
+                    <Button Type="primary" OnClick="OnNextClick">
+                        Done
+                    </Button>
+                }
+
+            </div>
+        </div>
+    }
+
+
+
+
+</div>
+
+
+
+
+<style>
+    .steps-content {
+        margin-top: 16px;
+        border: 1px dashed #e9e9e9;
+        border-radius: 6px;
+        background-color: #fafafa;
+        min-height: 200px;
+        text-align: center;
+        padding-top: 80px;
+        margin-bottom: 16px;
+    }
+
+    .ant-btn-primary {
+        color: #fff;
+        background: #dc3545;
+        text-shadow: 0 -1px 0 rgb(0 0 0 / 12%);
+        box-shadow: 0 2px 0 rgb(0 0 0 / 5%);
+    }
+
+    .steps-action {
+        margin-top: 20px;
+    }
+</style>
+
+
+@code {
+    [Inject] public ISemesterBlockRepo _semesterBlockRepo { get; set; }
+    [Inject] public ISemesterRepo _semesterRepo { get; set; }
+    [Inject] public IBlockRepo _blockRepo { get; set; }
+    [Inject] public ITrainingFacilitiesCPRepo _trainingFacilitiesCPRepo { get; set; }
+    [Inject] public ISubjectUPRepo _subjectUPRepo { get; set; }
+    [Inject] public IExamFileRepo _examFileRepo { get; set; }
+    [Inject] public IExaminationRoomDetailRepo _examinationRoomDetailRepo { get; set; }
+    [Inject] public IExaminationRoomRepo _examinationRoomRepo { get; set; }
+    [Inject] public UserManager<UserSignIn> _userManager { get; set; }
+
+    [Parameter] public string Current { get; set; }
+    private List<UserSignIn> _lstUser = new List<UserSignIn>();
+    string pdfContent = "";
+    private ExaminationRoom examinationRoom = new ExaminationRoom();
+    private List<ExaminationRoomDetailViewModel> _lstRoomDetailViews = new List<ExaminationRoomDetailViewModel>();
+    private List<ExaminationRoomDetailViewModel> _lstRoomDetailViewsFlag = new List<ExaminationRoomDetailViewModel>();
+    private List<ExaminationRoomDetailViewModel> _lstRoomDetailViewsDefautlt = new List<ExaminationRoomDetailViewModel>();
+    private List<ExaminationRoomDetailViewModel> _lstRoomDetailViewsAdding = new List<ExaminationRoomDetailViewModel>();
+    private List<ExaminationRoomDetailViewModel> preloading = new List<ExaminationRoomDetailViewModel>();
+    private List<ExamStorage> _lstExam = new List<ExamStorage>();
+    private DemoStepModel firstModel { get; set; } = new DemoStepModel();
+    private CheckExamDate secondModel { get; set; } = new CheckExamDate();
+    MudDatePicker _picker = new MudDatePicker();
+    private EditContext firstContext { get; set; }
+    private EditContext secondContext { get; set; }
+    public bool Vertical { get; set; } = false;
+    private List<SubjectDto> _lstAllSub = new List<SubjectDto>();
+    private List<SemesterBlockDto> _lstSemesterBlock = new List<SemesterBlockDto>();
+    private List<TrainingFacilitiesCP> _lstTraining = new List<TrainingFacilitiesCP>();
+    private List<BlockDto> _lstblock = new List<BlockDto>();
+    private List<SemesterDto> _lstsem = new List<SemesterDto>();
+    //form diền thông tin
+    RegisterAccountForm model = new RegisterAccountForm();
+    bool success;
+    private int encounter;
+    private bool LoadingMain = false;
+
+    public string GetIdTrain = "";
+    [Parameter]
+    public string getIdSubjectNonDecrpyt { get; set; }
+    public string getIdSubject = "";
+
+    public string getIdBlock = "";
+
+    public string getIdSemester = "";
+    private SubjectDto getSUbject = new SubjectDto();
+    private string[] Subject;
+    private List<string> SemesterBlock = new List<string>();
+    private static string[] Training;
+    private static string[] Supervisor;
+    private bool coerceValue = true;
+    public int SelectedOption { get; set; }
+    public bool flagBlock = false;
+    public bool flagSemmerter = false;
+    public bool flagTrain = false;
+    [Inject] public NavigationManager navigation { get; set; }
+
+    //
+    private List<ExamStorage> _lstExamFile = new List<ExamStorage>();
+    private List<ExamStorage> _lstAllExamFileFinal = new List<ExamStorage>();
+    //
+    private string UserName;
+    TimeSpan? time = new TimeSpan(00, 45, 00);
+    private DateTime? StartDate;
+    private DateTime? EndDate;
+    //
+    private TimeSpan? timeSpanStart;
+    private TimeSpan? timeSpanEnd;
+    private List<KeyValueAdding> _lstkeyValueAddings = new List<KeyValueAdding>();
+    private KeyValueAdding keyValueAdding = new KeyValueAdding();
+    //
+    private bool CheckEditting = false;
+    //
+    private Guid getIdExamRoom = Guid.Empty;
+    private string getSecret = "";
+    private string FinalSecret = "";
+    private List<string> lstError = new List<string>();
+    //
+    // UPload File
+    private static string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-4 mud-width-full mud-height-full z-10";
+    private string DragClass = DefaultDragClass;
+    private string dropClass = "";
+    private bool fileSizeError = false;
+    private bool fileTypeError = false;
+    private bool fileNameError = false;
+    private string ErrorFileName = "";
+    const double MaxFileSizeMB = 0.3;
+    const double MaxFileSize = MaxFileSizeMB * 1024 * 1024; // 200KB
+
+    private List<ExamStorageViewModel> _lstExamFileForAdding = new List<ExamStorageViewModel>();
+    private bool IsShowWaitting = false;
+    public int Value { get; set; }
+    //
+    bool IsShowLoading = false;
+    //pdf
+    bool _visible = false;
+    bool _confirmLoading = false;
+    string _modalText = "Content of the modal";
+    [Inject] public ISupervisorExamRoomRepocs supervisorExamRoomRepocs { get; set; }
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    Uri uri;
+    string maxRole = "";
+    [Parameter]
+    public string IdLecture { get; set; }
+
+    private List<SupervisorExamRoom> _lstDefautSupervisor = new List<SupervisorExamRoom>();
+    public List<SubjectTeacherViewModel> listTeachersInSubject = new List<SubjectTeacherViewModel>();
+    [Inject] public ISubjectTeacherRepo _iSubjectTeacherRepo { get; set; }
+
+
+    public CreateExaminationRoomSearch createExaminationRoomSearch = new CreateExaminationRoomSearch();
+    private async Task SearchTask(EditContext context)
+    {
+        await GetTasksSearch();
+    }
+    private async Task Clear()
+    {
+        createExaminationRoomSearch = new CreateExaminationRoomSearch();
+        await GetTasksSearch();
+    }
+    private async Task SearchTimeOderby(int TimeOderby)
+    {
+        createExaminationRoomSearch.TimeOderby = TimeOderby;
+        await SearchTask(null);
+    }
+
+    private async Task GetTasksSearch()
+    {
+        _lstRoomDetailViews = _lstRoomDetailViewsFlag;
+        if (!string.IsNullOrEmpty(createExaminationRoomSearch.LectureName))
+        {
+            _lstRoomDetailViews = _lstRoomDetailViews.Where(c => c.ListSupervisorID.Contains(_lstUser.Where(c => c.UserName.ToLower().Contains(createExaminationRoomSearch.LectureName.ToLower())).Select(c => Guid.Parse(c.Id)).FirstOrDefault())).ToList();
+        }
+        if (createExaminationRoomSearch.TimeOderby != 0)
+        {
+            if (createExaminationRoomSearch.TimeOderby == 1)
+            {
+                _lstRoomDetailViews = _lstRoomDetailViews.OrderBy(c => c.StartTime).ToList();
+            }
+            else if (createExaminationRoomSearch.TimeOderby == 2)
+            {
+                _lstRoomDetailViews = _lstRoomDetailViews.OrderByDescending(c => c.StartTime).ToList();
+            }
+            else if (createExaminationRoomSearch.TimeOderby == 3)
+            {
+                _lstRoomDetailViews = _lstRoomDetailViews.OrderBy(c => c.EndTime).ToList();
+            }
+            else if (createExaminationRoomSearch.TimeOderby == 4)
+            {
+                _lstRoomDetailViews = _lstRoomDetailViews.OrderByDescending(c => c.EndTime).ToList();
+            }
+            //_lstShedules = createExaminationRoomSearch.TimeOderby == 1 ? _lstShedules.OrderBy(c => c.StartTime).ToList() :
+            //createExaminationRoomSearch.TimeOderby == 2 ? _lstShedules.OrderByDescending(c => c.StartTime).ToList() :
+            //createExaminationRoomSearch.TimeOderby == 3 ? _lstShedules.OrderBy(c => c.EndTime).ToList() :
+            //createExaminationRoomSearch.TimeOderby == 4 ? _lstShedules.OrderByDescending(c => c.EndTime).ToList() : _lstShedules;
+        }
+        if (createExaminationRoomSearch.StartTime != null && createExaminationRoomSearch.EndTime != null)
+        {
+            _lstRoomDetailViews = _lstRoomDetailViews.Where(c => c.StartTime >= createExaminationRoomSearch.StartTime && c.EndTime.Date <= createExaminationRoomSearch.EndTime).ToList();
+        }
+
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+        current = Convert.ToInt32(Current);
+        IsShowLoading = true;
+        LoadingMain = true;
+        var
+        uri = navigation.ToAbsoluteUri(navigation.Uri);
+        if (string.IsNullOrEmpty(uri.Query) == false)
+        {
+            var urifist = uri.Query.Split("?")[1];
+            maxRole = _cryptoServices.Decrypt(urifist.Split("LDN01")[0].Replace("I0H", "/"));
+            IdLecture = _cryptoServices.Decrypt(urifist.Split("LDN01")[1].Replace("I0H", "/"));
+        }
+        getIdSubject = _cryptoServices.Decrypt(getIdSubjectNonDecrpyt.Replace("I0H", "/"));
+
+        getSUbject = await _subjectUPRepo.GetSubjectbyId(Guid.Parse(getIdSubject));
+
+
+        await GetUserInRole();
+
+        await GenerateToArray();
+
+        getIdBlock = _lstSemesterBlock.Where(c => c.StartTime <= DateTime.Now && c.EndTime >= DateTime.Now).Select(c => c.IdBlock).FirstOrDefault().ToString();
+        getIdSemester = _lstSemesterBlock.Where(c => c.StartTime <= DateTime.Now && c.EndTime >= DateTime.Now).Select(c => c.IdSemester).FirstOrDefault().ToString();
+        await LoadingAgain();
+        GetIdTrain = "169A0425-7E5A-4057-9748-32F1CF3C1479";
+        await GetNameById();
+        await GetListExamFile();
+        LoadingMain = false;
+        IsShowLoading = false;
+
+
+    }
+    private async Task LoadingAgain()
+    {
+        _lstExam = await _examFileRepo.GetAllExamFilesForOnlySubject(Guid.Parse(getIdSubject));
+        preloading = await _examinationRoomDetailRepo.GetExamFileForSubject(Guid.Parse(getIdSubject));
+        _lstRoomDetailViews = preloading.Where(c => c.IdBlock == Guid.Parse(getIdBlock) && c.IdSemester == Guid.Parse(getIdSemester)).ToList();
+        _lstRoomDetailViewsDefautlt = preloading.Where(c => c.IdBlock == Guid.Parse(getIdBlock) && c.IdSemester == Guid.Parse(getIdSemester)).ToList();
+
+    }
+    private async Task GetNameById()
+    {
+        model.TrainingName = _lstTraining.Where(c => c.Id == Guid.Parse(GetIdTrain)).Select(c => c.TrainingInstitutionName).FirstOrDefault();
+        model.BlockSemesterName = _lstblock.Where(c => c.Id == Guid.Parse(getIdBlock)).Select(c => c.NameOfBlock).FirstOrDefault() + "-" + _lstsem.Where(c => c.Id == Guid.Parse(getIdSemester)).Select(c => c.NameofSemester).FirstOrDefault();
+    }
+    private async Task GenerateToArray()
+    {
+        _lstAllSub = await _subjectUPRepo.GetAllSubjectAsync();
+        Subject = _lstAllSub.Select(c => c.SubjectName).ToArray();
+        _lstTraining = await _trainingFacilitiesCPRepo.GetTrainingFacilitiesAsync();
+        _lstblock = await _blockRepo.GetAll();
+        _lstsem = await _semesterRepo.GetAll();
+        _lstSemesterBlock = await _semesterBlockRepo.GetAll();
+        //đế blokc-kì
+        string mixedstring = "";
+        foreach (var semblock in _lstSemesterBlock)
+        {
+            foreach (var block in _lstblock.Where(c => c.Id == semblock.IdBlock))
+            {
+                mixedstring = block.NameOfBlock;
+                foreach (var sem in _lstsem.Where(c => c.Id == semblock.IdSemester))
+                {
+                    mixedstring = mixedstring + "-" + sem.NameofSemester;
+                }
+                if (SemesterBlock.Any(c => c == mixedstring) == false)
+                {
+                    SemesterBlock.Add(mixedstring);
+                }
+
+            }
+        }
+        //
+        Training = _lstTraining.Select(c => c.TrainingInstitutionName).ToArray();
+        Supervisor = _lstUser.Select(c => c.Email).ToArray();
+
+    }
+    private async Task RedirectToBackManage()
+    {
+        var url = Path.Combine($"/manageexamfileofsubject/{_cryptoServices.Encrypt(getIdSubject.ToString()).Replace("/", "I0H")}?{_cryptoServices.Encrypt((maxRole).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdLecture).ToString()).Replace("/", "I0H")}");
+        navigation.NavigateTo(url);
+    }
+    private async Task RedirectToBackDetail()
+    {
+        var url = Path.Combine($"/detaiexamstorageofsubject/{_cryptoServices.Encrypt(getIdSubject.ToString()).Replace("/", "I0H")}/{_cryptoServices.Encrypt(IdLecture.ToString()).Replace("/", "I0H")}/{_cryptoServices.Encrypt(IdLecture.ToString()).Replace("/", "I0H")}?{_cryptoServices.Encrypt((maxRole).ToString()).Replace("/", "I0H")}");
+        navigation.NavigateTo(url);
+    }
+
+
+    // UpLoad File
+    private async Task GetListExamFile()
+    {
+        _lstExamFile = await _examFileRepo.GetAllExamFilesBySubjectId(Guid.Parse(getIdSubject));
+    }
+    public async Task<byte[]> FileConverter(IFileListEntry files)
+    {
+        using (var ms = new System.IO.MemoryStream())
+        {
+            await files.Data.CopyToAsync(ms);
+            return ms.ToArray();
+        }
+    }
+    bool _disposed;
+    public void Dispose() => _disposed = true;
+    public async Task SimulateProgress()
+    {
+        Value = 0;
+        do
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            Value += 8;
+            StateHasChanged();
+            await Task.Delay(500);
+
+        } while (Value < 100);
+
+
+    }
+    private async Task OnInputFileChanged(IFileListEntry[] files)
+    {
+        dropClass = "";
+        fileSizeError = false;
+        fileTypeError = false;
+
+        List<string> acceptedFileTypes = new List<string>() { "application/pdf" };
+        foreach (var file in files)
+        {
+            bool error = false;
+            if (file.Name.ToLower().Count() > 50)
+            {
+                error = true;
+                fileNameError = true;
+                ErrorFileName = file.Name;
+                files.ToList().Clear();
+                return;
+            }
+            if (_lstExamFile.Any(c => c.FileName.ToLower().Contains(file.Name.ToLower())))
+            {
+                error = true;
+                fileNameError = true;
+                ErrorFileName = file.Name;
+                files.ToList().Clear();
+                return;
+
+            }
+            if (file.Size > MaxFileSize)
+            {
+
+                error = true;
+                fileSizeError = true;
+                ErrorFileName = file.Name;
+                files.ToList().Clear();
+                return;
+            }
+
+            if (!acceptedFileTypes.Contains(file.Type))
+            {
+                error = true;
+                fileTypeError = true;
+                ErrorFileName = file.Name;
+                files.ToList().Clear();
+                return;
+            }
+
+        }
+
+        if (files.Count() > 0)
+        {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = $"Xác Nhận Thêm File",
+                    Text = "Bạn Có Chắc Muốn Thêm File Đề Thi Này Không ?",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Đồng Ý",
+                    CancelButtonText = "Hủy"
+                });
+
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+                foreach (var file in files)
+                {
+                    var attachment = await FileConverter(file);
+                    ExamStorageViewModel examStorageViewModel = new ExamStorageViewModel()
+                        {
+                            Id = Guid.NewGuid(),
+                            CreateTime = DateTime.Now,
+                            FileName = file.Name,
+                            ExamFile = attachment,
+                            IndexOfExamStorageFile = _lstExamFile.Where(c => Guid.Parse(c.IdUserUpLoad) == Guid.Parse(IdLecture)).Count() == 0 ? 1 : _lstExamFile.Where(c => Guid.Parse(c.IdUserUpLoad) == Guid.Parse(IdLecture)).Max(c => c.IndexOfExamStorageFile) + 1,
+                            Status = 0,
+                            Note = "",
+                            IdUserUpLoad = IdLecture.ToString(),
+
+                            DeleteTime = default,
+                            SubjectId = getSUbject.Id,
+                            UserNameUpload = _userManager.Users.Where(c => c.Id == IdLecture.ToString()).Select(c => c.UserName).FirstOrDefault(),
+                            SubjectName = getSUbject.SubjectName,
+                            SubjectCode = getSUbject.SubjectCode
+
+                        };
+                    _lstExamFileForAdding.Add(examStorageViewModel);
+
+
+                }
+                IsShowLoading = true;
+                await InvokeAsync(() => StateHasChanged());
+
+                var res = await _examFileRepo.AddMultipleExamFile(_lstExamFileForAdding);
+
+                if (res)
+                {
+                    await Swal.FireAsync(
+                    "Thêm Thành Công",
+                    "Successfuly",
+                    SweetAlertIcon.Success
+                    );
+                    _lstExamFileForAdding.Clear();
+                    await GetListExamFile();
+                    fileSizeError = false;
+                    fileTypeError = false;
+                    fileNameError = false;
+                    IsShowLoading = false;
+                }
+                else
+                {
+                    await Swal.FireAsync(
+                  "Thêm Thất Bại",
+                  "Fail",
+                  SweetAlertIcon.Error
+                  );
+                    _lstExamFileForAdding.Clear();
+                    IsShowLoading = false;
+                    await InvokeAsync(() => StateHasChanged());
+                    return;
+                }
+
+            }
+            else if (result.Dismiss == DismissReason.Cancel)
+            {
+
+                //ở đây xử lý khi hủy upload
+                await Swal.FireAsync(
+                  "Hủy",
+                  "Đã Hủy Thêm File",
+                  SweetAlertIcon.Error
+                  );
+                _lstExamFileForAdding.Clear();
+            }
+
+
+
+
+        }
+
+
+    }
+    private void HandleDragEnter()
+    {
+        dropClass = "dropzone-drag";
+    }
+    private void HandleDragLeave()
+    {
+        dropClass = "";
+    }
+    private async Task ClearDragClass()
+    {
+        DragClass = DefaultDragClass;
+    }
+    // Remove File
+    public async Task RemoveFile(MudChip chip)
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = $"Xác Nhận Xóa File Đề Thi",
+                Text = "Bạn Có Chắc Muốn Thêm File Đề Thi Này Không ?",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Đồng Ý",
+                CancelButtonText = "Hủy"
+            });
+
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            //lấy ra đối tượng cần để xóa
+            var getIdFile = _lstExamFile.Where(c => c.FileName == chip.Text).Select(c => c.Id).FirstOrDefault();
+            IsShowLoading = true;
+            InvokeAsync(() => StateHasChanged());
+            await SimulateProgress();
+            var res = await _examFileRepo.DeleteExamFile(getIdFile);
+
+            if (res)
+            {
+                await Swal.FireAsync(
+                "Xóa Thành Công",
+                "Successfuly",
+                SweetAlertIcon.Success
+                );
+                await GetListExamFile();
+                IsShowLoading = false;
+                await LoadingAgain();
+                await InvokeAsync(() => StateHasChanged());
+            }
+            else
+            {
+                await Swal.FireAsync(
+              "Xóa Thất Bại Do Đề đã được sử dụng",
+              "Fail",
+              SweetAlertIcon.Error
+              );
+                IsShowLoading = false;
+                await InvokeAsync(() => StateHasChanged());
+                return;
+            }
+
+        }
+        else if (result.Dismiss == DismissReason.Cancel)
+        {
+
+            //ở đây xử lý khi hủy upload
+            await Swal.FireAsync(
+              "Hủy",
+              "Đã Hủy Xóa File",
+              SweetAlertIcon.Error
+              );
+            IsShowLoading = false;
+            await InvokeAsync(() => StateHasChanged());
+        }
+
+    }
+    private async Task HandleOk(MouseEventArgs e)
+    {
+
+        _confirmLoading = true;
+        StateHasChanged();
+        await Task.Delay(500);
+        _visible = false;
+        _confirmLoading = false;
+    }
+
+    private void HandleCancel(MouseEventArgs e)
+    {
+        Console.WriteLine("Clicked cancel button");
+        _visible = false;
+    }
+    private async Task ShowExamPdfFile(Guid IdExamFile)
+    {
+        _visible = true;
+        var examshowing = _lstExam.Where(c => c.Id == IdExamFile).Select(c => c.ExamFile).FirstOrDefault();
+
+        pdfContent = "data:application/pdf;base64,";
+        pdfContent += System.Convert.ToBase64String(examshowing);
+    }
+    #region
+
+
+    private async Task GetUserInRole()
+    {
+        try
+        {
+            foreach (var user in _userManager.Users.ToList())
+            {
+                var res = await _userManager.IsInRoleAsync(user, "GV FPLExam");
+                if (res)
+                {
+                    _lstUser.Add(user);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            await Swal.FireAsync(
+                   "Thông Báo",
+                   "Vui lòng liên hệ với daotao.poly để biết thêm chi tiết",
+                   SweetAlertIcon.Error
+                   );
+            return;
+        }
+
+    }
+    private async Task RemoveUser(string id)
+    {
+        try
+        {
+            foreach (var x in _lstRoomDetailViews.Where(c => c.IdExaminationRoom == getIdExamRoom && c.SecretKey == getSecret))
+            {
+                x.ListSupervisorID.Remove(Guid.Parse(id));
+                await InvokeAsync(() =>
+            {
+            });
+            }
+        }catch(Exception e)
+        {
+            await Swal.FireAsync(
+                   "Thông Báo",
+                   "Vui lòng liên hệ với daotao.poly để biết thêm chi tiết",
+                   SweetAlertIcon.Error
+                   );
+            return;
+        }
+
+    }
+    public class StepItem
+    {
+        public string Title { get; set; }
+        public string Content { get; set; }
+    }
+    private async Task<IEnumerable<string>> SearchSupervisor(string value)
+    {
+        try
+        {
+        if (_lstUser.Any(c => c.Email == value))
+        {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = $"Xác Nhận Thêm Giám Thị",
+                    Text = $"Bạn Có Muốn Thêm Giám Thị {value} Hay Không ?",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Đồng Ý",
+                    CancelButtonText = "Hủy"
+                });
+
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+                var getId = _lstUser.Where(c => c.Email == value).Select(c => c.Id).FirstOrDefault();
+                //lấy được id giảng viên rồi thì quay sang check
+                var listchecker = await supervisorExamRoomRepocs.GetSupervisorById(getId);
+                var examdetailmodel = _lstRoomDetailViews.Find(c => c.IdExaminationRoom == getIdExamRoom && c.SecretKey == getSecret);
+                var listfianl = listchecker.Where(c => c.EndTime.Date >= DateTime.Now.Date).OrderByDescending(c => c.EndTime).ToList();
+                @if (examdetailmodel.ListSupervisorID.Count() == 0)
+                {
+                     
+                   
+              
+                if (listfianl.Count() == 0)
+                {
+                    if (examdetailmodel.ListSupervisorID.Any(c => c == Guid.Parse(getId)) == false)
+                    {
+                        examdetailmodel.ListSupervisorID.Add(Guid.Parse(getId));
+                        await Swal.FireAsync(
+                 "Thành Công",
+                 "Thêm Giám Thị Thành Công",
+                 SweetAlertIcon.Success
+                 );
+                        UserName = "";
+                        await InvokeAsync(() =>
+       {
+
+           StateHasChanged();
+       });
+
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < listfianl.Count(); i++)
+                    {
+                        if (examdetailmodel.StartTime > listfianl[0].EndTime)
+                        {
+                            if (examdetailmodel.ListSupervisorID.Any(c => c == Guid.Parse(getId)) == false)
+                            {
+                                examdetailmodel.ListSupervisorID.Add(Guid.Parse(getId));
+                                await Swal.FireAsync(
+                         "Thành Công",
+                         "Thêm Giám Thị Thành Công Hãy Tiến Hành Lưu Dữ Liệu",
+                         SweetAlertIcon.Success
+                         );
+                                UserName = "";
+                                await InvokeAsync(() =>
+               {
+
+                   StateHasChanged();
+               });
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            i++;
+                        }
+
+                        if (examdetailmodel.StartTime < listfianl[i].EndTime && examdetailmodel.EndTime > listfianl[i - 1].StartTime)
+                        {
+                            await Swal.FireAsync(
+        "Thất Bại",
+        "Không thể xếp giảng viên vào ca này được vì bị trùng lịch",
+        SweetAlertIcon.Error
+        );
+                            await InvokeAsync(() =>
+           {
+
+               StateHasChanged();
+
+           });
+                            break;
+                        }
+                        else
+                        {
+                            examdetailmodel.ListSupervisorID.Add(Guid.Parse(getId));
+                            await Swal.FireAsync(
+                     "Thành Công",
+                     "Thêm Giám Thị Thành Công",
+                     SweetAlertIcon.Success
+                     );
+                            UserName = "";
+                            await InvokeAsync(() =>
+           {
+
+               StateHasChanged();
+           });
+                            break;
+                        }
+                    }
+                }
+                }
+                else
+                {
+                    await Swal.FireAsync(
+                "Đề Thi Này Đã Có Giám Thị",
+                "Fail",
+                SweetAlertIcon.Error
+                );
+                    UserName = "";
+                    await InvokeAsync(() =>
+       {
+
+       StateHasChanged();
+       });
+                    }
+
+                }
+                else if (result.Dismiss == DismissReason.Cancel)
+                {
+
+                    //ở đây xử lý khi hủy upload
+                    await Swal.FireAsync(
+                      "Hủy",
+                      "Đã Hủy Thêm Giám Thị",
+                      SweetAlertIcon.Error
+                      );
+                    await InvokeAsync(() =>
+                          {
+
+                              StateHasChanged();
+                          });
+                }
+
+            }
+
+
+
+            // if text is null or empty, show complete list
+            if (string.IsNullOrEmpty(value))
+                return Supervisor;
+            StateHasChanged();
+            return Supervisor.Where(x => x.ToLower().Contains(value.ToLower(), StringComparison.InvariantCultureIgnoreCase));
+        }
+        catch(Exception e)
+        {
+            await Swal.FireAsync(
+                      "Thông Báo",
+                      "Vui lòng liên hệ với daotao.poly để biết thêm chi tiết",
+                      SweetAlertIcon.Error
+                      );
+            if (string.IsNullOrEmpty(value))
+                return Supervisor;
+            StateHasChanged();
+            return Supervisor.Where(x => x.ToLower().Contains(value.ToLower(), StringComparison.InvariantCultureIgnoreCase));
+        }
+    }
+    private async Task CancelInStance(ExaminationRoomDetailViewModel examinationRoomDetailViewModel)
+    {
+        CheckEditting = false;
+        examinationRoomDetailViewModel.IsEditing = false;
+    }
+    public async Task UpdateInstance(ExaminationRoomDetailViewModel examinationRoomDetailViewModel)
+    {
+        try
+        {
+
+
+            examinationRoomDetailViewModel.StartTime = Convert.ToDateTime(StartDate + timeSpanStart);
+            examinationRoomDetailViewModel.EndTime = Convert.ToDateTime(EndDate + timeSpanEnd);
+
+            //giờ phải kiểm tra xem thằng này là thằng mới hay là đã có trong database
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = $"Cập Nhật Thông Tin Đề Thi {examinationRoomDetailViewModel.ExamFileName}",
+                Text = "Bạn Có Muốn Cập Nhật Thông Tin Hay Không ?",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Đồng Ý",
+                CancelButtonText = "Hủy"
+            });
+
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+
+
+                List<ExamRoomSupervisorViewModel> _lstsupervisorExamRooms = new List<ExamRoomSupervisorViewModel>();
+                //x.TotalTimeOfExam = examinationRoomDetailViewModel.TotalTimeOfExam;
+                if (examinationRoomDetailViewModel.TotalTimeOfExam < 50 || examinationRoomDetailViewModel.TotalTimeOfExam > 90)
+                {
+                    await Swal.FireAsync(
+                          "Thời lượng làm bài Chỉ được từ 50 đến 90 phút",
+                          "Fail",
+                          SweetAlertIcon.Error
+                          );
+                    return;
+                }
+                //if (Convert.ToInt32(examinationRoomDetailViewModel.EndTime.Minute - examinationRoomDetailViewModel.StartTime.Minute) != 120)
+                //{
+                //   var error = "Giờ kết thúc phải lớn hơn giờ bắt đầu là 2 giờ";
+                //    lstError.Add(error);
+                //}
+                if (examinationRoomDetailViewModel.StartTime <= DateTime.Now)
+                {
+                    await Swal.FireAsync(
+                         "Ngày và giờ bắt đầu phải lớn hơn ngày hiện tại",
+                         "Fail",
+                         SweetAlertIcon.Error
+                         );
+                    return;
+
+                }
+                if (examinationRoomDetailViewModel.EndTime.ToLongDateString() != examinationRoomDetailViewModel.StartTime.ToLongDateString())
+                {
+                    await Swal.FireAsync(
+                        "Ngày Kết thúc phải bằng ngày bắt đầu",
+                        "Fail",
+                        SweetAlertIcon.Error
+                        );
+                    return;
+                }
+                if (examinationRoomDetailViewModel.StartTime.AddMinutes(examinationRoomDetailViewModel.TotalTimeOfExam) > examinationRoomDetailViewModel.EndTime)
+                {
+                    await Swal.FireAsync(
+                        "Thời gian làm bài phải nhỏ thời gian kết thúc",
+                        "Fail",
+                        SweetAlertIcon.Error
+                        );
+                    return;
+
+
+
+                }
+                LoadingMain = true;
+                await InvokeAsync(() => StateHasChanged());
+                var res = false;
+                var addres = false;
+                if (_lstRoomDetailViewsDefautlt.Any(c => c == examinationRoomDetailViewModel))
+                {
+
+                    examinationRoomDetailViewModel.Status = 0;
+                    res = await _examinationRoomDetailRepo.UpdatingExamRoomDtail(examinationRoomDetailViewModel);
+                }
+                var comparelistsupervisor = _lstDefautSupervisor.Where(c => c.IdExaminationRoom == examinationRoomDetailViewModel.IdExaminationRoom && c.SecretKey == examinationRoomDetailViewModel.SecretKey).Select(c => c.IdLecturter).ToList();
+                bool same = comparelistsupervisor.Select(x => x).ToHashSet().SetEquals(examinationRoomDetailViewModel.ListSupervisorID.Select(x => x));
+
+                if (res)
+                {
+                    if (!same)
+                    {
+
+
+                        if (examinationRoomDetailViewModel.ListSupervisorID.Count() > 0)
+                        {
+                            foreach (var x in examinationRoomDetailViewModel.ListSupervisorID)
+                            {
+
+                                ExamRoomSupervisorViewModel supervisorExamRoom = new ExamRoomSupervisorViewModel()
+                                {
+                                    IdLecturter = x,
+                                    EndTime = examinationRoomDetailViewModel.EndTime,
+                                    StartTime = examinationRoomDetailViewModel.StartTime,
+                                    SecretKey = examinationRoomDetailViewModel.SecretKey,
+                                    IdExaminationRoom = examinationRoomDetailViewModel.IdExaminationRoom,
+                                    Status = 0,
+                                    SubjectName = "",
+                                    IsMainSupervisor = true,
+                                    Note = "",
+                                    CountDown = ""
+                                };
+                                _lstsupervisorExamRooms.Add(supervisorExamRoom);
+                            }
+                            addres = await supervisorExamRoomRepocs.AddingRangeSupervisorExamRoom(_lstsupervisorExamRooms);
+                            if (res & addres)
+                            {
+
+                                await Swal.FireAsync(
+                                "Cập Nhật Thông Tin Thành Công",
+                                "Successfuly",
+                                SweetAlertIcon.Success
+                                );
+                                CheckEditting = false;
+                                await LoadingAgain();
+                                await InvokeAsync(() => StateHasChanged());
+
+                                examinationRoomDetailViewModel.IsEditing = false;
+                                LoadingMain = false;
+                            }
+                            else
+                            {
+                                await Swal.FireAsync(
+                           "Cập Nhật Thất Bại",
+                           "Fail",
+                           SweetAlertIcon.Error
+                           );
+
+                                CheckEditting = false;
+                                examinationRoomDetailViewModel.IsEditing = false;
+                                LoadingMain = false;
+                                await LoadingAgain();
+                                await InvokeAsync(() => StateHasChanged());
+                            }
+
+
+                        }
+
+                    }
+                    else
+                    {
+                        await Swal.FireAsync(
+                                "Cập Nhật Thông Tin Thành Công",
+                                "Successfuly",
+                                SweetAlertIcon.Success
+                                );
+                        CheckEditting = false;
+                        await LoadingAgain();
+                        await InvokeAsync(() => StateHasChanged());
+
+                        examinationRoomDetailViewModel.IsEditing = false;
+                        LoadingMain = false;
+                    }
+                }
+                else
+                {
+                    await Swal.FireAsync(
+               "Cập Nhật Thất Bại",
+               "Fail",
+               SweetAlertIcon.Error
+               );
+
+                    CheckEditting = false;
+                    examinationRoomDetailViewModel.IsEditing = false;
+                    LoadingMain = false;
+                    await LoadingAgain();
+                    await InvokeAsync(() => StateHasChanged());
+                }
+
+
+
+            }
+            else if (result.Dismiss == DismissReason.Cancel)
+            {
+
+                //ở đây xử lý khi hủy upload
+                await Swal.FireAsync(
+                  "Hủy",
+                  "Đã Hủy Cập Nhật",
+                  SweetAlertIcon.Error
+                  );
+
+                CheckEditting = false;
+                examinationRoomDetailViewModel.IsEditing = false;
+                await InvokeAsync(() => StateHasChanged());
+            }
+        }
+        catch(Exception e)
+        {
+            await Swal.FireAsync(
+                      "Thông Báo",
+                      "Vui lòng liên hệ với daotao.poly để biết thêm chi tiết",
+                      SweetAlertIcon.Error
+                      );
+            return;
+        }
+    }
+    public async Task ReloadPass(ExaminationRoomDetailViewModel examinationRoomDetailViewModel)
+    {
+        examinationRoomDetailViewModel.SecretKey = _examinationRoomDetailRepo.RandomString(10);
+        FinalSecret = examinationRoomDetailViewModel.SecretKey;
+        if (_lstkeyValueAddings.Count() > 0)
+        {
+            foreach (var x in _lstkeyValueAddings.Where(c => c.SecretKey == examinationRoomDetailViewModel.SecretKey))
+            {
+                x.SecretKey = examinationRoomDetailViewModel.SecretKey;
+            }
+        }
+    }
+
+    public int current { get; set; } = 0;
+    public StepItem[] steps =
+    {
+        new StepItem {Title = "Bước 1:", Content = "Điền Thông Tin Phòng Thi"},
+        new StepItem {Title = "Bước 2:", Content = "Thêm Đề Thi Cho Môn & Thời Gian Thi"},
+
+    };
+
+    async Task OnPreClick()
+    {
+
+
+        current--;
+
+
+    }
+
+    async Task OnNextClick()
+    {
+
+
+        current++;
+
+
+
+
+
+
+    }
+    public async Task DeleteInstane(ExaminationRoomDetailViewModel examinationRoomDetailViewModel)
+    {
+        try
+        {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = $"Xóa Đề Thi {examinationRoomDetailViewModel.ExamFileName}",
+                    Text = "Bạn Có Muốn Xóa Đề Thi Này Hay Không ?",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Đồng Ý",
+                    CancelButtonText = "Hủy"
+                });
+
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+                var res = false;
+                LoadingMain = true;
+                await InvokeAsync(() => StateHasChanged());
+                res = await _examinationRoomDetailRepo.DeletingExamRoomDtail(examinationRoomDetailViewModel);
+
+                if (res)
+                {
+
+                    await Swal.FireAsync(
+                    "Xóa Đề Đề Thi Thành Công",
+                    "Successfuly",
+                    SweetAlertIcon.Success
+                    );
+                    _lstRoomDetailViews.Remove(examinationRoomDetailViewModel);
+                    if (_lstkeyValueAddings.Count() > 0)
+                    {
+                        var findIdExamFile = _lstkeyValueAddings.Find(c => c.SecretKey == examinationRoomDetailViewModel.SecretKey);
+                        _lstkeyValueAddings.Remove(findIdExamFile);
+                    }
+                    LoadingMain = false;
+                    await LoadingAgain();
+                    await InvokeAsync(() => StateHasChanged());
+                }
+                else
+                {
+                    Swal.FireAsync(
+                 "Xóa Thất Bại",
+                 "Fail",
+                 SweetAlertIcon.Error
+                 );
+                    LoadingMain = false;
+                    await InvokeAsync(() => StateHasChanged());
+                }
+
+            }
+            else if (result.Dismiss == DismissReason.Cancel)
+            {
+
+                //ở đây xử lý khi hủy upload
+                await Swal.FireAsync(
+                  "Hủy",
+                  "Đã Hủy Xóa Đề Thi Chính Thức",
+                  SweetAlertIcon.Error
+                  );
+                LoadingMain = false;
+                await InvokeAsync(() => StateHasChanged());
+            }
+        }catch(Exception e)
+        {
+            await Swal.FireAsync(
+                     "Thông Báo",
+                     "Vui lòng liên hệ với daotao.poly để biết thêm chi tiết",
+                     SweetAlertIcon.Error
+                     );
+            return;
+        }
+
+
+
+
+    }
+    private async Task AddExamFile(Guid Id)
+    {
+        try
+        {
+
+
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = $"Xác Nhận Thêm Đề Thi Chính Thức",
+                Text = "Bạn có muốn thêm đề thi này làm đề thi chính thức không ?",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Đồng Ý",
+                CancelButtonText = "Hủy"
+            });
+
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+                LoadingMain = true;
+                await InvokeAsync(() => StateHasChanged());
+                ExaminationRoomDetailViewModel examinationRoomDetailViewModel = new ExaminationRoomDetailViewModel()
+                {
+                    IdExaminationRoom = Guid.NewGuid(),
+                    SecretKey = _examinationRoomDetailRepo.RandomString(10),
+                    IndexOfExaminationRoomDetail = _lstRoomDetailViews.Count() == 0 ? 1 : _lstRoomDetailViews.Max(c => c.IndexOfExaminationRoomDetail) + 1,
+                    Status = 0,
+                    Note = "",
+                    ExamFileName = _lstExam.Where(c => c.Id == Id).Select(c => c.FileName).FirstOrDefault() == null ? "dethimoi" + _lstExam.Count.ToString() : _lstExam.Where(c => c.Id == Id).Select(c => c.FileName).FirstOrDefault(),
+                    TotalTimeOfExam = 50,
+                    StartTime = DateTime.Now.AddDays(1),
+                    EndTime = DateTime.Now.AddDays(1).AddHours(2),
+                    IdExamFile = Id,
+                    IdSubject = Guid.Parse(getIdSubject),
+                    IdBlock = Guid.Parse(getIdBlock),
+                    IdSemester = Guid.Parse(getIdSemester),
+                    BlockName = _lstblock.Where(c => c.Id == Guid.Parse(getIdBlock)).Select(c => c.NameOfBlock).FirstOrDefault(),
+                    SemesterName = _lstsem.Where(c => c.Id == Guid.Parse(getIdSemester)).Select(c => c.NameofSemester).FirstOrDefault(),
+                    SubjectName = getSUbject.SubjectName,
+                    ExaminationRoomName = "",
+                    ListStudentId = new List<string>(),
+                    ListSupervisorID = new List<Guid>()
+                };
+                _lstRoomDetailViewsAdding.Add(examinationRoomDetailViewModel);
+                //
+                KeyValueAdding keyValueAdding = new KeyValueAdding()
+                {
+                    IdExamFile = Id,
+                    StartTime = DateTime.Now.AddDays(1),
+                    EndTime = DateTime.Now.AddDays(1).AddHours(2),
+                    TotalTimeOfExam = 50,
+
+                    SecretKey = examinationRoomDetailViewModel.SecretKey,
+                    Status = 6,
+                    Note = "",
+                    ListIdStudent = new List<string>(),
+                    ListSupervisorID = new List<Guid>()
+                };
+                _lstkeyValueAddings.Add(keyValueAdding);
+
+                if (_lstRoomDetailViewsDefautlt.Count() == 0)
+                {
+                    var IdExaminationRoomDetail = Guid.NewGuid();
+                    ExaminationRoomDetailView examinationRoomDetailView = new ExaminationRoomDetailView()
+                    {
+                        Id = IdExaminationRoomDetail,
+                        ExaminationRoomName = $"Phòng Thi Môn {getSUbject.SubjectName}",
+                        CreateTime = DateTime.Now,
+                        IndexOfExaminationRoom = 1,
+                        Status = 0,
+                        IdTrainingFacility = Guid.Parse(GetIdTrain),
+                        TrainingFacilityName = "Hà Nội"
+                    };
+                    var checkfirststep = await _examinationRoomRepo.AddExaminationRoom(examinationRoomDetailView);
+                    if (checkfirststep)
+                    {
+                        ExamDetaiRoomForAdding examDetaiRoomForAdding = new ExamDetaiRoomForAdding()
+                        {
+
+                            IdExaminationRoom = IdExaminationRoomDetail,
+                            IdSubject = Guid.Parse(getIdSubject),
+                            IdSemester = Guid.Parse(getIdSemester),
+                            IdBlock = Guid.Parse(getIdBlock),
+                            keyValueAdding = _lstkeyValueAddings
+                        };
+                        var resvailone = await _examinationRoomDetailRepo.AddingRangeExamRoomDtail(examDetaiRoomForAdding);
+                        if (resvailone)
+                        {
+                            await Swal.FireAsync(
+                                      "Thêm Thành Công Vào Danh Sách Đề",
+                                      "Hãy tiến hành thêm giảng viên thôi nào",
+                                      SweetAlertIcon.Success
+                                      );
+
+
+                            _lstkeyValueAddings.Clear();
+                            await LoadingAgain();
+                            LoadingMain = false;
+                            await InvokeAsync(() => StateHasChanged());
+
+
+                        }
+                        else
+                        {
+                            await Swal.FireAsync(
+                    "Thêm Thất Bại",
+                    "Failed",
+                    SweetAlertIcon.Error
+                    );
+                            await LoadingAgain();
+                            LoadingMain = false;
+                            await InvokeAsync(() => StateHasChanged());
+                        }
+
+                    }
+                }
+                else
+                {
+                    var getIdRoom = _lstRoomDetailViews.Where(c => c.IdSubject == Guid.Parse(getIdSubject)).Select(c => c.IdExaminationRoom).FirstOrDefault();
+                    ExamDetaiRoomForAdding examDetaiRoomForAdding = new ExamDetaiRoomForAdding()
+                    {
+
+                        IdExaminationRoom = getIdRoom,
+                        IdSubject = Guid.Parse(getIdSubject),
+                        IdSemester = Guid.Parse(getIdSemester),
+                        IdBlock = Guid.Parse(getIdBlock),
+                        keyValueAdding = _lstkeyValueAddings
+                    };
+                    var resvailone = await _examinationRoomDetailRepo.AddingRangeExamRoomDtail(examDetaiRoomForAdding);
+                    if (resvailone)
+                    {
+                        await Swal.FireAsync(
+                                  "Thêm Thành Công Vào Danh Sách Đề",
+                                  "Hãy tiến hành thêm giảng viên thôi nào",
+                                  SweetAlertIcon.Success
+                                  );
+                        await LoadingAgain();
+                        LoadingMain = false;
+
+                        _lstkeyValueAddings.Clear();
+                        _lstRoomDetailViewsAdding.Clear();
+                        await InvokeAsync(() => StateHasChanged());
+
+
+                    }
+                    else
+                    {
+                        await Swal.FireAsync(
+                "Thêm Thất Bại",
+                "Failed",
+                SweetAlertIcon.Error
+                );
+                        _lstkeyValueAddings.Clear();
+                        _lstRoomDetailViewsAdding.Clear();
+                        LoadingMain = false;
+                        await InvokeAsync(() => StateHasChanged());
+                    }
+
+                }
+            }
+            else if (result.Dismiss == DismissReason.Cancel)
+            {
+
+                //ở đây xử lý khi hủy upload
+                await Swal.FireAsync(
+                  "Đã hủy Thêm File",
+                  "",
+                  SweetAlertIcon.Error
+                  );
+                LoadingMain = false;
+                await InvokeAsync(() => StateHasChanged());
+            }
+        }
+        catch(Exception e)
+        {
+            
+        }
+
+
+
+    }
+    private async Task EnableEditing(bool flag, ExaminationRoomDetailViewModel instanceData)
+    {
+        if (CheckEditting == false)
+        {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = $"Xác Nhận Chỉnh Sửa {instanceData.ExamFileName}",
+                    Text = $"Bạn Có Muốn Tiến Hành Chỉnh Sửa {instanceData.ExamFileName} Hay Không ?",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Đồng Ý",
+                    CancelButtonText = "Hủy"
+                });
+
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+                instanceData.IsEditing = flag;
+                CheckEditting = true;
+                getIdExamRoom = instanceData.IdExaminationRoom;
+                getSecret = instanceData.SecretKey;
+                EndDate = instanceData.EndTime.Date;
+                timeSpanStart = instanceData.StartTime.TimeOfDay;
+                timeSpanEnd = instanceData.EndTime.TimeOfDay;
+                StartDate = instanceData.StartTime.Date;
+                var lstLecture = await _examinationRoomDetailRepo.GetAllLectureAddExam();
+                var LstExaminationRoomDetailExist = _lstRoomDetailViews.Where(c => c.StartTime >= instanceData.StartTime && c.EndTime <= instanceData.EndTime).ToList();
+                foreach (var ExaminationRoomDetailExist in LstExaminationRoomDetailExist)
+                {
+                    var lstIdlectureInExam = _lstDefautSupervisor.Where(c => c.IdExaminationRoom == ExaminationRoomDetailExist.IdExaminationRoom && c.SecretKey == ExaminationRoomDetailExist.SecretKey).Select(c => c.IdLecturter).ToList();
+                    var lectureInExam = lstLecture.Where(c => lstIdlectureInExam.Contains(c.Id)).ToList();
+                    foreach (var lecture in lectureInExam)
+                    {
+                        lstLecture.Remove(lecture);
+                    }
+                }
+
+            }
+            else if (result.Dismiss == DismissReason.Cancel)
+            {
+
+                //ở đây xử lý khi hủy upload
+                await Swal.FireAsync(
+                  "Hủy",
+                  "Đã Hủy Đi Đến Chỉnh Sửa",
+                  SweetAlertIcon.Error
+                  );
+            }
+
+        }
+        else
+        {
+            await Swal.FireAsync(
+                "Cảnh Báo",
+                "Không Thể Thực Hiện Chỉnh Sửa Nhiều File Cùng 1 Thời Điểm Vui Lòng Hoàn Tất Cập Nhật Hiện Tại",
+                SweetAlertIcon.Error
+                );
+        }
+
+
+
+
+    }
+    private async Task Today()
+    {
+        await _picker.GoToDate(DateTime.Today);
+    }
+    private async Task SendAlert(string message)
+    {
+        // await JSRuntime.InvokeVoidAsync("DemoSite.Alert", "Clicked Staus - " + message);
+    }
+    private async Task AddUserToExamFile(string Iduser)
+    {
+
+    }
+    private void OnSelectedOptionChanged(int selectedOption)
+    {
+        model.Status = selectedOption;
+        StateHasChanged();
+    }
+    private async Task<IEnumerable<string>> SearchBlockSemester(string value)
+    {
+
+        if (string.IsNullOrEmpty(value))
+            return SemesterBlock;
+        if (SemesterBlock.ToList().Any(c => c == value))
+        {
+            var newchar = value.Split("-").ToList();
+
+            getIdBlock = _lstblock.Where(c => c.NameOfBlock == newchar[0]).Select(c => c.Id).FirstOrDefault().ToString();
+            getIdSemester = _lstsem.Where(c => c.NameofSemester == newchar[1]).Select(c => c.Id).FirstOrDefault().ToString();
+
+        }
+        return SemesterBlock.Where(x => x.ToLower().Contains(value.ToLower(), StringComparison.InvariantCultureIgnoreCase));
+    }
+    public class RegisterAccountForm
+    {
+        [Required]
+        [StringLength(8, ErrorMessage = "Name length can't be more than 8.")]
+        public string RoomName { get; set; }
+
+        [Required]
+        public string BlockSemesterName { get; set; }
+        [Required]
+        public string TrainingName { get; set; }
+
+        [Required]
+        public string SubjectName { get; set; }
+
+        [Required]
+        public int Status { get; set; }
+
+        public string Note { get; set; }
+
+    }
+    public class CheckExamDate
+    {
+        [Required]
+
+        public DateTime? ExamDay { get; set; } = DateTime.Now.AddDays(1);
+    }
+    private async Task<IEnumerable<string>> SearchSubjcet(string value)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+            return Subject;
+        return Subject.Where(x => x.ToLower().Contains(value.ToLower(), StringComparison.InvariantCultureIgnoreCase));
+    }
+    private async Task OnValidSubmit(EditContext context)
+    {
+        success = true;
+        await InvokeAsync(() => StateHasChanged());
+    }
+
+    private IEnumerable<string> Validate(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            yield return "email không hợp lệ";
+            yield break;
+        }
+
+        if (!Supervisor.Contains(value))
+        {
+            yield return "không tìm thấy tài khoản giám thị";
+        }
+    }
+
+    private IEnumerable<string> ValidateForTrain(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            yield return "Cơ Sở Không Được Để Trống";
+            yield break;
+        }
+
+        if (!Training.Contains(value))
+        {
+            yield return "không tìm thấy cơ sở";
+        }
+    }
+    private IEnumerable<string> ValidateForBlock(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            yield return "Block-Kì Không Được Phép Để Trống";
+            yield break;
+        }
+
+        if (!SemesterBlock.Contains(value))
+        {
+            yield return "Không Tìm Thấy Block-Kì";
+        }
+    }
+
+
+    private async Task<IEnumerable<string>> SearchTrain(string value)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value)) return Training;
+        GetIdTrain = _lstTraining.Where(c => c.TrainingInstitutionName.ToLower() == value.ToLower()).Select(c => c.Id).FirstOrDefault().ToString();
+        return Training.Where(x => x.ToLower().Contains(value.ToLower(), StringComparison.InvariantCultureIgnoreCase));
+    }
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter)]
+    public sealed class StateAttribute : ValidationAttribute
+    {
+        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+        {
+            if (!Supervisor.Contains(value))
+            {
+                return new ValidationResult("This is an incorrect value", new[] { validationContext.MemberName });
+            }
+
+            return null;
+        }
+    }
+    #endregion
+}
+
+

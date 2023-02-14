@@ -1,0 +1,42 @@
+﻿@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.QuizAnswerCPDtos
+@using FPLSP.Server.Infrastructure.ViewModels.QuizAnswerCPVm
+
+
+
+<EditForm Model="@QuizAnswerCPListSearch" OnSubmit="@SearchForm">
+    <div class="row">
+        <div class="col-4">
+            <InputSelect id="name" class="form-control" @bind-Value="QuizAnswerCPListSearch.QuestionCode">
+                <option value="">Tất cả</option>
+                @foreach (var item in ListQuizAnswerCP)
+                {
+                    <option value="@item.QuestionCode">@item.QuestionCode</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="col-6">
+            <InputText class="form-control" @bind-Value="QuizAnswerCPListSearch.Answer" placeholder="Nhập câu trả lời"></InputText>
+        </div>
+        <div class="col-2">
+            <button type="submit" class="btn btn-success">Tìm kiếm</button>
+        </div>
+    </div>
+
+</EditForm>
+@code {
+    [Parameter]
+    public EventCallback<ListSearchQuizAnswerCP> OnSearch { get; set; }
+    private ListSearchQuizAnswerCP QuizAnswerCPListSearch = new ListSearchQuizAnswerCP();
+    public List<QuizAnswerCPDtos> ListQuizAnswerCP { get; set; } = new List<QuizAnswerCPDtos>();
+    [Inject] public IQuizAnswerCPRepo _iQuizAnswerCPClient { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        var pagingResponse = await _iQuizAnswerCPClient.GetQuizAnswerLists(QuizAnswerCPListSearch);
+        ListQuizAnswerCP = pagingResponse.Items;
+    }
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(QuizAnswerCPListSearch);
+    }
+}

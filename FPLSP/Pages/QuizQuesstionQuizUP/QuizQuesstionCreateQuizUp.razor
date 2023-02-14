@@ -1,0 +1,715 @@
+﻿@page "/createquizQuesstionQuizUP/{idspecialized}/{idsubject}/{idquiz}"
+@using FPLSP.Server.Domain.Enums
+@using FPLSP.Server.Infrastructure.ViewModels.QuizQuesstionQuizUP
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using Blazored.Toast.Services
+@using System.Text.RegularExpressions
+<div class="row pt-3">
+<h3>Thêm câu hỏi</h3>
+@if (ShowAuthError)
+{
+    <div class="alert alert-danger" role="alert">
+        @Error
+    </div>
+}
+<EditForm Model="lessonContent" OnValidSubmit="Create" class="card card-body bg-light mt-1">
+<DataAnnotationsValidator />
+<div class="form-group">
+<div class="row">
+    <div class="form-group pt-2 col-md-6">
+        <label for="name" class="col-md-3 col-form-label">Loại câu hỏi:</label>
+        <div class="col-md-4">
+            <InputSelect ValueExpression="@(()=>lessonContent.QuestionForm)" Value="@lessonContent.QuestionForm" ValueChanged="@((QuestionForms newValue) => Quaylai2(newValue))"
+                         id="name" class="form-select" >
+                @foreach (var item in Enum.GetValues(typeof(QuestionForms)))
+                {
+                    <option value="@item">@item</option>
+                }
+            </InputSelect>
+                        
+        </div>
+    </div>
+    <div class="form-group pt-2 col-md-6">
+        <label for="name" class="col-md-3 col-form-label">Trạng thái:</label>
+        <div class="col-md-4">
+            <InputSelect id="name" class="form-select" @bind-Value="lessonContent.StatusQuizQuiz">
+                <option value="0">Không hoạt động</option>
+                <option value="1">Đang hoạt động</option>
+            </InputSelect>
+        </div>
+    </div>
+</div>
+<div class="row mt-3">
+    <div>
+        <label for="exampleFormControlInput1" class="form-label">Câu hỏi  :</label>
+        <InputText rows="2" cols="50"
+                   class="form-select" @bind-Value="lessonContent.QuestionName"
+                   autocomplete="off"
+                   id="exampleFormControlInput1"
+                   @oninput="((ChangeEventArgs e)=>ChangedClassName(e))"
+                   list="txt"
+                   placeholder="Vui lòng nhập câu hỏi"> </InputText>
+        <div class="text-danger"><ValidationMessage For="@(() => lessonContent.QuestionName)" /></div>
+    </div>
+    <div class="row d-flex justify-content-center">
+
+        <datalist id="txt">
+            @foreach (var x in @CPList.GroupBy(c => c.QuestionName))
+            {
+                @foreach (var z in x)
+                {
+                    <option value="@z.QuestionName">
+
+                    </option>
+                    break;
+                }
+            }
+        </datalist>
+
+
+    </div>
+</div>
+
+@if (lessonContent.QuestionForm == QuestionForms.MultipleChoise)
+{
+    <div class="row">
+        <div class="row pe-0">
+            <div class="form-group pt-2 col-md-5">
+                <label for="name" class="col-md-3 col-form-label">Câu trả lời 1:</label>
+                <div class="col-md-12">
+                    <InputText id="name" class="form-control" @bind-Value="lessonContent.Answer" />
+                    <ValidationMessage For="@(() => lessonContent.Answer)" />
+                </div>
+            </div>
+            <div class="form-group pt-2 pe-0 col-md-1">
+                <div class="col-md-12">
+                    <label for="name" class="col-md-12 col-form-label"> Đ/S </label>
+                    <InputSelect id="name" class="form-select" @bind-Value="lessonContent.IsCorrect">
+                        <option value="true">Đúng</option>
+                        <option value="false">Sai</option>
+                    </InputSelect>
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-5">
+                <label for="name" class="col-md-3 col-form-label">Câu trả lời 2:</label>
+                <div class="col-md-12">
+                    <InputText id="name" class="form-control" @bind-Value="lessonContent.Answer2" />
+                    <ValidationMessage For="@(() => lessonContent.Answer2)" />
+                </div>
+            </div>
+            <div class="form-group pt-2 pe-0 col-md-1">
+                <div class="col-md-12">
+                    <label for="name" class="col-md-12 col-form-label"> Đ/S </label>
+                    <InputSelect id="name" class="form-select" @bind-Value="lessonContent.IsCorrect2">
+                        <option value="true">Đúng</option>
+                        <option value="false">Sai</option>
+                    </InputSelect>
+                </div>
+            </div>
+        </div>
+        <div class="row pe-0">
+            <div class="form-group pt-2 col-md-5">
+                <label for="name" class="col-md-3 col-form-label">Câu trả lời 3:</label>
+                <div class="col-md-12">
+                    <InputText id="name" class="form-control" @bind-Value="lessonContent.Answer3" />
+                    <ValidationMessage For="@(() => lessonContent.Answer3)" />
+                </div>
+            </div>
+            <div class="form-group pt-2 pe-0 col-md-1">
+                <div class="col-md-12">
+                    <label for="name" class="col-md-12 col-form-label"> Đ/S </label>
+                    <InputSelect id="name" class="form-select" @bind-Value="lessonContent.IsCorrect3">
+                        <option value="true">Đúng</option>
+                        <option value="false">Sai</option>
+                    </InputSelect>
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-5">
+                <label for="name" class="col-md-3 col-form-label">Câu trả lời 4:</label>
+                <div class="col-md-12">
+                    <InputText id="name" class="form-control" @bind-Value="lessonContent.Answer4" />
+                    <ValidationMessage For="@(() => lessonContent.Answer4)" />
+                </div>
+            </div>
+            <div class="form-group pt-2 pe-0 col-md-1">
+                <div class="col-md-12">
+                    <label for="name" class="col-md-12 col-form-label"> Đ/S </label>
+                    <InputSelect id="name" class="form-select" @bind-Value="lessonContent.IsCorrect4">
+                        <option value="true">Đúng</option>
+                        <option value="false">Sai</option>
+                    </InputSelect>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (lessonContent.QuestionForm == QuestionForms.YesNo)
+{
+    <div class="row">
+
+        <div class="row pe-0">
+            <div class="form-group pt-2 col-md-5">
+                <label for="name" class="col-md-3 col-form-label">Câu trả lời 1:</label>
+                <div class="col-md-12">
+                    <InputText id="name" class="form-control" @bind-Value="lessonContent.Answer" placeholder="Yes" disabled />
+                    <ValidationMessage For="@(() => lessonContent.Answer)" />
+                </div>
+            </div>
+            <div class="form-group pt-2 pe-0 col-md-1">
+                <div class="col-md-12">
+                    <label for="name" class="col-md-12 col-form-label"> Đ/S </label>
+                    <InputSelect id="name" class="form-select" @bind-Value="lessonContent.IsCorrect">
+                        <option value="true">Đúng</option>
+                        <option value="false">Sai</option>
+                    </InputSelect>
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-5">
+                <label for="name" class="col-md-3 col-form-label">Câu trả lời 2:</label>
+                <div class="col-md-12">
+                    <InputText id="name" class="form-control" @bind-Value="lessonContent.Answer2" placeholder="No" disabled />
+                    <ValidationMessage For="@(() => lessonContent.Answer2)" />
+                </div>
+            </div>
+            <div class="form-group pt-2 pe-0 col-md-1">
+                <div class="col-md-12">
+                    <label for="name" class="col-md-12 col-form-label"> Đ/S </label>
+                    <InputSelect id="name" class="form-select" @bind-Value="lessonContent.IsCorrect2">
+                        <option value="true">Đúng</option>
+                        <option value="false">Sai</option>
+                    </InputSelect>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (lessonContent.QuestionForm == QuestionForms.SupplyItems)
+{
+    <div class="row">
+        <div>
+            <div class="form-group pt-2 col-md-12">
+                <label for="name" class="col-md-3 col-form-label">Đáp án:</label>
+                <div class="col-md-12">
+                    <InputText id="name" class="form-control" @bind-Value="lessonContent.Answer" />
+                    <ValidationMessage For="@(() => lessonContent.Answer)" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (lessonContent.QuestionForm == QuestionForms.MatchingItems)
+{
+    <div class="row">
+
+        <div class="row pe-0">
+            <div class="form-group pt-2 col-md-5">
+                <label for="name" class="col-md-3 col-form-label">Câu trả lời 1:</label>
+                <div class="col-md-12">
+                    <InputText id="name" class="form-control" @bind-Value="lessonContent.Answer" />
+                    <ValidationMessage For="@(() => lessonContent.Answer)" />
+                </div>
+            </div>
+            <div class="form-group pt-2 pe-0 col-md-1">
+                <div class="col-md-12">
+                    <label for="name" class="col-md-12 col-form-label"> Đ/S </label>
+                    <InputSelect id="name" class="form-select" @bind-Value="lessonContent.IsCorrect">
+                        <option value="true">Đúng</option>
+                        <option value="false">Sai</option>
+                    </InputSelect>
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-5">
+                <label for="name" class="col-md-3 col-form-label">Câu trả lời 2:</label>
+                <div class="col-md-12">
+                    <InputText id="name" class="form-control" @bind-Value="lessonContent.Answer2" />
+                    <ValidationMessage For="@(() => lessonContent.Answer2)" />
+                </div>
+            </div>
+            <div class="form-group pt-2 pe-0 col-md-1">
+                <div class="col-md-12">
+                    <label for="name" class="col-md-12 col-form-label"> Đ/S </label>
+                    <InputSelect id="name" class="form-select" @bind-Value="lessonContent.IsCorrect2">
+                        <option value="true">Đúng</option>
+                        <option value="false">Sai</option>
+                    </InputSelect>
+                </div>
+            </div>
+        </div>
+        <div class="row pe-0">
+            <div class="form-group pt-2 col-md-5">
+                <label for="name" class="col-md-3 col-form-label">Câu trả lời 3:</label>
+                <div class="col-md-12">
+                    <InputText id="name" class="form-control" @bind-Value="lessonContent.Answer3" />
+                    <ValidationMessage For="@(() => lessonContent.Answer3)" />
+                </div>
+            </div>
+            <div class="form-group pt-2 pe-0 col-md-1">
+                <div class="col-md-12">
+                    <label for="name" class="col-md-12 col-form-label"> Đ/S </label>
+                    <InputSelect id="name" class="form-select" @bind-Value="lessonContent.IsCorrect3">
+                        <option value="true">Đúng</option>
+                        <option value="false">Sai</option>
+                    </InputSelect>
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-5">
+                <label for="name" class="col-md-3 col-form-label">Câu trả lời 4:</label>
+                <div class="col-md-12">
+                    <InputText id="name" class="form-control" @bind-Value="lessonContent.Answer4" />
+                    <ValidationMessage For="@(() => lessonContent.Answer4)" />
+                </div>
+            </div>
+            <div class="form-group pt-2 pe-0 col-md-1">
+                <div class="col-md-12">
+                    <label for="name" class="col-md-12 col-form-label"> Đ/S </label>
+                    <InputSelect id="name" class="form-select" @bind-Value="lessonContent.IsCorrect4">
+                        <option value="true">Đúng</option>
+                        <option value="false">Sai</option>
+                    </InputSelect>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-4 text-center">
+    </div>
+    <div class="col-md-4 text-center">
+        <button type="submit" class="btn btn-success me-2">Tạo Câu Hỏi</button>
+        <button type="button" class="btn btn-outline-success me-2" @onclick="ClearForm">Làm Mới</button>
+        <a @onclick="()=>Quaylai()" class="btn btn-outline-danger">Quay Lại</a>
+    </div>
+    <div class="col-md-4"></div>
+</div>
+</EditForm>
+
+<PopUpConfirm ConfirmationMessage="Bạn Có Chắc Muốn Sử Dụng 1 Số Thuộc Tính Của Câu Hỏi Cũ Hay Không ?"
+              ConfirmationTitle="Xác nhận của bạn ?"
+              @ref="DeleConfirmation"
+              ConfirmationChanged="OnConfirmationDelete">
+
+</PopUpConfirm>
+</div>
+@code{
+
+    private QuizQuesstionQuizUPCreateVM lessonContent = new QuizQuesstionQuizUPCreateVM();
+
+    [Parameter]
+    public string idquiz { get; set; }
+    [Parameter]
+    public string idsubject { get; set; }
+    [Parameter]
+    public string idspecialized { get; set; }
+
+    public string questionId { get; set; }
+
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    public int f = 0;
+    public int g = 0;
+    public int countAnswer = 0;
+    public int answerquestion = 0;
+    public string bindtext;
+    [Inject]
+    public IQuizQuesstionQuizUPClient _iQuizQuesstionQuizCPClient { get; set; }
+
+    public List<QuizQuesstionQuizUPDto> CPList { get; set; } = new List<QuizQuesstionQuizUPDto>();
+    public QuizQuesstionQuizUPDto CP;
+
+    private QuizQuesstionQuizUPListSearch _parameters = new QuizQuesstionQuizUPListSearch();
+
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    protected PopUpConfirm DeleConfirmation { set; get; }
+    public bool ShowAuthError { get; set; }
+
+    [Parameter]
+    public string Error { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        try
+        {
+            CPList = await _iQuizQuesstionQuizCPClient.GetAllCauHoi(Guid.Parse(idsubject));
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+    }
+    private async Task Create()
+    {
+        Regex trimmer = new Regex(@"\s\s+");
+        lessonContent.QuestionName = lessonContent.QuestionName.Trim();
+        lessonContent.QuestionName = trimmer.Replace(lessonContent.QuestionName, "");
+        ShowAuthError = false;
+        lessonContent.lsAnswer = new List<string>();
+        lessonContent.lsIsCorrect = new List<bool>();
+        if (lessonContent.QuestionForm == QuestionForms.YesNo)
+        {
+            lessonContent.Answer = "Yes";
+            lessonContent.lsAnswer.Add(lessonContent.Answer);
+            lessonContent.lsIsCorrect.Add(lessonContent.IsCorrect);
+
+            lessonContent.Answer2 = "No";
+            lessonContent.lsAnswer.Add(lessonContent.Answer2);
+            lessonContent.lsIsCorrect.Add(lessonContent.IsCorrect2);
+
+            for (int i = 0; i < lessonContent.lsIsCorrect.Count; i++)
+            {
+                if (lessonContent.lsIsCorrect[i] == false)
+                {
+                    f += 1;
+                }
+                if (lessonContent.lsIsCorrect[i] == true)
+                {
+                    g += 1;
+                }
+            }
+            if (f == 2 || g == 2)
+            {
+                _toastService.ShowError("Không được có 2 đáp án Đúng hoặc Sai");
+                var url = Path.Combine("/createquizQuesstionQuizUP/" + idspecialized + "/" + idsubject + "/" + idquiz);
+                Navigation.NavigateTo(url);
+                f = 0;
+                g = 0;
+                return;
+            }
+        }
+        else if (lessonContent.QuestionForm == QuestionForms.MultipleChoise)
+        {
+            lessonContent.lsAnswer.Clear();
+            lessonContent.lsIsCorrect.Clear();
+            countAnswer = 0;
+            f = 0;
+            g = 0;
+
+            lessonContent.lsAnswer.Add(lessonContent.Answer);
+            lessonContent.lsIsCorrect.Add(lessonContent.IsCorrect);
+
+            lessonContent.lsAnswer.Add(lessonContent.Answer2);
+            lessonContent.lsIsCorrect.Add(lessonContent.IsCorrect2);
+
+            lessonContent.lsAnswer.Add(lessonContent.Answer3);
+            lessonContent.lsIsCorrect.Add(lessonContent.IsCorrect3);
+
+            lessonContent.lsAnswer.Add(lessonContent.Answer4);
+            lessonContent.lsIsCorrect.Add(lessonContent.IsCorrect4);
+
+            for (int i = 0; i < lessonContent.lsAnswer.Count; i++)
+            {
+                if (lessonContent.lsAnswer[i] != "")
+                {
+                    lessonContent.lsAnswer[i] = lessonContent.lsAnswer[i].Trim();
+                    lessonContent.lsAnswer[i] = trimmer.Replace(lessonContent.lsAnswer[i], "");
+                }
+            }
+
+            for (int i = 0; i < lessonContent.lsIsCorrect.Count; i++)
+            {
+                if (lessonContent.lsIsCorrect[i] == false)
+                {
+                    f += 1;
+                }
+                if (lessonContent.lsAnswer[i] == "")
+                {
+                    countAnswer += 1;
+                }
+
+            }
+            for (int i = 0; i < lessonContent.lsAnswer.Count; i++)
+            {
+                for (int j = i + 1; j < lessonContent.lsAnswer.Count; j++)
+                {
+                    if (lessonContent.lsAnswer[i] == lessonContent.lsAnswer[j])
+                    {
+                        answerquestion += 1;
+                    }
+                }
+
+
+            }
+
+            if (countAnswer >= 1)
+            {
+                _toastService.ShowError("Phải nhập đủ 4 câu trả lời");
+                var url = Path.Combine("/createquizQuesstionQuizUP/" + idspecialized + "/" + idsubject + "/" + idquiz);
+                Navigation.NavigateTo(url);
+                countAnswer = 0;
+                return;
+            }
+            if (answerquestion > 0)
+            {
+                _toastService.ShowError("Không được có câu trả lời trùng nhau");
+                var url = Path.Combine("/createquizQuesstionQuizUP/" + idspecialized + "/" + idsubject + "/" + idquiz);
+                Navigation.NavigateTo(url);
+                answerquestion = 0;
+                return;
+            }
+            else if (f == 4)
+            {
+                _toastService.ShowError("Không được có 4 câu đáp án sai");
+                var url = Path.Combine("/createquizQuesstionQuizUP/" + idspecialized + "/" + idsubject + "/" + idquiz);
+                Navigation.NavigateTo(url);
+                countAnswer = 0;
+                f = 0;
+                return;
+            }
+        }
+        else if (lessonContent.QuestionForm == QuestionForms.SupplyItems)
+        {
+            lessonContent.lsAnswer.Clear();
+            lessonContent.lsIsCorrect.Clear();
+
+            lessonContent.lsAnswer.Add(lessonContent.Answer);
+            lessonContent.IsCorrect = true;
+            lessonContent.lsIsCorrect.Add(lessonContent.IsCorrect);
+
+            lessonContent.Answer = lessonContent.Answer.Trim();
+            lessonContent.Answer = trimmer.Replace(lessonContent.Answer, "");
+
+            if (lessonContent.Answer == "")
+            {
+                _toastService.ShowError("Bạn chưa nhập câu trả lời");
+                var url = Path.Combine("/createquizQuesstionQuizUP/" + idspecialized + "/" + idsubject + "/" + idquiz);
+                Navigation.NavigateTo(url);
+                return;
+            }
+        }
+        else if (lessonContent.QuestionForm == QuestionForms.MatchingItems)
+        {
+            lessonContent.lsAnswer.Clear();
+            lessonContent.lsIsCorrect.Clear();
+            countAnswer = 0;
+            g = 0;
+            f = 0;
+
+            lessonContent.lsAnswer.Add(lessonContent.Answer);
+            lessonContent.lsIsCorrect.Add(lessonContent.IsCorrect);
+
+            lessonContent.lsAnswer.Add(lessonContent.Answer2);
+            lessonContent.lsIsCorrect.Add(lessonContent.IsCorrect2);
+
+            lessonContent.lsAnswer.Add(lessonContent.Answer3);
+            lessonContent.lsIsCorrect.Add(lessonContent.IsCorrect3);
+
+            lessonContent.lsAnswer.Add(lessonContent.Answer4);
+            lessonContent.lsIsCorrect.Add(lessonContent.IsCorrect4);
+
+            for (int i = 0; i < lessonContent.lsAnswer.Count; i++)
+            {
+                if (lessonContent.lsAnswer[i] != null)
+                {
+                    lessonContent.lsAnswer[i] = lessonContent.lsAnswer[i].Trim();
+                    lessonContent.lsAnswer[i] = trimmer.Replace(lessonContent.lsAnswer[i], "");
+                }
+                else
+                {
+                    lessonContent.lsAnswer[i] = "";
+                }
+            }
+            for (int i = 0; i < lessonContent.lsIsCorrect.Count; i++)
+            {
+                if (lessonContent.lsIsCorrect[i] == true)
+                {
+                    f += 1;
+                }
+                if (lessonContent.lsIsCorrect[i] == false)
+                {
+                    g += 1;
+                }
+                if (lessonContent.lsAnswer[i] == "")
+                {
+                    countAnswer += 1;
+                }
+
+            }
+            for (int i = 0; i < lessonContent.lsAnswer.Count; i++)
+            {
+                for (int j = i + 1; j < lessonContent.lsAnswer.Count; j++)
+                {
+                    if (lessonContent.lsAnswer[i] == lessonContent.lsAnswer[j])
+                    {
+                        answerquestion += 1;
+                    }
+                }
+
+
+            }
+            if (countAnswer >= 1)
+            {
+                _toastService.ShowError("Phải nhập đủ 4 câu trả lời");
+                var url = Path.Combine("/createquizQuesstionQuizUP/" + idspecialized + "/" + idsubject + "/" + idquiz);
+                Navigation.NavigateTo(url);
+                countAnswer = 0;
+                return;
+            }
+            if (answerquestion > 0)
+            {
+                _toastService.ShowError("Không được có câu trả lời trùng nhau");
+                var url = Path.Combine("/createquizQuesstionQuizUP/" + idspecialized + "/" + idsubject + "/" + idquiz);
+                Navigation.NavigateTo(url);
+                answerquestion = 0;
+                return;
+            }
+            if (g == 4)
+            {
+                _toastService.ShowError("Không được có 4 câu trả lời sai!");
+                var url = Path.Combine("/createquizQuesstionQuizUP/" + idspecialized + "/" + idsubject + "/" + idquiz);
+                Navigation.NavigateTo(url);
+                g = 0;
+                return;
+            }
+            if (f > 1)
+            {
+                _toastService.ShowError("Không được có nhiều hơn 1 đáp án lời đúng!");
+                var url = Path.Combine("/createquizQuesstionQuizUP/" + idspecialized + "/" + idsubject + "/" + idquiz);
+                Navigation.NavigateTo(url);
+                f = 0;
+                return;
+            }
+        }
+
+        var result = await _iQuizQuesstionQuizCPClient.Create(Guid.Parse(idquiz), lessonContent);
+        if (result != 1)
+        {
+            _toastService.ShowError("Chưa thêm được! Vui lòng thủ lại");
+            var url = Path.Combine("/createquizQuesstionQuizUP/" + idspecialized + "/" + idsubject + "/" + idquiz);
+            Navigation.NavigateTo(url);
+        }
+        else
+        {
+            _toastService.ShowSuccess("Thêm mới câu hỏi thành công!");
+            var url = Path.Combine("/quizQuesstionQuizUP/" + idspecialized + "/" + idsubject + "/" + idquiz);
+            Navigation.NavigateTo(url);
+        }
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/quizQuesstionQuizUP/" + idspecialized + "/" + idsubject + "/" + idquiz);
+        Navigation.NavigateTo(url);
+    }
+    private async Task Quaylai2(QuestionForms value)
+    {
+        lessonContent.QuestionForm = value;
+        lessonContent.QuestionName = "";
+        if (lessonContent.QuestionForm == QuestionForms.YesNo)
+        {
+            lessonContent.Answer = "Yes";
+            lessonContent.IsCorrect = false;
+
+            lessonContent.Answer2 = "No";
+            lessonContent.IsCorrect2 = false;
+        }
+        else if (lessonContent.QuestionForm == QuestionForms.MultipleChoise)
+        {
+            lessonContent.Answer = "";
+            lessonContent.IsCorrect = false;
+
+            lessonContent.Answer2 = "";
+            lessonContent.IsCorrect2 = false;
+
+            lessonContent.Answer3 = "";
+            lessonContent.IsCorrect3 = false;
+
+            lessonContent.Answer4 = "";
+            lessonContent.IsCorrect4 = false;
+        }
+        else if (lessonContent.QuestionForm == QuestionForms.SupplyItems)
+        {
+            lessonContent.Answer = "";
+            lessonContent.IsCorrect = false;
+        }
+        else if (lessonContent.QuestionForm == QuestionForms.MatchingItems)
+        {
+            lessonContent.Answer = "";
+            lessonContent.IsCorrect = false;
+
+            lessonContent.Answer2 = "";
+            lessonContent.IsCorrect2 = false;
+
+            lessonContent.Answer3 = "";
+            lessonContent.IsCorrect3 = false;
+
+            lessonContent.Answer4 = "";
+            lessonContent.IsCorrect4 = false;
+        }
+        lessonContent.StatusQuizQuiz = 0;
+    }
+    private async void ChangedClassName(ChangeEventArgs args)
+    {
+        bindtext = Convert.ToString(args.Value);
+        if (CPList.Any(c => c.QuestionName == Convert.ToString(args.Value)))
+        {
+            DeleConfirmation.show();
+        }
+
+    }
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (deleteconfirmed)
+        {
+            for (int i = 0; i < CPList.Count; i++)
+            {
+                if (CPList[i].QuestionName == bindtext)
+                {
+                    CP = await _iQuizQuesstionQuizCPClient.GetbyId(CPList[i].QuizQuestionId);
+                }
+            }
+
+            lessonContent = new QuizQuesstionQuizUPCreateVM()
+                {
+                    QuestionName = CP.QuestionName,
+                    QuestionForm = CP.QuestionForm,
+                    lsAnswer = CP.Answers,
+                    lsIsCorrect = CP.lsIsCorrect,
+                };
+            for (var i = 0; i < lessonContent.lsAnswer.Count; i++)
+            {
+                if (i == 0)
+                {
+                    lessonContent.Answer = lessonContent.lsAnswer[i];
+                    lessonContent.IsCorrect = lessonContent.lsIsCorrect[i];
+                }
+                if (i == 1)
+                {
+                    lessonContent.Answer2 = lessonContent.lsAnswer[i];
+                    lessonContent.IsCorrect2 = lessonContent.lsIsCorrect[i];
+                }
+                if (i == 2)
+                {
+                    lessonContent.Answer3 = lessonContent.lsAnswer[i];
+                    lessonContent.IsCorrect3 = lessonContent.lsIsCorrect[i];
+                }
+                if (i == 3)
+                {
+                    lessonContent.Answer4 = lessonContent.lsAnswer[i];
+                    lessonContent.IsCorrect4 = lessonContent.lsIsCorrect[i];
+                }
+            }
+        }
+    }
+    private void ClearForm()
+    {
+        lessonContent.QuestionName = "";
+        lessonContent.Answer = "";
+        lessonContent.IsCorrect = false;
+
+        lessonContent.Answer2 = "";
+        lessonContent.IsCorrect2 = false;
+
+        lessonContent.Answer3 = "";
+        lessonContent.IsCorrect3 = false;
+
+        lessonContent.Answer4 = "";
+        lessonContent.IsCorrect4 = false;
+        lessonContent.StatusQuizQuiz = 0;
+
+    }
+
+}

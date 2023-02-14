@@ -1,0 +1,170 @@
+﻿@page "/lessonContentUPUpdate/{idsubjectUP}/{Id}"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.LessonContentUP
+@using FPLSP.Server.Infrastructure.ViewModels.LessonUP
+@using FPLSP.Server.Infrastructure.ViewModels.ResourceLinkUP
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+<div class="row pt-3">
+    <h3>Cập nhật nội dung bài học</h3>
+    @if (ShowAuthError)
+    {
+        <div class="alert alert-danger" role="alert">
+            @Error
+        </div>
+    }
+    @if (request != null)
+    {
+        <EditForm Model="request" OnValidSubmit="UpdateSubmit" class="card card-body bg-light mt-5">
+            <DataAnnotationsValidator />
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-6">
+                            <div class="form-group pt-2 col-md-12">
+                                <label for="name" class="col-md-4 col-form-label">Tên nội dung bài học:</label>
+                                <div class="col-md-12">
+                                    <InputText id="name" class="form-control" @bind-Value="request.LessonContentName" />
+                                    <div class="text-danger"><ValidationMessage For="@(() => request.LessonContentName)" /></div>
+
+                                </div>
+                         </div>
+                        </div>
+                    <div class="col-6">
+                        <div class="form-group pt-2 col-md-12">
+                            <label for="name" class="col-md-4 col-form-label">Mã nội dung bài học:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="request.LessonContentCode" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.LessonContentCode)" /></div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                            <div class="form-group pt-2 col-md-12">
+                                <label for="name" class="col-md-4 col-form-label">Nội dung :</label>
+                                <div class="col-md-12">
+                                    <InputText id="name" class="form-control" @bind-Value="request.Content" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.Content)" /></div>
+
+                                </div>
+                            </div>
+                        </div>
+                    <div class="col-6">
+                        <div class="form-group pt-2 col-md-12">
+                            <label for="name" class="col-md-4 col-form-label">Mô tả:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="request.Descriptions" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.Descriptions)" /></div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                            <div class="form-group pt-2 col-md-12">
+                                <label for="name" class="col-md-2 col-form-label">Trạng thái :</label>
+                                <div class="col-md-12">
+                                    <InputSelect @bind-Value="request.Status" class="form-select">
+                                        <option value="0">Không hoạt động</option>
+                                        <option value="1">Đang hoạt động</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                    <div class="col-6">
+                            <div class="form-group pt-2 col-md-12">
+                                <label for="name" class="col-md-4 col-form-label">Tài nguyên môn học :</label>
+                                <div class="col-md-12">
+                                    <InputSelect @bind-Value="request.ResuorceLinkId" class="form-select">
+                                        @foreach (var item in _lstResourceLinkUP)
+                                    {
+                                         <option value="@item.Id">@item.ResourcesTitle</option> 
+                                    }                                      
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <div class="row mt-3">
+                <div class="col-4"></div>
+                <div class="col-4" style="text-align:center">
+                    <button type="submit" class="btn btn-primary me-2">Cập Nhật</button>
+                    <button type="button" class="btn btn-outline-success me-2" @onclick="Khoiphuc">Khôi Phục</button>
+                    <a @onclick="() => Quaylai()" class="btn btn-outline-danger">Quay Lại</a>
+                </div>
+                <div class="col-4"></div>
+
+            </div>
+        </EditForm>
+    }
+</div>
+@code {
+    [Parameter]
+    public string Id { get; set; }
+    [Parameter]
+    public string idsubjectUP { get; set; }
+    public bool ShowAuthError { get; set; }
+    [Inject] ILessonContentUPRepo LessonContentUPRepo { get; set; }
+    [Inject] NavigationManager NavigationManager { get; set; }
+    [Inject] private ILessonUPRepo _lessonUPRepo { get; set; }
+    private List<LessonUPViewModel> _lstLessonUP { get; set; }
+    [Inject] private IResourceLinkUPRepo _resourceLinkUPRepo { get; set; }
+    private List<ResourceLinkUPViewModel> _lstResourceLinkUP { get; set; }
+    private LessonContentUPUpdateRequest request;
+    private LessonContentUPViewModel data { get; set; } = new LessonContentUPViewModel();
+    [Inject] private IToastService toastService { get; set; }
+    [CascadingParameter]
+    private Error Error { get; set; }
+
+    public string status { get; set; } = "";
+    protected override async Task OnInitializedAsync()
+    {
+        _lstLessonUP = await _lessonUPRepo.GetAll();
+        _lstResourceLinkUP = await _resourceLinkUPRepo.GetAll();
+        data = await LessonContentUPRepo.GetById(Id);
+        request = new LessonContentUPUpdateRequest();
+        request.LessonContentCode = data.LessonContentCode;
+        request.LessonContentName = data.LessonContentName;
+        request.Content = data.Content;
+        request.Descriptions = data.Descriptions;
+        request.LessonId = data.LessonId;
+        request.Status = data.Status;
+        status = data.Status.ToString();
+        request.ResuorceLinkId = data.ResuorceLinkId;
+    }
+
+
+    private async Task UpdateSubmit(EditContext context)
+    {
+        try
+        {
+            var result = await LessonContentUPRepo.Update(Guid.Parse(Id), request);
+            if (result)
+            {
+                toastService.ShowSuccess("Cập nhật thành công");
+                NavigationManager.NavigateTo($"/lessonContentUP/{idsubjectUP}/{data.LessonId}");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowSuccess("Cập nhật thất bại");
+        }
+    }
+    public async void Khoiphuc()
+    {
+        request = new LessonContentUPUpdateRequest();
+        request.LessonContentCode = data.LessonContentCode;
+        request.LessonContentName = data.LessonContentName;
+        request.Content = data.Content;
+        request.Descriptions = data.Descriptions;
+        request.LessonId = data.LessonId;
+        request.Status = data.Status;
+        status = data.Status.ToString();
+        request.ResuorceLinkId = data.ResuorceLinkId;
+    }
+    void Quaylai()
+    {
+        NavigationManager.NavigateTo($"/lessonContentUP/{idsubjectUP}/{data.LessonId}");
+    }
+}

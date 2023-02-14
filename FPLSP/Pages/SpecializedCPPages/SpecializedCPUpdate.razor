@@ -1,0 +1,327 @@
+﻿@page "/updateSpecializedCP/{idNonDecrypt}"
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Specialized
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<h3>CẬP NHẬT CHUYÊN NGÀNH</h3>
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/SpecializedCP/@_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H" )/@_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H" )">Chuyên ngành</a></li>
+        <li class="breadcrumb-item"><a href="/manageSpecializedCP?@_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H" )LDN01@_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H" )">Quản lý chuyên ngành</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Cập nhật chuyên ngành</li>
+    </ol>
+</nav>
+<EditForm Model="request" OnValidSubmit="Update" class="card card-body bg-light mt-3">
+    <DataAnnotationsValidator />
+    <div class="form-group">
+        <div class="row">
+            <div class="col-2 pt-4">
+                <div class="row">
+                    <img src="@request.Image" onerror="this.src='./css/images/Others/logoFPT.png'" width=195px height=232px style="object-fit:contain">
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label for="image" class="col-12 col-form-label">Hình Ảnh:</label>
+                        @if (@image != null)
+                        {
+                            <div class="col-12">
+                                <ImageUpload OnChange="AssignImageUrl" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.Image)" /></div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="col-12">
+                                <ImageUpload OnChange="AssignImageUrl" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.Image)" /></div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-10 pt-1">
+                <div class="row">
+                    <div class="form-group pt-2 col-md-6">
+                        <label for="name" class="col-md-4 col-form-label">Mã Chuyên ngành:</label>
+                        <div class="col-md-12">
+                            <InputText id="name" class="form-control" @bind-Value="@request.SpecializedCode" />
+                            <div class="text-danger"><ValidationMessage For="@(() => request.SpecializedCode)" /></div>
+                        </div>
+                    </div>
+                    <div class="form-group pt-2 col-md-6">
+                        <label for="name" class="col-md-4 col-form-label">Tên Chuyên ngành:</label>
+                        <div class="col-md-12">
+                            <InputText id="name" class="form-control" @bind-Value="@request.SpecializationName" />
+                            <div class="text-danger"><ValidationMessage For="@(() => request.SpecializationName)" /></div>
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="row">
+                    <div class="form-group pt-2 col-md-6">
+                        <label for="name" class="col-md-4 col-form-label">Chuyên ngành lớn:</label>
+                        <div class="col-md-12">
+                            <InputSelect @bind-Value="_parentId" class="form-select">
+                                <option value="@Guid.Empty">Chọn chuyên ngành lớn</option>
+                                @if (_lstLevel0 != null)
+                                {
+                                    @foreach (var item in _lstLevel0)
+                                    {
+                                        <option value="@item.Id">@item.SpecializationName</option>
+                                    }
+                                }
+                            </InputSelect>
+
+                        </div>
+                    </div><div class="form-group pt-2 col-md-6">
+                        <label for="name" class="col-md-4 col-form-label">Trạng thái:</label>
+                        <div class="col-md-12">
+                            <InputSelect @bind-Value="request.Status" class="form-select">
+                                <option value="0">Hoạt động</option>
+                                <option value="1">Không Hoạt động</option>
+                            </InputSelect>
+                            <div class="text-danger"><ValidationMessage For="@(() => request.Status)" /></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row pt-4">
+        <div class="col-md-12 text-center">
+            <button type="submit" class="btn btn-primary me-2">Cập Nhật</button>
+            <button type="button" class="btn btn-outline-success ms-2" @onclick="Undo">Khôi Phục</button>
+            <a class="btn btn-outline-danger ms-2" href="/manageSpecializedCP?@_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H" )LDN01@_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H" )">Quay Lại</a>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public string idNonDecrypt { get; set; }
+    [Parameter]
+    public string image { get; set; }
+    public string id = "";
+    [Inject]
+    public ISpecializedCPRepo _specializedCPRepo { get; set; }
+    public SpecializedVM request = new SpecializedVM();
+    public SpecializedDto _specializedCP = new SpecializedDto();
+    public List<SpecializedDto> _lstLevel0 = new List<SpecializedDto>();
+    public Guid _parentId = new Guid();
+    [Inject] public NavigationManager Navigation { get; set; }
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    [Parameter]
+    public string _error { get; set; }
+    [Inject]
+    public IToastService ToastService { get; set; }
+    public int _level { get; set; } = 0;
+    Uri uri;
+    string maxlevel = "";
+    string IdCoSo = "";
+   
+    protected override async Task OnInitializedAsync()
+    {
+        uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (string.IsNullOrEmpty(uri.Query) == false)
+        {
+            var urifist = uri.Query.Split("?")[1];
+            maxlevel = _cryptoServices.Decrypt(urifist.Split("LDN01")[0].Replace("I0H", "/"));
+            IdCoSo = _cryptoServices.Decrypt(urifist.Split("LDN01")[1].Replace("I0H", "/"));
+        }
+     
+        id = _cryptoServices.Decrypt(idNonDecrypt.Replace("I0H", "/"));
+        _specializedCP = await _specializedCPRepo.GetbyId(Guid.Empty, Guid.Parse(id));
+        request.SpecializedCode = _specializedCP.SpecializedCode.Trim();
+        request.SpecializationName = _specializedCP.SpecializationName;
+        request.Status = _specializedCP.Status;
+        request.Image = _specializedCP.Image;
+        _level = _specializedCP.Level;
+        image = _specializedCP.Image;
+        if (_specializedCP.IdSpeciality != null)
+        {
+            var pID = _specializedCP.IdSpeciality.ToString();
+            _parentId = Guid.Parse(pID);
+        }
+        _lstLevel0 = await _specializedCPRepo.GetAll();
+        _lstLevel0 = _lstLevel0.Where(x => x.Level == 0).ToList();
+
+
+    }
+    public bool checkName(string x)
+    {
+        foreach (char c in x)
+        {
+            if (!Char.IsLetter(c) && c.ToString() != " ")
+                return false;
+        }
+        return true;
+    }
+    public bool checkCode(string x)
+    {
+        foreach (char c in x)
+        {
+            if (!Char.IsLetter(c) && !Char.IsDigit(c) && c.ToString() != "#")
+                return false;
+        }
+        return true;
+    }
+    public bool checkNumber(string x)
+    {
+        foreach (char c in x)
+        {
+            if (!Char.IsDigit(c))
+                return false;
+        }
+        return true;
+    }
+    private async Task Update()
+    {
+        var lstSpecializedCP = await _specializedCPRepo.GetAll();
+
+        if (!checkName(request.SpecializationName))
+        {
+            ToastService.ShowError("Tên không được chứa số và ký tự đặc biệt", "Error");
+        }
+        else if (_parentId == Guid.Empty)
+        {
+            if (string.IsNullOrEmpty(request.SpecializedCode))
+            {
+                ToastService.ShowError("Mã không được để trống", "Error");
+            }
+            else if (!checkCode(request.SpecializedCode))
+            {
+                ToastService.ShowError("Mã không được chứa khoảng trắng và ký tự đặc biệt", "Error");
+            }
+            else
+            {
+                if (request.SpecializedCode != _specializedCP.SpecializedCode)
+                {
+                    var temp = lstSpecializedCP.FirstOrDefault(x => x.SpecializedCode == request.SpecializedCode && x.Level == 0);
+
+                    if (temp != null)
+                    {
+                        ToastService.ShowError("Mã chuyên ngành đã tồn tại", "Error");
+                        Navigation.NavigateTo($"/updateSpecializedCP/{id}");
+                    }
+                    else
+                    {
+                        var result = await _specializedCPRepo.Update(Guid.Empty, Guid.Parse(id), request);
+
+                        if (result != 1)
+                        {
+                            ToastService.ShowError("Cập nhật chuyên ngành lớn thất bại", "Error");
+                            Navigation.NavigateTo($"/updateSpecializedCP/{id}");
+                        }
+                        else
+                        {
+                            ToastService.ShowSuccess("Cập nhật chuyên ngành lớn thành công", "Success");
+                            Navigation.NavigateTo("/manageSpecializedCP");
+                            this.StateHasChanged();
+                        }
+                    }
+                }
+                else
+                {
+                    var result = await _specializedCPRepo.Update(Guid.Empty, Guid.Parse(id), request);
+
+                    if (result != 1)
+                    {
+                        ToastService.ShowError("Cập nhật chuyên ngành lớn thất bại", "Error");
+                        Navigation.NavigateTo($"/updateSpecializedCP/{id}");
+                    }
+                    else
+                    {
+                        ToastService.ShowSuccess("Cập nhật chuyên ngành lớn thành công", "Success");
+                        Navigation.NavigateTo("/manageSpecializedCP");
+                        this.StateHasChanged();
+                    }
+                }
+            }
+
+        }
+        else if (_parentId != Guid.Empty)
+        {
+            if (request.SpecializedCode != _specializedCP.SpecializedCode)
+            {
+                if (lstSpecializedCP.FirstOrDefault(x => x.SpecializedCode == request.SpecializedCode && x.Id == _parentId) == null)
+                {
+                    var temp = lstSpecializedCP.FirstOrDefault(x => x.SpecializedCode == request.SpecializedCode && x.Level == 1 && x.IdSpeciality == _parentId);
+
+                    if (temp != null)
+                    {
+                        ToastService.ShowError("Mã chuyên ngành đã tồn tại", "Error");
+                        Navigation.NavigateTo($"/updateSpecializedCP/{id}");
+                    }
+                    else
+                    {
+                        var result = await _specializedCPRepo.Update(_parentId, Guid.Parse(id), request);
+
+                        if (result != 1)
+                        {
+                            ToastService.ShowError("Cập nhật chuyên ngành hẹp thất bại", "Error");
+                            Navigation.NavigateTo($"/updateSpecializedCP/{id}");
+                        }
+                        else
+                        {
+                            ToastService.ShowSuccess("Cập nhật chuyên ngành hẹp thành công", "Success");
+                            Navigation.NavigateTo("/manageSpecializedCP");
+                            this.StateHasChanged();
+                        }
+                    }
+                }
+                else
+                {
+                    ToastService.ShowError("Mã chuyên ngành hẹp không được trùng với chuyên ngành lớn", "Error");
+                }
+            }
+            else
+            {
+                var result = await _specializedCPRepo.Update(_parentId, Guid.Parse(id), request);
+
+                if (result != 1)
+                {
+                    ToastService.ShowError("Cập nhật chuyên ngành hẹp thất bại", "Error");
+                    Navigation.NavigateTo($"/updateSpecializedCP/{id}");
+                }
+                else
+                {
+                    ToastService.ShowSuccess("Cập nhật chuyên ngành hẹp thành công", "Success");
+                    Navigation.NavigateTo("/manageSpecializedCP");
+                    this.StateHasChanged();
+                }
+            }
+        }
+        else
+        {
+            ToastService.ShowError("Cập nhật chuyên ngành lớn thất bại", "Error");
+        }
+
+    }
+
+    public async void Undo()
+    {
+        _specializedCP = await _specializedCPRepo.GetbyId(Guid.Empty, Guid.Parse(id));
+        request.SpecializedCode = _specializedCP.SpecializedCode;
+        request.SpecializationName = _specializedCP.SpecializationName;
+        request.Status = _specializedCP.Status;
+        request.Image = _specializedCP.Image;
+        _level = _specializedCP.Level;
+        image = _specializedCP.Image;
+        if (_specializedCP.IdSpeciality != null)
+        {
+            var pID = _specializedCP.IdSpeciality.ToString();
+            _parentId = Guid.Parse(pID);
+        }
+
+    }
+    private void AssignImageUrl(string imgUrl)
+    {
+        request.Image = imgUrl;
+    }
+}

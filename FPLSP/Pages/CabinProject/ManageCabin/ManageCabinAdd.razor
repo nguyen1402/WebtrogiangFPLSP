@@ -1,0 +1,104 @@
+﻿
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces.CabinProject
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.Cabin
+@inject IDialogService DialogService
+@if (ShowConfirmation)
+{
+
+    <div class="modal fade show d-block" id="exampleModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <EditForm Model="cabinCreateViewModel" class="card card-body bg-light">
+                        <DataAnnotationsValidator />
+                        <h6>Tạo mới Cabin</h6>
+                        <div class="form-group">
+                            <div class="row">
+                                <div class="form-group pt-2 col-md-6 ">
+                                    <label class="form-label" style="color:black">Tên Cabin:</label>
+                                    <div class="text-danger">
+                                        <InputText class="form-control" @bind-Value="cabinCreateViewModel.CabinName"></InputText>
+                                        <ValidationMessage For="()=>cabinCreateViewModel.CabinName"></ValidationMessage>
+                                    </div>
+                                </div>
+                                <div class="form-group pt-2 col-md-6 ">
+                                    <label class="form-label" style="color:black">Tòa:</label>
+                                    <div class="text-danger">
+                                        <InputText class="form-control" @bind-Value="cabinCreateViewModel.BuildingName"></InputText>
+                                        <ValidationMessage For="()=>cabinCreateViewModel.BuildingName"></ValidationMessage>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="d-flex justify-content-center mb-2">
+                                    <div class="p-2">
+                                        <button @onclick="()=> Add()" class="btn btn-success">Tạo mới</button>
+                                    </div>
+                                    <div class="p-2">
+                                        <button class="btn btn-danger" @onclick="()=>OnConfirmationChange(false)">Hủy</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public EventCallback<bool> OnAdd { get; set; }
+
+
+    CabinCreateViewModel cabinCreateViewModel = new CabinCreateViewModel();
+    protected async Task OnConfirmationChange(bool value)
+    {
+        ShowConfirmation = false;
+        await OnAdd.InvokeAsync(value);
+
+    }
+    [Inject] private IToastService _toastService { get; set; }
+    [Inject] private CryptoServices cryptoServices { get; set; }
+    [Inject] private ICabinRepo cabin { get; set; }
+    [Parameter] public string IdTrain { get; set; }
+    public bool ShowConfirmation { get; set; }
+    private async void Add()
+    {
+        var cb = await cabin.GetAllCabinAsync();
+        cb = cb.Where(x => x.CabinName == cabinCreateViewModel.CabinName && x.BuildingName == cabinCreateViewModel.BuildingName).ToList();
+        if (cb.Count > 0)
+        {
+            _toastService.ShowError($"Cabin {cabinCreateViewModel.CabinName} đã tồn tại");
+            cabinCreateViewModel.BuildingName = "";
+            cabinCreateViewModel.CabinName = "";
+            return;
+        }
+        if (cabinCreateViewModel.CabinName == "" || cabinCreateViewModel.CabinName == null || cabinCreateViewModel.BuildingName == "" || cabinCreateViewModel.BuildingName == null)
+        {
+            return;
+        }
+
+        IdTrain = IdTrain.Replace("cabin", "/");
+        IdTrain = cryptoServices.Decrypt(IdTrain);
+        cabinCreateViewModel.IdTrainingFacility = Guid.Parse(IdTrain);
+        var check = await cabin.CreateCabin(cabinCreateViewModel);
+        if (check)
+        {
+            cabinCreateViewModel.BuildingName = "";
+            cabinCreateViewModel.CabinName = "";
+            _toastService.ShowSuccess("Thêm mới cabin thành công");
+            await OnConfirmationChange(true);
+        }
+    }
+    public void show()
+    {
+        ShowConfirmation = true;
+        StateHasChanged();
+    }
+
+}

@@ -1,0 +1,204 @@
+﻿@page "/updatesubjetc/{idsubject}/{idspecialized}"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Subject
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+<div class="row pt-3">
+    <h3>Cập Nhật Môn </h3>
+        <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/SpecializedCP">Chuyên ngành</a></li>
+            <li class="breadcrumb-item"><a href="/subjects/@idspecialized">@namespecialized</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Cập nhật môn học</li>
+    </ol>
+</nav>
+    @if (subject != null)
+    {
+        @if (ShowAuthError)
+        {
+            <div class="alert alert-danger" role="alert">
+                @Error
+            </div>
+        }
+        <EditForm Model="subject" OnValidSubmit="Update" class="card card-body bg-light">
+            <DataAnnotationsValidator />
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-2 pt-4">
+                        <div class="row">
+                            <img src="@subject.Image" onerror="this.src='./css/images/Others/logoFPT.png'" width=195px height=232px style="object-fit:contain">
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="image" class="col-12 col-form-label">Hình Ảnh:</label>
+                                @if (@image != null)
+                                {
+                                    <div class="col-12">
+                                        <ImageUpload OnChange="AssignImageUrl" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="col-12">
+                                        <ImageUpload OnChange="AssignImageUrl" />
+                                    </div>
+                                }
+
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="col-10 pt-1">
+                        <div class="row">
+                            <div class="form-group pt-2 col-6">
+                                <label for="name" class="col-2 col-form-label">Mã Môn:</label>
+                                <div class="col-12">
+                                    <InputText id="name" class="form-control" @bind-Value="subject.SubjectCode" disabled />
+                                    <ValidationMessage For="@(() => subject.SubjectCode)" />
+                                </div>
+                            </div>
+                            <div class="form-group pt-2 col-6">
+                                <label for="name" class="col-2 col-form-label">Tên Môn:</label>
+                                <div class="col-12">
+                                    <InputText id="name" class="form-control" @bind-Value="subject.SubjectName" />
+                                    <div class="text-danger"><ValidationMessage For="@(() => subject.SubjectName)" /></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group pt-2 col-6">
+                                <label for="name" class="col-2 col-form-label">Số buổi:</label>
+                                <div class="col-12">
+                                    <InputNumber min=10 max=29 id="name" class="form-control" @bind-Value="subject.TotalOfSub" />
+                                    <ValidationMessage For="@(() => subject.TotalOfSub)" />
+                                </div>
+                            </div>
+                            <div class="form-group pt-2 col-6">
+                                <label for="name" class="col-3 col-form-label">Trạng thái:</label>
+                                <div class="col-12">
+                                    <InputSelect @bind-Value="subject.Status" class="form-select">
+                                        <option value="0">Không hoạt động</option>
+                                        <option value="1">Đang hoạt động</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group pt-2 col-12">
+                                <label for="name" class="col-3 col-form-label">Môn chính/Môn mẫu:</label>
+                                <div class="col-12">
+                                    <InputSelect @bind-Value="subject.IsDemo" class="form-select">
+                                        <option value="false">Môn chính</option>
+                                        <option value="true">Môn mẫu</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="row">
+                                    <div class="col-3">
+                                    </div>
+                                    <div class="col-6 mt-2 pt-4" style="text-align:center">
+                                        <button type="submit" class="btn btn-primary me-2">Cập Nhật</button>
+                                        <button type="button" class="btn btn-outline-success me-2" @onclick="KhoiPhuc">Khôi Phục</button>
+                                        <a href="/subjects/@idspecialized.ToString()" class="btn btn-outline-danger">Quay Lại</a>
+                                    </div>
+                                    <div class="col-3">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </EditForm>
+
+    }
+</div>
+
+@code{
+    private SubjectUpdateVM subject;
+        private SubjectDto undosubject;
+
+        [Inject]
+        public NavigationManager Navigation { get; set; }
+
+        [Inject]
+        ISubjectClient _iSubjectClient { get; set; }
+
+        public bool ShowAuthError { get; set; }
+        [Parameter]
+        public string Error { get; set; }
+        [Parameter]
+        public string image { get; set; }
+
+        [Parameter]
+
+        public string idsubject { get; set; }
+        [Parameter]
+
+        public string idspecialized { get; set; }
+        [Inject] private IToastService _toastService { get; set; }
+        [Inject]
+        public ISpecializedCPRepo _iSpecialized { get; set; }
+        public SpecializedDto specializedDto = new SpecializedDto();
+        string namespecialized { get; set; }
+        protected async override Task OnInitializedAsync()
+        {
+        specializedDto = await _iSpecialized.GetbyId(Guid.Empty, Guid.Parse(idspecialized));
+        namespecialized = specializedDto.SpecializationName;
+            var subjectdb = await _iSubjectClient.GetSubjectbyId(Guid.Parse(idsubject));
+            subject = new SubjectUpdateVM()
+            {
+                SubjectCode = subjectdb.SubjectCode,
+                SubjectName = subjectdb.SubjectName,
+                TotalOfSub = subjectdb.TotalOfSub,
+                Image = subjectdb.Image,
+                Status = subjectdb.Status,
+                IsDemo=subjectdb.IsDemo,
+                StartDay = subjectdb.StartDay,
+                EndDay = subjectdb.EndDay,
+            };
+            undosubject = subjectdb;
+            image = subjectdb.Image;
+
+
+        }
+        private async Task Update()
+        {
+            var result = await _iSubjectClient.UpdateSubject(Guid.Parse(idsubject), subject);
+            if (result != 1)
+            {
+                _toastService.ShowError("Lỗi! Vui lòng thử lại");
+                Navigation.NavigateTo($"/updatesubjetc/" + idsubject + "/" + idspecialized);
+            }
+            else
+            {
+                _toastService.ShowSuccess("Cập nhật thành công");
+                Navigation.NavigateTo($"/subjects/" + idspecialized);
+
+            }
+        }
+        private void AssignImageUrl(string Image) => subject.Image = Image;
+
+        private async void KhoiPhuc()
+        {
+            if (image != subject.Image)
+            {
+                image = null;
+            }
+            subject.SubjectCode = undosubject.SubjectCode;
+            subject.SubjectName = undosubject.SubjectName;
+            subject.TotalOfSub = undosubject.TotalOfSub;
+            subject.Image = undosubject.Image;
+            subject.Status = undosubject.Status;
+            subject.IsDemo=undosubject.IsDemo;
+        }
+}
+

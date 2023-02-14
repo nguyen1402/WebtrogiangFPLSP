@@ -1,0 +1,96 @@
+﻿@page "/pdfviewer"
+@using System.Timers;
+@using AntDesign
+@using Microsoft.AspNetCore.Components.ProtectedBrowserStorage;
+
+
+@inject ProtectedSessionStorage protectedSessionStorage
+@inject SweetAlertService Swal;
+@inject IJSRuntime JS
+<div class="btn-container">
+    <button class="tired">
+        <span class="text">Hover</span>
+        <div class="icon-container">
+            <div class="icon icon--left">
+                <svg>
+                    <use xlink:href="#arrow-right"></use>
+                </svg>
+            </div>
+            <div class="icon icon--right">
+                <svg>
+                    <use xlink:href="#arrow-right"></use>
+                </svg>
+            </div>
+        </div>
+    </button>
+</div>
+
+
+@code
+{
+    double size = 8;
+    [Parameter]
+    public RenderFragment childcontent { get; set; }
+    public string username;
+    public string IdUser;
+    public string Image;
+    private SliderMark[] nMarks =
+    {
+            new SliderMark(0, "0p"),
+            new SliderMark(5, "5p"),
+            new SliderMark(15, "15p"),
+            new SliderMark(25, "25p"),
+            new SliderMark(45, "45p")
+
+     };
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+
+        //await protectedSessionStorage.SetAsync("UserName", userAuthen.Email);
+        //await protectedSessionStorage.SetAsync("IdUser", userAuthen.Id);
+        //await protectedSessionStorage.SetAsync("Image", imageUser);
+        //await protectedSessionStorage.SetAsync("userAuthen", userAuthen);
+        ////
+        //ProtectedBrowserStorageResult<string> getid = await protectedSessionStorage.GetAsync<string>("IdUser");
+        //ProtectedBrowserStorageResult<string> getuername = await protectedSessionStorage.GetAsync<string>("UserName");
+        //ProtectedBrowserStorageResult<string> getimage = await protectedSessionStorage.GetAsync<string>("Image");
+        //ProtectedBrowserStorageResult<UserSignIn> realuser = await protectedSessionStorage.GetAsync<UserSignIn>("userAuthen");
+        //if (getuername.Success)
+        // {
+        //     fistusername = getuername.Value;
+        // }
+        // if (getid.Success)
+        // {
+        //     fistusername = getuername.Value;
+        // }
+        // if (getimage.Success)
+        // {
+        //     imageUser = getimage.Value;
+        // }
+        // if (realuser.Success)
+        // {
+        //     userAuthen = realuser.Value;
+        // }
+
+    }
+    private async Task OnChangeValueTask()
+    {
+        
+    }
+    private async Task SetItem()
+    {
+        await JS.InvokeVoidAsync("localStorage.setItem", "thuyen", "leanthuyen");
+    }
+    private async Task GetIten()
+    {
+        username= await JS.InvokeAsync<string>("localStorage.getItem", "thuyen");
+    }
+    private async Task Xoa()
+    {
+        await JS.InvokeVoidAsync("localStorage.removeItem", "thuyen");
+    }
+}
+
+   
+
+

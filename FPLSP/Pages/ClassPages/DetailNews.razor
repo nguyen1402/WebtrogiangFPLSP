@@ -1,0 +1,25 @@
+﻿@page "/detailNews/{idNews}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.NewFeed
+@attribute [Authorize(Roles = "Student")]
+<h3>Chi tiết thông báo</h3>
+
+@code {
+    [Parameter]
+    public string idNews { get; set; }
+
+    [Inject]
+    private INewFeedRepo _newFeedRepo { get; set; }
+
+    List<NewFeedOverView> _lstNews { get; set; }
+
+    public DetailNews()
+    {
+        _lstNews = new List<NewFeedOverView>();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        //_lstNews = await _newFeedRepo
+    }
+}

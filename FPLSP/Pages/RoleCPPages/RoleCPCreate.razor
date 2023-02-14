@@ -1,0 +1,118 @@
+﻿@page "/createrolecp"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.RoleCPVm
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<h3>TẠO MỚI CHỨC VỤ</h3>
+
+<EditForm Model="@request" OnValidSubmit="@Create" class="card card-body bg-light mt-5" id="create-form">
+    <DataAnnotationsValidator />
+    <div class="form-group">
+        <div class="row">
+            <div class="form-group pt-2 col-md-6">
+                <label for="name" class="col-md-4 col-form-label">Mã Chức Vụ:</label>
+                <div class="col-md-10">
+                    <input id="name" class="form-control" value="@_codeNew" disabled />
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-6">
+                <label for="name" class="col-md-4 col-form-label">Tên Chức Vụ:</label>
+                <div class="col-md-10">
+                    <InputText id="name" class="form-control" @bind-Value="@request.RoleName" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.RoleName)" /></div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-6">
+                <label for="Status"><b>Trạng thái</b></label>
+                <div class="col-md-10">
+                    <InputSelect class="form-select" @bind-Value="status">
+                        <option value="0">Hoạt động</option>
+                        <option value="1">Không hoạt động</option>
+                    </InputSelect>
+                                <div class="text-danger"><ValidationMessage For="@(() => request.Status)" /></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row pt-4">
+        <div class="col-md-12 mt-2 pt-4 text-center">
+            <button type="submit" class="btn btn-primary" form="create-form">Thêm Mới</button>
+            <a class="btn btn-outline-success ms-2" @onclick="() => clearForm()">Làm Mới</a>
+            <a class="btn btn-outline-danger ms-2" href="/rolecp">Quay Lại</a>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    
+        [Inject]
+        public IRoleCPRepo _roleCPRepo { get; set; }
+        [Inject] public NavigationManager Navigation { get; set; }
+
+        private string _codeNew { get; set; }
+        public string _error { get; set; }
+        public string status { get; set; } = "1";
+
+        private RoleCPRequest request = new RoleCPRequest();
+        [Inject]
+        public IToastService ToastService { get; set; }
+
+        protected override async Task OnInitializedAsync()
+        {
+
+            var maxCodeLecturer = await _roleCPRepo.GetMaxCodeRole();
+            _codeNew = "CV" + (Convert.ToInt32(maxCodeLecturer.RoleCode.Substring(2, maxCodeLecturer.RoleCode.Length - 2)) + 1).ToString();
+            request.RoleCode = _codeNew;
+        }
+
+        private async Task Create()
+        {
+            request.Status = Convert.ToInt32(status);
+            bool check = true;
+            foreach (char c in request.RoleName)
+            {
+                if (!Char.IsLetter(c) && c.ToString() != " ")
+                    check = false;
+            }
+            if (check)
+            {
+                var lstRole = await _roleCPRepo.GetAllRoleAsync();
+                var data = lstRole.FirstOrDefault(x => x.RoleName == request.RoleName);
+                if (data == null)
+                {
+                    var result = await _roleCPRepo.CreateRole(request);
+                    if (result)
+                    {
+                        ToastService.ShowSuccess("Tạo chức vụ thành công", "Success");
+                        Navigation.NavigateTo($"/rolecp");
+                    }
+                    else
+                    {
+                        ToastService.ShowError("Tạo chức vụ thất bại", "Error");
+                        Navigation.NavigateTo($"/createrolecp");
+                    }
+                }
+                else
+                {
+                    ToastService.ShowError("Chức vụ đã tồn tại", "Error");
+                }
+            }
+            else
+            {
+                ToastService.ShowError("Tên không được chứa số và ký tự đặc biệt", "Error");
+            }
+
+
+
+        }
+
+
+        public void clearForm()
+        {
+            request.RoleName = null;
+            status = "1";
+        }
+}

@@ -1,0 +1,150 @@
+﻿@page "/redirecttoonlineroom/{GetIdUser}/{SecretKey}/{LastChecking}"
+@using AntDesign;
+@using FPLSP.Data.FPLExam;
+@using FPLSP.Repositories.Interfaces.FPLExam;
+@using FPLSP.Server.Domain.Entities.CoresParts;
+@using Microsoft.AspNetCore.Identity;
+@inject NavigationManager NavigationManager;
+@inject StateDelegateAcceptTojoin checkingsateuser;
+@inject SweetAlertService Swal;
+@implements IDisposable
+@inject NotificationService _notice
+@inject StateDelegateAcceptTojoin checkingsateuser;
+@inject AuthenticationStateProvider AuthenticationStateProvider;
+<div class="loading">
+    <div class="loading-texter">
+        <span class="loading-texter-words">F</span>
+        <span class="loading-texter-words">P</span>
+        <span class="loading-texter-words">L</span>
+        &nbsp;
+        <span class="loading-texter-words">E</span>
+        <span class="loading-texter-words">X</span>
+        <span class="loading-texter-words">A</span>
+        <span class="loading-texter-words">M</span>
+    </div>
+
+</div>
+@if (!string.IsNullOrEmpty(checkingsateuser.SelectedIdUser) || !string.IsNullOrEmpty(checkingsateuser.DeclineIdUser))
+{
+    <div class="loading">
+        <div class="loading-texter">
+            <span class="loading-texter-words">L</span>
+            <span class="loading-texter-words">O</span>
+            <span class="loading-texter-words">A</span>
+
+            <span class="loading-texter-words">D</span>
+            <span class="loading-texter-words">I</span>
+            <span class="loading-texter-words">N</span>
+            <span class="loading-texter-words">D</span>
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string LastChecking { get; set; }
+    [Parameter]
+    public string SecretKey { get; set; }
+    [Inject] public UserManager<UserSignIn> _userManager { get; set; }
+    [Inject] public IOnlineExamRoomRepo _onlineExamRoomRepo { get; set; }
+    private int counter = 0;
+    private int gettingstatus;
+    private string getEmail;
+    [Parameter]
+    public string GetIdUser { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+
+        checkingsateuser.OnChange += OnMyChangeHandler;
+        //lấy ra id của thí sinh đó
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity.IsAuthenticated)
+        {
+            getEmail = user.Claims.ToList()[4].Value;
+            var getIdUser = user.Claims.ToList().LastOrDefault().Value;
+            checkingsateuser.SelectedIdUser = "";
+            checkingsateuser.DeclineIdUser = "";
+            if (!string.IsNullOrEmpty(checkingsateuser.SelectedIdUser))
+            {
+                var resupdate = await _onlineExamRoomRepo.FastChangingStatus(SecretKey, GetIdUser);
+                if (resupdate)
+                {
+
+                    var gettingstatus = await _onlineExamRoomRepo.FastGettingStatus(SecretKey, GetIdUser);
+                    NavigationManager.NavigateTo($"/onlineroomhandler/{SecretKey}/{GetIdUser}", true);
+                }
+            }
+            if (getIdUser != null)
+            {
+                gettingstatus = await _onlineExamRoomRepo.FastGettingStatus(SecretKey, GetIdUser);
+            }
+            if (LastChecking.ToLower() == "firstjoin")
+            {
+
+                NavigationManager.NavigateTo($"onlineroomhandler/{SecretKey}/{GetIdUser}", true);
+            }
+        }
+    }
+
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (!string.IsNullOrEmpty(checkingsateuser.SelectedIdUser))
+            {
+                var resupdate = await _onlineExamRoomRepo.FastChangingStatus(SecretKey, GetIdUser);
+                if (resupdate)
+                {
+
+                    NavigationManager.NavigateTo($"/onlineroomhandler/{SecretKey}/{GetIdUser}", true);
+                }
+            }
+            if (!string.IsNullOrEmpty(checkingsateuser.DeclineIdUser))
+            {
+
+                NavigationManager.NavigateTo($"/loadingpage/{GetIdUser}");
+            }
+            if (LastChecking == "waittingforaccpet")
+            {
+                var res = await _onlineExamRoomRepo.FastUpdateTurn(SecretKey, GetIdUser);
+
+
+            }
+
+        }
+        if (!string.IsNullOrEmpty(checkingsateuser.SelectedIdUser))
+        {
+            if (checkingsateuser.SelectedIdUser == GetIdUser)
+            {
+                var resupdate = await _onlineExamRoomRepo.FastChangingStatus(SecretKey, GetIdUser);
+                if (resupdate)
+                {
+
+                    NavigationManager.NavigateTo($"/onlineroomhandler/{SecretKey}/{GetIdUser}",true);
+                }
+               // checkingsateuser.OnChange -= OnMyChangeHandler;
+            }
+           
+          
+        }
+        if (!string.IsNullOrEmpty(checkingsateuser.DeclineIdUser))
+        {
+            
+            NavigationManager.NavigateTo($"/loadingpage/{GetIdUser}");
+        }
+
+    }
+    public async void OnMyChangeHandler(object sender, EventArgs args)
+    {
+        // notify the UI that the state has changed
+        await InvokeAsync(() => StateHasChanged());
+    }
+
+    public void Dispose()
+    {
+      //  checkingsateuser.OnChange -= OnMyChangeHandler;
+    }
+}

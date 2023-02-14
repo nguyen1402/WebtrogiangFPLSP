@@ -1,0 +1,109 @@
+﻿@page "/StudentUPDetails/{Id:guid}"
+@using FPLSP.Server.Domain.Dtos.StudentUPDtos
+@using FPLSP.Repositories.Interfaces
+@attribute [Authorize(Roles = "LecturerFPLSP")]
+<h3>Thông tin sinh viên</h3>
+
+@if (student != null)
+{
+    <div class="form-group">
+        <div class="row">
+            <div class="form-group pt-2 col-md-12">
+                <div class="row pt-2 col-md-1 text-center">
+                    <a href="/StudentUPList" class="btn btn-outline-danger">Quay Lại</a>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-12">
+            </div>   
+        </div>
+        <td><img src="@student.ImageUrl" onerror="this.src='./css/images/Others/logoFPT.png'" alt="product image" height=190 width=170></td>
+
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Mã Sinh Viên: <b>@student.StudentCode</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Tên Sinh Viên: <b>@student.StudentName</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Giới tính: 
+                    @if(student.Gender == false)
+                    {
+                        <b>Nam</b>
+                    }else{
+                        <b>Nữ</b>
+                    }
+                </label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Ngày sinh: <b>@student.DateOfBirth.Day/@student.DateOfBirth.Month/@student.DateOfBirth.Year</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Email: <b>@student.Email</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Số điện thoại: <b>@student.PhoneNumber</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Địa chỉ: <b>@student.Address</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Dân tộc: <b>@student.Ethnic</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">CMT/CCCD: <b>@student.IdentityCardNumber</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Ngày cấp: <b>@student.IssuedOn.Day/@student.IssuedOn.Month/@student.IssuedOn.Year</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Tên Bố: <b>@student.FathersName</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Tên Mẹ: <b>@student.MotherName</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Mô tả: <b>@student.Description</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Trạng thái: 
+                    @if(student.Status == 0)
+                    {
+                        <b>Đang hoạt động</b>
+                    }else{
+                        <b>Ngưng hoạt động</b>
+                    }
+                </label>
+            </div>
+        </div>
+    </div>
+
+
+
+}
+@code
+{
+    public StudentUpDto student;
+    [Inject] public NavigationManager Navigation { get; set; }
+    [Inject] IStudentUPRepo _repo { get; set; }
+    [Parameter] public Guid Id { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        student = await _repo.GetStudentUPById(Id);
+    }
+}

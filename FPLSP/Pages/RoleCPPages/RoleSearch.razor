@@ -1,0 +1,48 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels.RoleCPVm
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+<EditForm Model="@roleCPListSearch" OnSubmit=@SearchForm>
+    <div class="row">
+        <div class="col">
+            <InputText placeholder="Tìm theo tên, mã" class="form-control" @bind-Value="roleCPListSearch.Name"></InputText>
+        </div>
+        <div class="col-4">
+            <InputSelect class="form-select" @bind-Value="status">
+                <option value="">Chọn trạng thái</option>
+                <option value="0">Hoạt động</option>
+                <option value="1">Không hoạt động</option>
+            </InputSelect>
+        </div>
+        <div class="col-4">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+                <a class="btn btn-outline-success ms-2" @onclick="() => clearSearch()">Làm mới</a>
+
+        </div>
+    </div>
+</EditForm>
+
+@code{
+    [Parameter]
+        public EventCallback<RoleCPListSearch> OnSearch { get; set; }
+        private RoleCPListSearch roleCPListSearch = new RoleCPListSearch();
+        public string status { get; set; } = "";
+        private async Task SearchForm(EditContext context)
+        {
+            if (status != "")
+            {
+                roleCPListSearch.Status = Convert.ToInt32(status);
+            }
+            else
+            {
+                roleCPListSearch.Status = null;
+            }
+            await OnSearch.InvokeAsync(roleCPListSearch);
+        }
+        public async void clearSearch()
+        {
+            roleCPListSearch.Name = "";
+            status = "";
+            roleCPListSearch = new RoleCPListSearch();
+            await OnSearch.InvokeAsync(roleCPListSearch);
+        }
+}

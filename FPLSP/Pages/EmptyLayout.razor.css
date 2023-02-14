@@ -1,0 +1,103 @@
+body {
+    font-size: calc(1em + 1vw)
+}
+/* Remove the navbar's default rounded borders and increase the bottom margin */
+/* .navbar {
+      margin-bottom: 50px;
+      border-radius: 0;
+    }
+
+    /* Remove the jumbotron's default bottom margin */
+.jumbotron {
+    margin-bottom: 0;
+    background-color: #ffffff;
+}
+
+/* .container{
+    	width: 960px;
+    	line-height: 0.8;
+
+    } */
+a.linkopacity img {
+    opacity: 0.5;
+}
+
+
+a.linkopacity:hover img {
+    opacity: 1.0;
+}
+
+/* Add a gray background color and some padding to the footer */
+footer {
+ 
+    background-color: #283054;
+    line-height: 1;
+}
+
+    footer p {
+        color: white;
+        font-size: 1em;
+    }
+
+.footer-text__orange {
+    color: orange;
+}
+
+.campus-image p {
+    margin: 20px;
+    color: #004a80;
+    font-size: 0.6em;
+}
+
+.hovergallery img {
+    -webkit-transform: scale(0.8); /*Webkit: Scale down image to 0.8x original size*/
+    -moz-transform: scale(0.8); /*Mozilla scale version*/
+    -o-transform: scale(0.8); /*Opera scale version*/
+    -webkit-transition-duration: 0.5s; /*Webkit: Animation duration*/
+    -moz-transition-duration: 0.5s; /*Mozilla duration version*/
+    -o-transition-duration: 0.5s; /*Opera duration version*/
+    opacity: 0.7; /*initial opacity of images*/
+    margin: 0 10px 5px 0; /*margin between images*/
+}
+
+    .hovergallery img:hover {
+        -webkit-transform: scale(1.1); /*Webkit: Scale up image to 1.2x original size*/
+        -moz-transform: scale(1.1); /*Mozilla scale version*/
+        -o-transform: scale(1.1); /*Opera scale version*/
+        box-shadow: 0px 0px 30px gray; /*CSS3 shadow: 30px blurred shadow all around image*/
+        -webkit-box-shadow: 0px 0px 30px gray; /*Safari shadow version*/
+        -moz-box-shadow: 0px 0px 30px gray; /*Mozilla shadow version*/
+        opacity: 1;
+    }
+
+.col-xs-5ths, .col-sm-5ths, .col-md-5ths, .col-lg-5ths {
+    position: relative;
+    min-height: 1px;
+    padding-right: 10px;
+    padding-left: 10px;
+}
+
+.col-xs-5ths {
+    width: 20%;
+    float: left;
+}
+
+@media (min-width: 768px) {
+    footer p {
+        font-size: 0.8em;
+    }
+}
+
+@media (min-width: 992px) {
+    .col-md-5ths {
+        width: 20%;
+        float: left;
+    }
+}
+
+@media (min-width: 1200px) {
+    .col-lg-5ths {
+        width: 20%;
+        float: left;
+    }
+}

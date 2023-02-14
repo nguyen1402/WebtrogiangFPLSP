@@ -1,0 +1,301 @@
+﻿@page "/SpecializedCP/{maxlevelNonDecrpyt}/{IdCoSoNonDecrpyt}"
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Specialized
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<div class="row">
+    <h3>CHUYÊN NGÀNH</h3>
+</div>
+
+<div class="row pt-3">
+    <div class="col-md-5 float-end">
+        <a class="btn btn-outline-primary" @onclick="RedirectToManage">Quản lý Chuyên Ngành</a>
+    </div>
+    <div class="col-md-5 text-right">
+        <SpecializedCPListSearch OnSearch="SearchSpecializedCP"></SpecializedCPListSearch>
+    </div>
+    @*<div class="col-2 ps-3">
+    <div class="dropdown-center">
+    <button class="btn btn-info ps-4 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Chức Năng
+    </button>
+    <ul class="dropdown-menu">
+    <li><a class="dropdown-item" @onclick="() => DeleteAll()">Xóa</a></li>
+    </ul>
+    </div>
+    </div>*@
+</div>
+@if (_lstSpecializedCP == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <div class="row pt-3">
+        @if (_lstSpecializedCP.Count == 0)
+        {
+            <span>Danh sách chuyên ngành rỗng</span>
+        }
+        else
+        {
+            @foreach (var item in _lstSpecializedCP)
+            {
+                <div class="col-3" style="padding: 10px;">
+                    <div class="card text-bg-dark" style="border-top-right-radius: 30px">
+                        <div style="width:290px;">
+                            <p style="background-color: #ffe3e0;color: #e92727;margin: 0;padding: 10px 15px;font-weight: 650;font-size: 15px;border-top-right-radius: 30px"><i class="fa-solid fa-graduation-cap"></i> <b>@item.SpecializedCode</b> - @item.SpecializationName.ToUpper()</p>
+                        </div>
+                        <img src="@item.Image" onerror="this.src='./css/images/Others/logoFPT.png'" style="height:160px;object-fit:contain" class="card-img" alt="...">
+                        <div class="card-img-overlay d-flex align-items-end p-0">
+                            <div class="row">
+                                <div class="col-8 dropup-center dropup">
+                                    <button class="btn btn-danger dropdown-toggle" style="border-top-right-radius: 30px; font-size: smaller;width: 165px;background-color: #ec5528;color: #f5f5f5;" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        @item.SpecializationName
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        @*<li>
+                            <a class="dropdown-item" style="font-size: 14px;font-weight: bold;" @onclick="@(() => { NavigateToSubjectCP(item.Id); })"> @item.SpecializationName</a>
+                            </li>*@
+                                        @if (_lstAll.Where(x => x.IdSpeciality == item.Id).Count() > 0)
+                                        {
+                                            foreach (var x in _lstAll.Where(x => x.IdSpeciality == item.Id))
+                                            {
+                                                <li><a class="dropdown-item" style="font-size:small;" @onclick="@(() => { NavigateToSubjectCP(_cryptoServices.Encrypt((x.Id.ToString()))); })"><i class="fa-solid fa-graduation-cap"></i> @x.SpecializationName</a></li>
+                                            }
+                                        }
+                                        else
+                                        {
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+    <div class="footer text-muted">
+        <div class="row mt-3">
+
+            <span>
+                <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+            </span>
+
+        </div>
+    </div>
+}
+<Comfirmation ConfirmationMessage="Bạn có chắc muốn xóa chuyên ngành không?"
+              ConfirmationTitle="Xóa"
+              @ref="DeleteConfirmation"
+              ConfirmationChanged="OnConfirmationDelete"></Comfirmation>
+
+@code {
+    [Inject]
+    public ISpecializedCPRepo _specializedCPRepo { get; set; }
+    private List<SpecializedDto> _lstSpecializedCP = new List<SpecializedDto>();
+    private List<SpecializedDto> _lstAll = new List<SpecializedDto>();
+    [Inject] public IDashboardClient dashboardClient { get; set; }
+    [Parameter]
+    public string maxlevelNonDecrpyt { get; set; }
+    [Parameter]
+    public string IdCoSoNonDecrpyt { get; set; }
+
+    
+    private List<Guid> _removeSpecializedCP = new List<Guid>();
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+
+    [CascadingParameter]
+    private Error _error { get; set; }
+    public MetaData MetaData { get; set; } = new MetaData();
+    public SpecializedListSearch _specializedListSearch { get; set; } = new SpecializedListSearch();
+    protected Comfirmation DeleteConfirmation { get; set; }
+    private string deleteID { get; set; }
+    [Inject]
+    public IToastService ToastService { get; set; }
+    private bool Check = false;
+
+    string maxlevel = "";
+    string IdCoSo = "";
+    protected override async Task OnInitializedAsync()
+    {
+        maxlevel = _cryptoServices.Decrypt(maxlevelNonDecrpyt.Replace("I0H", "/"));
+        IdCoSo = _cryptoServices.Decrypt(IdCoSoNonDecrpyt.Replace("I0H", "/"));
+        _lstAll = await _specializedCPRepo.GetAll();
+        _lstAll = _lstAll.Where(x => x.Level != 0 && x.Status == 0).ToList();
+        await GetSpecializedCPList();
+    }
+    private async Task SelectedPage(int page)
+    {
+        _specializedListSearch.PageNumber = page;
+        Check = false;
+        await GetSpecializedCPList();
+    }
+    public async Task SearchSpecializedCP(SpecializedListSearch search)
+    {
+        _specializedListSearch = search;
+        await GetSpecializedCPList();
+    }
+    private async Task GetSpecializedCPList()
+    {
+        try
+        {
+
+            if (maxlevel == "6")
+            {
+                var pagingResponse = await dashboardClient.GetAllSpecByIdTran(Guid.Parse(IdCoSo), _specializedListSearch);
+                _lstSpecializedCP = pagingResponse.Items;
+                _lstSpecializedCP = _lstSpecializedCP.OrderBy(x => x.SpecializedCode).ToList();
+                MetaData = pagingResponse.MetaData;
+            }
+            else
+            {
+                var pagingResponse = await _specializedCPRepo.Gets(Guid.Empty, _specializedListSearch);
+                _lstSpecializedCP = pagingResponse.Items;
+                _lstSpecializedCP = _lstSpecializedCP.OrderBy(x => x.SpecializedCode).ToList();
+                MetaData = pagingResponse.MetaData;
+
+            }
+
+        }
+        catch (Exception ex)
+        {
+
+            _error.ProcessError(ex);
+        }
+    }
+    public void OnDelete(Guid id)
+    {
+        deleteID = id.ToString();
+        DeleteConfirmation.show();
+    }
+
+    public async Task OnConfirmDelete(bool deleteConfirmed)
+    {
+        if (deleteConfirmed)
+        {
+            var result = await _specializedCPRepo.Delete(Guid.Empty, Guid.Parse(deleteID));
+            if (result == 1)
+            {
+                ToastService.ShowSuccess("Đổi trạng thái chuyên ngành thành công", "Success");
+                await GetSpecializedCPList();
+            }
+            else
+            {
+                ToastService.ShowError("Đổi trạng thái chuyên ngành thất bại", "Error");
+            }
+        }
+    }
+
+    void CheckManual(Guid reportId, bool check)
+    {
+        if (check == true)
+        {
+            foreach (var x in _lstSpecializedCP.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in _lstSpecializedCP.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    void DeleteAll()
+    {
+        _removeSpecializedCP = _lstSpecializedCP.Where(c => c.IsChecked == true).Select(c => c.Id).ToList();
+        DeleteConfirmation.show();
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            _lstSpecializedCP.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            _lstSpecializedCP.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (deleteconfirmed && deleteID == null && _removeSpecializedCP.Count == 0)
+        {
+            ToastService.ShowError("Bạn chưa chọn đối tượng để xóa");
+            await GetSpecializedCPList();
+            NavigationManager.NavigateTo($"/SpecializedCP/{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H" )}/{_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H" )}");
+        }
+        else if (deleteconfirmed && deleteID != null)
+        {
+            var result = await _specializedCPRepo.Delete(Guid.Empty, Guid.Parse(deleteID));
+            if (result == 1)
+            {
+                ToastService.ShowSuccess("Xóa thành công");
+                deleteID = null;
+                await GetSpecializedCPList();
+                NavigationManager.NavigateTo($"/SpecializedCP/{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H")}/{_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+            }
+            else
+            {
+                ToastService.ShowError("Xóa thất bại");
+                deleteID = null;
+                await GetSpecializedCPList();
+                NavigationManager.NavigateTo($"/SpecializedCP/{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H")}/{_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+            }
+        }
+        else if (deleteconfirmed && _removeSpecializedCP != null)
+        {
+
+            //var result = await _specializedCPRepo.RemoveSpecializedCP(_removeSpecializedCP);
+            //if (result)
+            //{
+            //    ToastService.ShowSuccess("Xóa thành công");
+            //    deleteID = null;
+            //    _removeSpecializedCP = null;
+            //    await GetSpecializedCPList();
+            //    NavigationManager.NavigateTo($"/SpecializedCP");
+            //}
+            //else
+            //{
+            //    ToastService.ShowError("Xóa thất bại");
+            //    deleteID = null;
+            //    _removeSpecializedCP = null;
+            //    await GetSpecializedCPList();
+            //    NavigationManager.NavigateTo($"/SpecializedCP");
+            //}
+        }
+        else
+        {
+            deleteID = null;
+            _removeSpecializedCP = null;
+        }
+        Check = false;
+    }
+
+    private void RedirectToCreate()
+    {
+        NavigationManager.NavigateTo($"/createSpecializedCP?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+    }
+    private void NavigateToUpdate(Guid id)
+    {
+        NavigationManager.NavigateTo($"/updateSpecializedCP/{id}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+    }
+    private void RedirectToManage()
+    {
+        NavigationManager.NavigateTo($"/manageSpecializedCP?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+    }
+    private void NavigateToSubjectCP(string id)
+    {
+        var a = id.Replace("/", "I0H");
+        NavigationManager.NavigateTo($"/subjects/{a}?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+    }
+}

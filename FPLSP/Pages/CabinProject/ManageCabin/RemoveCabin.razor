@@ -1,0 +1,89 @@
+﻿@using FPLSP.Repositories.Interfaces
+@using FPLSP.Repositories.Interfaces.CabinProject
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.BookingCabin
+@if (ShowConfirmation)
+{
+    <div class="modal fade show d-block" id="exampleModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">@ConfirmationTitle</h5>
+                  
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                        @onclick="() => OnConfirmationChange(false)">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    @ConfirmationMessage
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                        @onclick="() => OnConfirmationChange(false)">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger"
+                        @onclick="() => Delete()">
+                        Xác nhận
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<ConfirmRemoveCabin ConfirmationMessage="Danh sách giáo viên đang book Cabin? "
+                    ConfirmationTitle="Xác nhận xóa Cabin"
+                    ConfirmationChanged="OnConfirmationDelete " @ref="DeleteConfirmation"></ConfirmRemoveCabin>
+
+
+
+
+@code {
+    [Inject] NavigationManager _navigationManager { get; set; }
+    protected bool ShowConfirmation { get; set; }
+
+    [Parameter]
+    public string ConfirmationTitle { get; set; } = "Confirm Delete";
+
+    [Parameter]
+    public string ConfirmationMessage { get; set; } = "Are you sure you want to delete";
+
+    [Parameter]
+    public EventCallback<bool> ConfirmationChanged { get; set; }
+    protected ConfirmRemoveCabin DeleteConfirmation { get; set; }
+    List<string> nameLec = new List<string>();
+    [Inject] private IBookingCabinApiClient _bookingCabinApiClient { get; set; }
+    [Inject] private ILecturersCPRepo lecturersCPRepo { get; set; }
+    Guid IdCabin;
+    public async Task show(Guid Id)
+    {
+        IdCabin = Id;
+        ShowConfirmation = true;
+        StateHasChanged();
+    }
+    public async Task Delete()
+    {
+      await DeleteConfirmation.show(IdCabin);
+    }
+    protected async Task OnConfirmationChange(bool value)
+    {
+
+        ShowConfirmation = false;
+        await ConfirmationChanged.InvokeAsync(value);
+
+    }
+    private async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (!deleteconfirmed)
+        {
+            ShowConfirmation = false;
+            await OnConfirmationChange(false);
+        }
+        else
+        {
+            await OnConfirmationChange(true);
+        }
+    }
+}
+

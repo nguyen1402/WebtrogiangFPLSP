@@ -1,0 +1,114 @@
+﻿@page "/lectuterSpecializedUpdate/{id}/{idBo}/{Idspecialized}/{Idlecturers}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.LectuterSpecializedCP
+@attribute [Authorize(Roles = "AdminCS")]
+@if (lessonContent != null)
+{
+    <div class="row pt-3">
+        @if (ShowAuthError)
+        {
+            <div class="alert alert-danger" role="alert">
+                @Error
+            </div>
+        }
+        <EditForm Model="lessonContent" OnValidSubmit="Update" class="card card-body bg-light mt-5">
+            <DataAnnotationsValidator />
+            <div class="form-group row pt-2">
+                <label for="name" class="col-md-2 col-form-label">Giảng Viên:</label>
+                <div class="col-md-10">
+                    <InputText id="name" class="form-control" @bind-Value="lessonContent.Email" disabled />
+                    <ValidationMessage For="@(() => lessonContent.Email)" />
+                </div>
+            </div>
+            <div class="form-group row pt-2">
+                <label for="name" class="col-md-2 col-form-label">Chuyên ngành hẹp:</label>
+                <div class="col-md-10">
+                    <InputText id="name" class="form-control" @bind-Value="lessonContent.SpecializedName" disabled />
+                    <ValidationMessage For="@(() => lessonContent.SpecializedName)" />
+                </div>
+            </div>
+
+            <div class="form-group row pt-2">
+                <label for="name" class="col-md-2 col-form-label">Trạng thái:</label>
+                <div class="col-md-10">
+                    <InputSelect @bind-Value="lessonContent.Status" class="form-control">
+                        <option value="0">Đang dạy</option>
+                        <option value="1">Ngừng dạy</option>
+                    </InputSelect>
+                </div>
+            </div>
+
+            <div class="row pt-2">
+                <div class="col-md-6 text-center">
+                    <button type="submit" class="btn btn-success">Cập nhật</button>
+                </div>
+                <div class="col-md-6 text-center">
+                    <a @onclick="()=>Quaylai()" class="btn btn-danger">Quay Lại</a>
+                </div>
+            </div>
+        </EditForm>
+
+    </div>
+}
+
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+    [Parameter]
+    public string idBo { get; set; }
+
+    [Parameter]
+    public string Idspecialized { get; set; }
+    [Parameter]
+    public string Idlecturers { get; set; }
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    public LectuterSpecializedCPUpdateVM lessonContent;
+    [Inject]
+    public ILectuterSpecializedCPCilents _iLessonContentClient { get; set; }
+
+    [Inject]
+    public ISpecializedCPRepo _iSpecializedClient { get; set; }
+
+    private List<SpecializedDto> lssp;
+
+    protected async override Task OnInitializedAsync()
+    {
+        var lessonContentdb = await _iLessonContentClient.GetbyId(Guid.Parse(Idspecialized), Guid.Parse(Idlecturers));
+        lessonContent = new LectuterSpecializedCPUpdateVM()
+            {
+                Email = lessonContentdb.Email,
+                SpecializedName = lessonContentdb.SpecializationName,
+                Status = lessonContentdb.Status
+            };
+        lssp = await _iSpecializedClient.GetAllAsync(Guid.Parse(idBo));
+
+    }
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+    private async Task Update()
+    {
+        ShowAuthError = false;
+        var result = await _iLessonContentClient.Update(Guid.Parse(Idspecialized), Guid.Parse(Idlecturers), lessonContent);
+        if (result != 1)
+        {
+            Error = "Lỗi";
+            var url = Path.Combine("/lectuterSpecializedUpdate", id, idBo, Idspecialized, Idlecturers);
+            ShowAuthError = true;
+            Navigation.NavigateTo(url);
+        }
+        else
+        {
+            var url = Path.Combine("/lectuterSpecialized", idBo, id);
+            Navigation.NavigateTo(url);
+        }
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/lectuterSpecialized", idBo, id);
+        Navigation.NavigateTo(url);
+    }}

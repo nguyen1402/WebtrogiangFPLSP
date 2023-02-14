@@ -1,0 +1,81 @@
+﻿@page "/quizQuesstionDetailsQuizCp/{idQuesstionNonDecrypt}/{idQuizNonDecrypt}/{idsubjectNonDecrypt}"
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+@if (CP != null)
+{
+    <div class="row pt-1">
+        <label for="name" class=" col-md-col-md-6 col-form-label">
+            Loại câu hỏi:
+            @CP.QuestionForm
+        </label>
+    </div>
+    <div class="row pt-1">
+        <label for="name" class=" col-md-col-md-6 col-form-label">Câu hỏi : <b>@CP.QuestionName</b></label>
+    </div>
+
+    <div class="row pt-1">
+        <label for="name" class=" col-md-col-md-6 col-form-label"> Đáp án :</label>
+        <div class="row">
+            <div class="col-md-3">
+                @if (CP.Answers.Count > 0)
+                {
+                    @foreach (var item in CP.Answers)
+                    {
+                        <div class="row">
+                            <b><i>@item</i></b>
+                        </div>
+                    }
+                }
+            </div>
+            <div class="col-md-3">
+                @if (CP.lsIsCorrect.Count > 0)
+                {
+                    @foreach (var item in CP.lsIsCorrect)
+                    {
+                        <div class="row">
+                            <b><i>@item</i></b>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+    <div class="row pt-2 col-md-1 text-center">
+        <a @onclick="()=>Quaylai()" class="btn btn-outline-danger">Quay Lại</a>
+    </div>
+
+}
+@code {
+    [Parameter]
+    public string idQuizNonDecrypt { get; set; }
+    public string idQuiz = "";
+    [Parameter]
+    public string idQuesstionNonDecrypt { get; set; }
+    public string idQuesstion = "";
+    [Parameter]
+    public string idsubjectNonDecrypt { get; set; }
+    public string idsubject = "";
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    [Inject]
+    public IQuizQuesstionQuizCPClient _iQuizQuesstionQuizCPClient { get; set; }
+
+    public QuizQuesstionQuizCPDto CP;
+    protected async override Task OnInitializedAsync()
+    {
+        idQuiz = _cryptoServices.Decrypt(idQuizNonDecrypt.Replace("I0H", "/"));
+        idQuesstion = _cryptoServices.Decrypt(idQuesstionNonDecrypt.Replace("I0H", "/"));
+        idsubject = _cryptoServices.Decrypt(idsubjectNonDecrypt.Replace("I0H", "/"));
+        CP = await _iQuizQuesstionQuizCPClient.GetbyId(Guid.Parse(idQuesstion));
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/quizQuesstionQuizCP", _cryptoServices.Encrypt((idQuiz).ToString()).Replace("/", "I0H") , _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H") );
+        Navigation.NavigateTo(url);
+    }
+}

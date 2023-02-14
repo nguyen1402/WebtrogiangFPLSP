@@ -1,0 +1,48 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels.TrainingFacilitiesCPVm
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+<EditForm Model="@trainingFacilitiesCPListSearch" OnSubmit=@SearchForm>
+    <div class="row">
+        <div class="col">
+            <InputText placeholder="Tìm tên, mã cơ sở đào tạo" class="form-control" @bind-Value="trainingFacilitiesCPListSearch.Name"></InputText>
+        </div>
+        <div class="col-3">
+            <InputSelect class="form-select" @bind-Value="status">
+                <option value="">Chọn trạng thái</option>
+                <option value="0">Hoạt động</option>
+                <option value="1">Không hoạt động</option>
+            </InputSelect>
+        </div>
+        <div class="col-4">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+                <a class="btn btn-outline-success ms-2" @onclick="() => clearSearch()">Làm mới</a>
+
+        </div>
+    </div>
+</EditForm>
+
+@code{    
+        [Parameter]
+        public EventCallback<TrainingFacilitiesCPListSearch> OnSearch { get; set; }
+        private TrainingFacilitiesCPListSearch trainingFacilitiesCPListSearch = new TrainingFacilitiesCPListSearch();
+        public string status { get; set; } = "";
+        private async Task SearchForm(EditContext context)
+        {
+            if (status != "")
+            {
+                trainingFacilitiesCPListSearch.Status = Convert.ToInt32(status);
+            }
+            else
+            {
+                trainingFacilitiesCPListSearch.Status = null;
+            }
+            await OnSearch.InvokeAsync(trainingFacilitiesCPListSearch);
+        }
+        public async void clearSearch()
+        {
+            trainingFacilitiesCPListSearch.Name = "";
+            status = "";
+            trainingFacilitiesCPListSearch = new TrainingFacilitiesCPListSearch();
+            await OnSearch.InvokeAsync(trainingFacilitiesCPListSearch);
+        }
+}

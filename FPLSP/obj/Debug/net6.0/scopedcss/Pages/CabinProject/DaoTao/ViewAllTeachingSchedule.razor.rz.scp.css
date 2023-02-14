@@ -1,0 +1,250 @@
+table[b-u6fzian4qd] {
+    margin: 0;
+    width: 100%;
+    /*    table-layout:fixed;
+*/ border-collapse: collapse;
+    overflow: hidden;
+    box-shadow: 10px -10px #3d82dd69;
+    background: linear-gradient(45deg, #0a58ca, #1890ff);
+}
+
+.baophong[b-u6fzian4qd] {
+    position: absolute;
+    height: 80vh;
+    top: 10vh;
+    right: 0;
+    overflow-x: hidden;
+    width: 42.8%;
+    overflow-y: auto;
+    background: #e5f5ff;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+th[b-u6fzian4qd],
+td[b-u6fzian4qd] {
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+th[b-u6fzian4qd], .shift[b-u6fzian4qd] {
+    background-color: rgba(129, 129, 129, 0.2);
+    text-align: left;
+}
+
+thead > th[b-u6fzian4qd] {
+    background-color: #55608f;
+}
+
+tbody > tr:hover[b-u6fzian4qd] {
+    background-color: rgba(131, 131, 131, 0.35) !important;
+    cursor: pointer;
+}
+
+tbody > td[b-u6fzian4qd] {
+    position: relative;
+}
+
+    tbody > td:hover[b-u6fzian4qd]:before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: -9999px;
+        bottom: -9999px;
+        background-color: rgba(131, 131, 131, 0.35) !important;
+        z-index: -1;
+    }
+
+table > tbody > tr > td[b-u6fzian4qd] {
+    padding: 10px;
+    font-size: 14px;
+    position: relative;
+}
+
+td:hover[b-u6fzian4qd]::after {
+    content: "";
+    position: absolute;
+    background-color: rgba(131, 131, 131, 0.4) !important;
+    left: 0;
+    top: -5000px;
+    height: 10000px;
+    width: 100%;
+    z-index: -1;
+}
+
+
+/*=======================Camera=======================*/
+
+.notification-modal-div .modal-content[b-u6fzian4qd] {
+    background-color: #fff;
+    color: black;
+    margin: auto;
+    padding-top: 20px;
+    border: 1px solid #888;
+    width: 550px;
+    border-radius: 5px;
+}
+
+.notification-modal-div[b-u6fzian4qd] {
+    /*font-family: 'RobotoDraft', 'Roboto', 'Helvetica Neue, Helvetica, Arial', sans-serif;*/
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 34%;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: #dfe4ea;
+    width: 500px;
+    height: 400px;
+    text-align: center;
+}
+
+.today-schedule[b-u6fzian4qd] {
+    background: #0056c9fc !important;
+    font-style: oblique;
+}
+
+/*List Cabin*/
+.roomRequest[b-u6fzian4qd] {
+    text-align: center;
+    padding: 0 10px;
+    color: #fff;
+    line-height: 40px;
+    width: 175px;
+    margin: 10px;
+    border-radius: 10px;
+    box-shadow: 0px 8px 15px #0a58ca52;
+    cursor: pointer;
+    background-color: #0a58ca9c;
+    font-weight: 700;
+    font-family: Helvetica,"sans-serif";
+    transition: all .2s;
+    padding: 10px 20px;
+    border-radius: 40px;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    font-size: 15px;
+}
+
+.roomRequest:hover[b-u6fzian4qd] {
+    background: #ffa502;
+}
+
+.roomRequest > h4[b-u6fzian4qd] {
+    width: 34px;
+    margin-left: 10px;
+    transition: transform .3s ease-in-out;
+}
+
+.roomRequest:hover h4[b-u6fzian4qd] {
+    transform: translateX(5px);
+}
+
+.roomRequest:active[b-u6fzian4qd] {
+    transform: scale(0.95);
+}
+
+/*Hủy phòng*/
+.container[b-u6fzian4qd] {
+    position: relative;
+    width: 190px;
+    height: fit-content;
+    margin-top: 30px;
+}
+
+.card[b-u6fzian4qd] {
+    position: relative;
+    width: 190px;
+    height: fit-content;
+    background: white;
+    padding: 16px;
+    border: 1px solid #232323;
+    transition: all .5s ease-in-out;
+}
+
+.card-hidden[b-u6fzian4qd] {
+    display: flex;
+    transform: translateY(200%);
+    flex-direction: column;
+    gap: .5rem;
+    transition: transform .5s ease-in, opacity .3s ease-in;
+    opacity: 0;
+}
+
+.card-border[b-u6fzian4qd] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 12px;
+    top: 0;
+    border: 1px dashed #232323;
+    border-radius: 8px;
+    z-index: -1;
+}
+
+.notice-room[b-u6fzian4qd] {
+    position: fixed;
+    height: 86%;
+    right: 10px;
+    overflow-x: hidden;
+    width: 42.8%;
+    overflow-y: auto;
+}
+
+.row[b-u6fzian4qd] {
+    display: flex;
+    justify-content: center;
+}
+
+.name-cabins[b-u6fzian4qd] {
+    text-align: center;
+    margin-top: 20px;
+    /*color: #f27125;*/
+}
+
+.hr-room[b-u6fzian4qd] {
+    background-color: #0a58ca;
+    margin: 10px;
+}
+
+/*Hovers*/
+.card[b-u6fzian4qd] {
+    transform: translate(-9px, -9px);
+    border-color: #5bc0eb;
+}
+
+.card:hover[b-u6fzian4qd] {
+    transform: translate(-12px, -12px);
+}
+
+.card .card-hidden[b-u6fzian4qd] {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.card .title[b-u6fzian4qd] {
+    transform: translateY(200%);
+}
+
+/*Text*/
+.title[b-u6fzian4qd] {
+    position: absolute;
+    bottom: 1rem;
+    color: #0a58ca9c;
+    transition: transform .25s ease-out;
+}
+
+/*Button*/
+.button[b-u6fzian4qd] {
+    padding: 8px;
+    background-color: #5bc0eb;
+    cursor: pointer;
+}
+
+.button:hover[b-u6fzian4qd] {
+    background-color: #53aed4;
+}

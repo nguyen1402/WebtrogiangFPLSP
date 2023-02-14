@@ -1,0 +1,138 @@
+﻿@page "/detailsubjectup/{id}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.LessonContentUP
+@using FPLSP.Server.Infrastructure.ViewModels.LessonUP
+@layout MainLayout2
+
+<div class="pad">
+    @if (subject != null)
+    {
+        <div class="row" style="box-sizing: border-box; padding: 20px; background-color: #fff">
+            <div class="col-lg-8">
+                <h3>Danh sách bài học</h3>
+
+                @if (ListLesson.Count != 0)
+                {
+                    @foreach (var ls in ListLesson)
+                    {
+                        <MudPaper Elevation="0">
+                            <MudTreeView T="string" ExpandOnClick="true" Hover="true">
+                                <MudTreeViewItem Value="@(ls.LessonName + " - " + @ls.Descriptions)" Icon="@Icons.Custom.Uncategorized.Folder">
+                                    @foreach (var list in listLessonContent)
+                                    {
+                                        if (list.Key == ls.Id)
+                                        {
+                                            foreach (var lc in list.Value)
+                                            {
+                                                <MudTreeViewItem Value="@(lc.LessonContentName)" Icon="@Icons.Custom.FileFormats.FileVideo">
+                                                    <a href="/getvideoUP/@id/@ls.Id/@lc.Id/9CF5A882-8F59-431F-98EA-0B767AC7EE60/@($"detailsubjectup=={id}")">
+                                                        <MudTreeViewItem Value="@("Video" +"-" +lc.LessonContentName)" />
+                                                    </a>
+                                                </MudTreeViewItem>
+                                            }
+                                        }
+                                    }
+                                </MudTreeViewItem>
+                            </MudTreeView>
+                        </MudPaper>
+                    }
+                }
+                else
+                {
+                    <div class="text-muted" style="text-align: left; margin: 0 auto;">Hiện chưa có bài học nào trong lớp</div>
+                }
+            </div>
+
+            <div class="col-lg-4" style="text-align: center; border: solid 1px; ">
+                <div style="background-color:darkorange; padding: 5px 0 5px 0;"><h3>Thông tin môn học</h3></div>
+                <img src="./css//images//Others//logoFPT.png" alt="Subject's' image" class="" style="height: 200px; width: 200px; object-fit: cover;padding-top: 10px;" />
+                <div>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <td>Mã Môn</td>
+                                <td>@subject.SubjectCode</td>
+                            </tr>
+                            <tr>
+                                <td>Tên Môn</td>
+                                <td>@subject.SubjectName</td>
+                            </tr>
+                            <tr>
+                                <td>Ngày Tạo</td>
+                                <td>@subject.CreatedDay</td>
+                            </tr>
+                            <tr>
+                                <td>Số buổi</td>
+                                <td>@subject.TotalOfSub</td>
+                            </tr>
+                            <tr>
+                                <td>Trạng Thái:</td>
+                                @if (subject.Status == 1)
+                                {
+                                    <td>Đang học</td>
+                                }
+                                else
+                                {
+                                    <td>Chưa bắt đầu</td>
+                                }
+
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code{
+    private SubjectDto subject;
+
+    [Inject]
+    private ISubjectUPRepo _subjectUPRepo { get; set; }
+    [Inject]
+    public ILessonUPRepo _iLessonClient { get; set; }
+    [Inject]
+    public ILessonContentUPRepo _iLessonContentRepo { get; set; }
+
+    [Parameter]
+    public string id { get; set; }
+    [Parameter]
+    public List<LessonUPViewModel> ListLesson { get; set; } = new List<LessonUPViewModel>();
+    public Dictionary<Guid, List<LessonContentUPViewModel>> listLessonContent = new Dictionary<Guid, List<LessonContentUPViewModel>>();
+
+    protected async override Task OnInitializedAsync()
+    {
+        subject = await _subjectUPRepo.GetSubjectbyId(Guid.Parse(id));
+        await GetListLesson();
+    }
+
+    private async Task GetListLesson()
+    {
+        try
+        {
+            ListLesson = await _iLessonClient.GetAll();
+            ListLesson = ListLesson.Where(c => c.SubjectId == Guid.Parse(id)).ToList();
+
+            foreach (var item in ListLesson)
+            {
+                listLessonContent.Add(item.Id, await GetLessonContents(item.Id));
+            }
+        }
+        catch (Exception ex)
+        {
+        }
+
+    }
+
+
+    private async Task<List<LessonContentUPViewModel>> GetLessonContents(Guid idLS)
+    {
+        var x = await _iLessonContentRepo.GetAll();
+        var result = x.Where(c => c.LessonId == idLS).ToList();
+        return result;
+    }
+
+}
+

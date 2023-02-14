@@ -1,0 +1,38 @@
+﻿@*@page "/detailsds/{idsj}/{id}/{idlesson}"*@
+
+@*
+<div class="row pt-3">
+@if (CP != null)
+{
+    <div class="row pt-1">
+        <label for="name" class=" col-md-6 col-form-label">Phầ n: <b>@CP.LessonContentCode - @CP.LessonContentName</b></label>
+    </div>
+    <div class="row pt-1">
+        <label for="name" class=" col-md-col-md-6 col-form-label">Nội dung: <b>@CP.Content</b></label>
+    </div>
+    <div class="row pt-1">
+        <label for="name" class=" col-md-col-md-6 col-form-label">Mô tả : <b>@CP.Descriptions</b></label>
+    </div>
+    <div class="row pt-1">
+        <label for="name" class=" col-md-col-md-6 col-form-label">Link <b>@CP.Path</b></label>
+    </div>
+    <div class="row pt-1">
+        <label for="name" class=" col-md-col-md-6 col-form-label"> Các link nội dung khác :
+            @if (CP.Path.Count >0)
+            {
+                @foreach (var item in CP.Path)
+                {
+                    <div class="row">
+                        <b><i>@item</i></b>
+                    </div>
+                }
+            }
+           
+        </label>
+    </div>
+    <div class="row pt-2 col-md-1 text-center">
+        <a @onclick="()=>Quaylai()" class="btn btn-outline-danger">Quay Lại</a>
+    </div>
+
+}
+</div>*@

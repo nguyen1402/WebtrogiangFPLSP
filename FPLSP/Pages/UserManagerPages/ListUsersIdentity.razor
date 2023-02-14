@@ -1,0 +1,440 @@
+﻿@page "/listuseriden/{maxlevelNonDecrpyt}/{IdCoSoNonDecrpyt}"
+@using Blazored.Toast.Services
+@using FPLSP.Data
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos.StudentUPDtos
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using FPLSP.Server.Infrastructure.ViewModels
+@using Microsoft.AspNetCore.Identity
+@using System.Security.Claims
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+<Spin Spinning=@IsShowLoading Delay=500 Tip="Loading........">
+
+</Spin>
+
+@if (_lstUsers != null)
+{
+    if (userRoleSearch.StatusNotRole == 1)
+    {
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-1" style="z-index: 1000;right: 25px;position: fixed;">
+            <a class="btn btn-outline-success" @onclick="AddAllUserNotRole"><i class="fa-solid fa-pen-to-square"></i></a>
+        </div>
+    }
+
+    <div class="row">
+
+        <EditForm class="row" Model="userRoleSearch" OnSubmit="SearchTask">
+            <div class="col-lg-3">
+                <InputSelect class="form-select" ValueExpression="@(()=>userRoleSearch.Role)" Value="@userRoleSearch.Role" ValueChanged="@((string? value)=> SearchRole(value))">
+                    <option value="">Các quyền</option>
+                    @foreach (var item in _lstRole)
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-lg-3">
+                <InputSelect class="form-select" ValueExpression="@(()=>userRoleSearch.StatusNotRole)" Value="@userRoleSearch.StatusNotRole" ValueChanged="@((int value)=> SearchStatsNotRole(value))">
+
+                    <option selected value="0">Tất cả quyền</option>
+                    <option value="1">Không quyền</option>
+                </InputSelect>
+            </div>
+            <div class=" col-lg-3">
+                <div class="input-group mb-3">
+                    <InputText placeholder="Nhập Tên ..." class="form-control" @bind-Value="userRoleSearch.Name"></InputText>
+                    <div class="input-group-append pl-1">
+                        <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+                    </div>
+                </div>
+            </div>
+            <div class=" col-lg-3">
+                <div class="input-group mb-3">
+
+                    <div class="input-group-append pl-1">
+                        <button type="button" @onclick="Clear" class="btn btn-primary">Làm Mới</button>
+                    </div>
+                </div>
+            </div>
+
+        </EditForm>
+
+        <table class="table table-hover align-middle table-bordered mt-3 text-center">
+            <thead class="table-success">
+                <tr>
+                    <th scope="col">Tên người dùng</th>
+                    <th scope="col">Vai Trò</th>
+                    <th scope="col">Điều Hướng</th>
+                    <th scope="col">Tác Vụ</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var x in _lstUsers)
+                {
+                    <tr>
+
+                        <td>@x.UserName</td>
+                        <td>
+                            @if (x.ListRoles.Count() == 0)
+                            {
+                            <th>Chưa cấp quyền</th>
+                            }
+                            else
+                            {
+                            <th>@String.Join(" , ", x.ListRoles.ToArray())</th>
+                            }
+
+                        </td>
+                        <td>
+                            @if (x.ListRedirectClaims.Count() == 0)
+                            {
+                            <th>Chưa điều hướng</th>
+                            }
+                            else
+                            {
+                                @foreach (var de in x.ListRedirectClaims)
+                                {
+
+                                    if (de.Type == "CanViewFPLSPProject")
+                                    {
+                                    <th> FPL Support (@de.Value), </th>
+                                    }
+                                    if (de.Type == "CanViewCabinProject")
+                                    {
+                                    <th> Cabin Project (@de.Value), </th>
+                                    }
+                                    if (de.Type == "CanViewFPLExam")
+                                    {
+                                    <th> Exam Project (@de.Value), </th>
+                                    }
+
+                                }
+                            }
+
+
+
+
+
+                        </td>
+                        <td><a @onclick="()=>GoToDetail((x.Id))" class="btn btn-danger">Cập nhật quyền</a></td>
+                    </tr>
+                }
+
+            </tbody>
+        </table>
+        <div class="card-footer text-muted">
+            <div class="row mt-3">
+
+                <span>
+                    <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+                </span>
+
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+<FPLSP.Components.Comfirmation ConfirmationMessage="Cập nhập quyền cho toàn bộ người dùng chưa có quyền là quyền sinh viên cơ sở Hà Nội bạn chắc chắc chứ?"
+                               ConfirmationTitle="Cấp quyền"
+                               @ref="UpdateConfirmationUser"
+                               ConfirmationChanged="OnConfirmationUpdateUser"></FPLSP.Components.Comfirmation>
+@code {
+    [Inject]
+    public IRoleUserIdentityRepo _roleUserIdentityRepo { get; set; }
+    [Inject] public IUserIdentityRepo _UserIdentityRepo { get; set; }
+    [Inject] public UserManager<UserSignIn> _userManager { get; set; }
+    private List<UserInListRoles> _lstUsers { get; set; }
+    private List<UserInListRoles> _lstUsersFlag { get; set; }
+    private UserRoleSearch userRoleSearch = new UserRoleSearch();
+    private List<IdentityRole> _lstRole = new List<IdentityRole>();
+    public MetaData MetaData { get; set; } = new MetaData();
+    private string ExceptRoleName = "";
+    protected Comfirmation UpdateConfirmationUser { get; set; }
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    [Inject] public IToastService toastService { get; set; }
+    [Inject] public NavigationManager navigation { get; set; }
+    [Parameter]
+    public string maxlevelNonDecrpyt { get; set; }
+    [Parameter]
+    public string IdCoSoNonDecrpyt { get; set; }
+    private List<Claim> _lstRedirect = new List<Claim>();
+    private string maxlevel = "";
+    public string IdCoSo = "";
+    private string getIdCoSo = "";
+    [Inject] public IStudentUPRepo _studentUPRepo { get; set; }
+    bool IsShowLoading = false;
+    void ShowLoading() => IsShowLoading = true;
+    void HideLoading() => IsShowLoading = false;
+    public async Task OnConfirmationUpdateUser(bool confirmed)
+    {
+        if (confirmed)
+        {
+            ShowLoading();
+            if (userRoleSearch.StatusNotRole == 1)
+            {
+                var a = 0;
+                foreach (var item in _lstUsersFlag.Where(c => c.ListRoles.Count() == 0).ToList())
+                {
+                    var _User = await _UserIdentityRepo.GetUserRoleById(item.Id);
+                    _User.ListRoles.Add("Student");
+                    var caim = _lstRedirect.FirstOrDefault(c => c.Type == "CanViewFPLSPProject");
+                    _User.ListRedirectClaims.Add(caim);
+                    if (_User.IdTrainingFacility == Guid.Empty)
+                    {
+                        _User.IdTrainingFacility = Guid.Parse("169A0425-7E5A-4057-9748-32F1CF3C1479");
+                        await _userManager.UpdateAsync(_User);
+                    }
+                    UserUpdateRolesHasClaims userUpdateRoles = new UserUpdateRolesHasClaims()
+                        {
+                            ID = item.Id,
+                            Name = _User.UserName,
+                            claims = _User.ListRedirectClaims,
+                            RoleNames = _User.ListRoles.ToArray()
+                        };
+                    if (userUpdateRoles.RoleNames.Any(c => c == "Student"))
+                    {
+                        var lstStudent = await _studentUPRepo.GetAllStudentDtosAsync();
+
+                        if (lstStudent.Any(c => c.Id == Guid.Parse(_User.Id)))
+                        {
+                            var studentUP = lstStudent.Find(c => c.Id == Guid.Parse(_User.Id));
+                            var update = new FPLSP.Server.Infrastructure.ViewModels.StudentsUPVm.StudentUpdateVM()
+                                {
+                                    Email = studentUP.Email,
+                                    Ethnic = studentUP.Ethnic,
+                                    Address = studentUP.Address,
+                                    DateOfBirth = studentUP.DateOfBirth,
+                                    Description = studentUP.Description,
+                                    FathersName = studentUP.FathersName,
+                                    Gender = studentUP.Gender,
+                                    HomeTown = studentUP.HomeTown,
+                                    IdentityCardNumber = studentUP.IdentityCardNumber,
+                                    ImageUrl = studentUP.ImageUrl,
+                                    IssuedOn = studentUP.IssuedOn,
+                                    MotherName = studentUP.MotherName,
+                                    PhoneNumber = studentUP.PhoneNumber,
+                                    StudentCode = studentUP.StudentCode,
+                                    StudentName = studentUP.StudentName,
+                                    Password = studentUP.Password,
+                                    Status = studentUP.Status,
+                                    IsDelete = false
+
+                                };
+
+                            await _studentUPRepo.UpdateStudentUP(studentUP.Id, update);
+
+
+
+                        }
+                        else
+                        {
+
+                            var studentgmail = _User.Email.Split("@")[0];
+                            var studentCode = studentgmail.Substring(studentgmail.Length - 7).ToUpper();
+                            var studentInClassCreate = new StudentUpDto()
+                                {
+                                    Email = _User.Email,
+                                    Ethnic = "",
+                                    Address = "",
+                                    DateOfBirth = DateTime.Now,
+                                    Description = "",
+                                    FathersName = "",
+                                    Gender = true,
+                                    HomeTown = "",
+                                    Id = Guid.Parse(_User.Id),
+                                    IdentityCardNumber = "",
+                                    ImageUrl = "",
+                                    IssuedOn = DateTime.Now,
+                                    MotherName = "",
+                                    Password = "",
+                                    PhoneNumber = "",
+                                    Status = 2,
+                                    StudentCode = studentCode,
+                                    StudentName = ""
+
+                                };
+                            await _studentUPRepo.CreateStudentUPstudentInClass(studentInClassCreate);
+                        }
+                    }
+
+                    //kiểm tra xem tất cả role hiện tại sau khi đã thêm hoặc cập nhật role đã có admin core chưa
+                    var res = await _UserIdentityRepo.AddRolesToUser(userUpdateRoles);
+                    if (res)
+                    {
+                        a++;
+                    }
+                }
+                toastService.ShowSuccess($"Cấp quyền thành công cho {a} người");
+                await GetTasks();
+            }
+        }
+        else
+        {
+            HideLoading();
+            return;
+
+        }
+
+    }
+    protected override async Task OnInitializedAsync()
+    {
+
+        //giải mã hóa router values tại đây để phục vụ cho các chức năng khác
+        maxlevel = _cryptoServices.Decrypt(maxlevelNonDecrpyt.Replace("I0H", "/"));
+        IdCoSo = _cryptoServices.Decrypt(IdCoSoNonDecrpyt.Replace("I0H", "/"));
+        getIdCoSo = IdCoSo;
+        _lstRedirect.Add(new Claim("CanViewFPLSPProject", "true"));
+        _lstRedirect.Add(new Claim("CanViewCabinProject", "true"));
+        _lstRedirect.Add(new Claim("CanViewFPLExam", "true"));
+
+
+        if (maxlevel == "7")
+        {
+            ExceptRoleName = "AdminCore";
+        }
+        else if (maxlevel == "6")
+        {
+            ExceptRoleName = "AdminCS";
+        }
+        else if (maxlevel == "5")
+        {
+            ExceptRoleName = "DirectorOfTraining";
+        }
+        else if (maxlevel == "4")
+        {
+            ExceptRoleName = "HeadOfDepartment";
+        }
+        else if (maxlevel == "3")
+        {
+            ExceptRoleName = "Staff";
+        }
+        else if (maxlevel == "2")
+        {
+
+            ExceptRoleName = "LecturerFPLSP";
+        }
+
+        _lstRole = await _roleUserIdentityRepo.GetAllRolesAsync();
+        await GetTasks();
+
+
+    }
+    private async Task GetTasks()
+    {
+        var pagingResponse = await _UserIdentityRepo.GetAllUser(userRoleSearch);
+        var _lstUserAll = await _UserIdentityRepo.GetAllListUser();
+        //kiểm tra xem nếu khác quyền admin core thì tất cả phải được lọc theo cơ sở đào tạo
+        if (maxlevel != "7")
+        {
+            _lstUsers = pagingResponse.Items.Where(c => c.IdTrainingFacility == Guid.Parse(IdCoSo)).ToList();
+            _lstUsersFlag = _lstUserAll.Where(c => c.IdTrainingFacility == Guid.Parse(IdCoSo)).ToList();
+
+        }
+        else
+        {
+            _lstUsers = pagingResponse.Items;
+            _lstUsersFlag = _lstUserAll;
+        }
+
+        // _lstUsers.Remove(_lstUsers.FirstOrDefault(c => c.UserName == email));
+        MetaData = pagingResponse.MetaData;
+
+        if (maxlevel == "7")
+        {
+            _lstUsers = _lstUsers;
+            _lstUsersFlag = _lstUsersFlag;
+        }
+        else if (maxlevel == "6")
+        {
+            _lstUsers = _lstUsers.Where(c => c.ListRoles.Any(c => c != "AdminCore")).ToList();
+            _lstUsersFlag = _lstUsersFlag.Where(c => c.ListRoles.Any(c => c != "AdminCore")).ToList();
+        }
+        else if (maxlevel == "5")
+        {
+            _lstUsers = _lstUsers.Where(c => c.ListRoles.Any(c => c != "AdminCore" && c != "AdminCS")).ToList();
+            _lstUsersFlag = _lstUsersFlag.Where(c => c.ListRoles.Any(c => c != "AdminCore" && c != "AdminCS")).ToList();
+        }
+        else if (maxlevel == "4")
+        {
+            _lstUsers = _lstUsers.Where(c => c.ListRoles.Any(c => c != "AdminCore" && c != "AdminCS" && c != "DirectorOfTraining")).ToList();
+            _lstUsersFlag = _lstUsersFlag.Where(c => c.ListRoles.Any(c => c != "AdminCore" && c != "AdminCS" && c != "DirectorOfTraining")).ToList();
+        }
+        else if (maxlevel == "3")
+        {
+            _lstUsers = _lstUsers.Where(c => c.ListRoles.Any(c => c != "AdminCore" && c != "AdminCS" && c != "DirectorOfTraining" && c != "HeadOfDepartment")).ToList();
+            _lstUsersFlag = _lstUsersFlag.Where(c => c.ListRoles.Any(c => c != "AdminCore" && c != "AdminCS" && c != "DirectorOfTraining" && c != "HeadOfDepartment")).ToList();
+        }
+        else if (maxlevel == "2")
+        {
+            _lstUsers = _lstUsers.Where(c => c.ListRoles.Any(c => c != "AdminCore" && c != "AdminCS" && c != "DirectorOfTraining" && c != "HeadOfDepartment" && c != "Staff")).ToList();
+            _lstUsersFlag = _lstUsersFlag.Where(c => c.ListRoles.Any(c => c != "AdminCore" && c != "AdminCS" && c != "DirectorOfTraining" && c != "HeadOfDepartment" && c != "Staff")).ToList();
+        }
+    }
+    private async Task SelectedPage(int page)
+    {
+        userRoleSearch.PageNumber = page;
+        await GetTasksSearch();
+    }
+
+    private async Task SearchRole(string role)
+    {
+        userRoleSearch.Role = role;
+        await SearchTask(null);
+    }
+    private async Task SearchStatsNotRole(int StatsNotRole)
+    {
+        userRoleSearch.StatusNotRole = StatsNotRole;
+        await SearchTask(null);
+    }
+    private async Task GoToDetail(string idUser)
+    {
+        var url = Path.Combine($"/detailuser/{_cryptoServices.Encrypt(idUser).Replace("/", "I0H")}/{_cryptoServices.Encrypt(maxlevel.ToString()).Replace("/", "I0H")}/{_cryptoServices.Encrypt(IdCoSo.ToString()).Replace("/", "I0H")}");
+        navigation.NavigateTo(url);
+    }
+    private async Task AddAllUserNotRole()
+    {
+        UpdateConfirmationUser.show();
+    }
+    private async Task SearchTask(EditContext context)
+    {
+        await GetTasksSearch();
+    }
+    private async Task Clear()
+    {
+        userRoleSearch = new UserRoleSearch();
+        await GetTasksSearch();
+    }
+
+    private async Task GetTasksSearch()
+    {
+        _lstUsers = _lstUsersFlag;
+        if (!string.IsNullOrEmpty(userRoleSearch.Name))
+        {
+            _lstUsers = _lstUsers.Where(c => c.UserName.Contains(userRoleSearch.Name)).ToList();
+        }
+        if (!string.IsNullOrEmpty(userRoleSearch.Role))
+        {
+            _lstUsers = _lstUsers.Where(c => c.ListRoles.Contains(userRoleSearch.Role)).ToList();
+        }
+        if (userRoleSearch.StatusNotRole == 1)
+        {
+            _lstUsers = _lstUsers.Where(c => c.ListRoles.Count() == 0).ToList();
+        }
+        var data = _lstUsers.Skip((userRoleSearch.PageNumber - 1) * userRoleSearch.PageSize).Take(userRoleSearch.PageSize).ToList();
+        var lstpage = new PageList<UserInListRoles>(data,
+            _lstUsers.Count(),
+            userRoleSearch.PageNumber,
+            userRoleSearch.PageSize);
+        _lstUsers = lstpage.Items;
+        MetaData = lstpage.MetaData;
+    }
+
+}

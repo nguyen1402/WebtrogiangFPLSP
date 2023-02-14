@@ -1,0 +1,77 @@
+﻿@page "/ClassRoom"
+@using FPLSP.Data.ClassRoomsApiClient
+@using FPLSP.Server.Domain.Dtos
+@using Microsoft.AspNetCore.Components
+
+<h3>ClassRoom</h3>
+
+@if (classRoomDtos == null)
+{
+    <FPLSP.Components.LoadingIndicator></FPLSP.Components.LoadingIndicator>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    ClassroomName
+                </th>
+                <th>
+                    ClassroomCode
+                </th>
+                <th>
+                    Address
+                </th>
+                <th>
+                    StudentAmount
+                </th>
+                <th>
+                    Status
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in classRoomDtos)
+            {
+                <tr>
+                    <td>@item.ClassroomName</td>
+                    <td>@item.ClassroomCode</td>
+                    <td>@item.Address</td>
+                    <td>@item.StudentAmount</td>
+                    <td>@item.Status</td>
+                    <td>
+                        @if (uri.Query == string.Empty)
+                        {
+                            <a href="/ManageStudent/@item.Id.ToString()">Show Detail Class +@item.Id</a>
+                        }
+                        @if (uri.Query == "?AddStudents")
+                        {
+                            <a href="Students?@item.Id.ToString()">Add Students To Class</a>
+                        }
+
+                    </td>
+                </tr>
+
+            }
+        </tbody>
+
+    </table>
+}
+
+@code{
+    [Inject] private IClassRoomApiClient ClassRoomApiClient { get; set; }
+    [Inject] private NavigationManager _navier { get; set; }
+    private List<ClassRoomDto> classRoomDtos;
+    Uri uri;
+    public ClassRoom()
+    {
+        classRoomDtos = new List<ClassRoomDto>();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        uri = _navier.ToAbsoluteUri(_navier.Uri);
+        classRoomDtos = await ClassRoomApiClient.GetClassUpDto();
+    }
+}

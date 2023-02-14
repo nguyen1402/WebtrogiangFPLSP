@@ -1,0 +1,60 @@
+﻿@page "/detailspecializedUP/{id}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+
+@if (model != null)
+{
+    <div class="row pt-1">
+        <label for="name" class=" col-md-6 col-form-label">Đường Link: <b>@model.SpecializedCode</b></label>
+    </div>
+    <div class="row pt-1">
+        <label for="name" class=" col-md-col-md-6 col-form-label">Mô tả: <b>@model.SpecializationName</b></label>
+    </div>
+    <div class="row pt-1">
+        <label for="name" class=" col-md-col-md-6 col-form-label">
+            Trạng thái :
+            @if (@model.Status == 0)
+            {
+                <b>
+                    Chưa đủ sinh viên
+                </b>
+            }
+            else if (@model.Status == 1)
+            {
+                <b>
+                    Chờ đi vào hoạt động
+                </b>
+            }
+            else if (@model.Status == 2)
+            {
+                <b>
+                    Ngưng hoạt động
+                </b>
+            }
+            else
+            {
+                <b>
+                    Đang hoạt động
+                </b>
+            }
+        </label>
+    </div>
+
+    <div class="row pt-2 col-md-1 text-center">
+        <a href="/specializedUP" class="btn btn-outline-danger">Quay Lại</a>
+    </div>
+
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+    private SpecializedDto model;
+
+    [Inject]
+    public ISpecializedUPRepo _iSpecializedClient { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        model = await _iSpecializedClient.GetbyId(Guid.Empty, Guid.Parse(Id));
+    }
+}

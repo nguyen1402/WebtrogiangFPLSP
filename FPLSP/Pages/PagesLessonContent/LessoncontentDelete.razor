@@ -1,0 +1,77 @@
+﻿@page "/leesoncontentdelete/{idsj}/{id}/{idlesson}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.LessonContentCP
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<div class="row pt-3">
+    <h2>Xóa Môn</h2>
+
+@if (lessonContent != null)
+{
+    <EditForm Model="lessonContent" OnValidSubmit="Delete" class="card card-body bg-light mt-5">
+        <DataAnnotationsValidator />
+        <div class="form-group row">
+            <label for="name" class="row">
+                <p>
+                    <b style="color : red">You chắc chắn want delete to ?</b> nội dung <b>@lessonContent.LessonContentName</b>
+                     ???
+                </p>
+            </label>
+
+        </div>
+        <div class="row pt-2">
+            <div class="col-md-6 text-center">
+                <button type="submit" class="btn btn-danger">Xóa Luôn</button>
+            </div>
+            <div class="col-md-6 text-center">
+                <a @onclick ="()=> Quaylai()" class="btn btn-primary">Quay Lại</a>
+            </div>
+        </div>
+    </EditForm>
+}
+</div>
+@code {
+    [Parameter]
+    public string id { get; set; }
+    [Parameter]
+    public string idlesson { get; set; }
+
+    [Parameter]
+    public string idsj { get; set; }
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    public LessonContentUpdateVM lessonContent;
+    [Inject]
+    public ILessonContentCPRepo _iLessonContentClient { get; set; }
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        lessonContent = await _iLessonContentClient.GetbyId(Guid.Parse(id));
+    }
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+    private async Task Delete()
+    {
+        ShowAuthError = false;
+        var result = await _iLessonContentClient.Delete(Guid.Parse(id));
+        if (result != 1)
+        {
+            Error = "Lỗi";
+            var url = Path.Combine("/leesoncontentupdate", idsj, id, idlesson);
+            ShowAuthError = true;
+            Navigation.NavigateTo(url);
+        }
+        else
+        {
+            var url = Path.Combine("/lessoncontent", idsj, idlesson);
+            Navigation.NavigateTo(url);
+        }
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/lessoncontent", idsj, idlesson);
+        Navigation.NavigateTo(url);
+    }
+}

@@ -1,0 +1,233 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+	  <Nullable>enable</Nullable>
+	  <ImplicitUsings>enable</ImplicitUsings>
+	  <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+	  <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+	  <UseRazorSourceGenerator>false</UseRazorSourceGenerator>
+		  <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+	  <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+	
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="GoogleController\**" />
+    <Compile Remove="Pages\Cabin\**" />
+    <Compile Remove="Views\External\**" />
+    <Content Remove="GoogleController\**" />
+    <Content Remove="Pages\Cabin\**" />
+    <Content Remove="Views\External\**" />
+    <EmbeddedResource Remove="GoogleController\**" />
+    <EmbeddedResource Remove="Pages\Cabin\**" />
+    <EmbeddedResource Remove="Views\External\**" />
+    <None Remove="GoogleController\**" />
+    <None Remove="Pages\Cabin\**" />
+    <None Remove="Views\External\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="wwwroot\lib\bootstrap\dist\js\jquery.js" />
+    <Content Remove="wwwroot\lib\bootstrap\dist\js\jquery.min.js" />
+    <Content Remove="wwwroot\lib\bootstrap\dist\js\jquery.min.map" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Pages\FPLExam\dybathrv.jpr~" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Pages\DiscoverNew\" />
+    <Folder Include="Repositories\Interfaces\CabinProject\" />
+    <Folder Include="Repositories\Services\CabinProject\" />
+    <Folder Include="wwwroot\css\UserImages\" />
+    <Folder Include="wwwroot\files\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="IdentityServer4\Views\Account\AccessDenied.cshtml" />
+    <None Include="IdentityServer4\Views\Account\LoggedOut.cshtml" />
+    <None Include="IdentityServer4\Views\Account\Logout.cshtml" />
+    <None Include="IdentityServer4\Views\Consent\Index.cshtml" />
+    <None Include="IdentityServer4\Views\Device\Success.cshtml" />
+    <None Include="IdentityServer4\Views\Device\UserCodeCapture.cshtml" />
+    <None Include="IdentityServer4\Views\Device\UserCodeConfirmation.cshtml" />
+    <None Include="IdentityServer4\Views\Diagnostics\Index.cshtml" />
+    <None Include="IdentityServer4\Views\Grants\Index.cshtml" />
+    <None Include="IdentityServer4\Views\Home\Index.cshtml" />
+    <None Include="IdentityServer4\Views\Shared\Error.cshtml" />
+    <None Include="IdentityServer4\Views\Shared\Redirect.cshtml" />
+    <None Include="IdentityServer4\Views\Shared\_Layout.cshtml" />
+    <None Include="IdentityServer4\Views\Shared\_Nav.cshtml" />
+    <None Include="IdentityServer4\Views\Shared\_ScopeListItem.cshtml" />
+    <None Include="IdentityServer4\Views\Shared\_ValidationSummary.cshtml" />
+    <None Include="IdentityServer4\Views\_ViewImports.cshtml" />
+    <None Include="IdentityServer4\Views\_ViewStart.cshtml" />
+    <None Include="Pages\CabinProject\GroupCabin\GroupCabin.razor" />
+    <None Include="Pages\CabinProject\GroupCabin\GroupCabinAdd.razor" />
+    <None Include="Pages\CabinProject\GroupCabin\GroupCabinUpdate.razor" />
+    <None Include="Pages\CabinProject\GroupCabin\SpecializedGroup.razor" />
+    <None Include="Pages\CabinProject\ManageCabin\ManagaCabin.razor" />
+    <None Include="Pages\CabinProject\ManageCabin\ManageCabinAdd.razor" />
+    <None Include="Pages\CabinProject\ManageCabin\ManageCabinSearch.razor" />
+    <None Include="Pages\CabinProject\ManageCabin\ManageCabinUpdate.razor" />
+    <None Include="Pages\CabinProject\SemesterBlock\SemesterBlock.razor" />
+    <None Include="Pages\CabinProject\SemesterBlock\SemesterBlockAdd.razor" />
+    <None Include="Pages\CabinProject\SemesterBlock\SemesterBlockComponents.razor" />
+    <None Include="Pages\CabinProject\SemesterBlock\SemesterBlockUpdate.razor" />
+    <None Include="Pages\DashBoard\DashBoard.razor" />
+    <None Include="Pages\ExamCPPages\ExamCPSearch.razor" />
+    <None Include="Pages\ExamCPPages\ExamCreate.razor" />
+    <None Include="Pages\ExamCPPages\ExamDetail.razor" />
+    <None Include="Pages\ExamCPPages\ExamList.razor" />
+    <None Include="Pages\ExamCPPages\ExamUpdate.razor" />
+    <None Include="Pages\ExamLinkCPPages\ExamLinkCreate.razor" />
+    <None Include="Pages\ExamLinkCPPages\ExamLinkDetail.razor" />
+    <None Include="Pages\ExamLinkCPPages\ExamLinkList.razor" />
+    <None Include="Pages\ExamLinkCPPages\ExamLinkSearch.razor" />
+    <None Include="Pages\ExamLinkCPPages\ExamLinkUpdate.razor" />
+    <None Include="Pages\GetVideoPagesUP\GetVideoUP.razor" />
+    <None Include="Pages\GetVideoPages\GetVideo.razor" />
+    <None Include="Pages\HomeWorkPages\HomeWorkCreat.razor" />
+    <None Include="Pages\HomeWorkPages\HomeWorkList.razor" />
+    <None Include="Pages\HomeWorkPages\HomeWorkListSeach.razor" />
+    <None Include="Pages\HomeWorkPages\HomeWorkUpdate.razor" />
+    <None Include="Pages\LecturerPages\CreateLecturer.razor" />
+    <None Include="Pages\LecturerPages\DetailsLecturer.razor" />
+    <None Include="Pages\LecturerPages\UpdateLecturer.razor" />
+    <None Include="Pages\ManageHomeWork\HomeWork.razor" />
+    <None Include="Pages\ManageStudents\ClassRoom.razor" />
+    <None Include="Pages\ManageStudents\ManageStudent.razor" />
+    <None Include="Pages\ManageStudents\StudentsApiClient.razor" />
+    <None Include="Pages\NewFeed\NewFeed.razor" />
+    <None Include="Pages\PagesLessonContent\ChitiettongLessonContent.razor" />
+    <None Include="Pages\PagesLessonContent\Lessoncontent.razor" />
+    <None Include="Pages\PagesLessonContent\LessoncontentCreate.razor" />
+    <None Include="Pages\PagesLessonContent\LessoncontentDelete.razor" />
+    <None Include="Pages\PagesLessonContent\LessoncontentUpdate.razor" />
+    <None Include="Pages\PagesLessonContent\LessonContentVideo.razor" />
+    <None Include="Pages\PagesLessonCP\Createlesson.razor" />
+    <None Include="Pages\PagesLessonCP\Deletelesson.razor" />
+    <None Include="Pages\PagesLessonCP\Detailslesson.razor" />
+    <None Include="Pages\PagesLessonCP\Lesson.razor" />
+    <None Include="Pages\PagesLessonCP\Updatelesson.razor" />
+    <None Include="Pages\PagesResourcelinkCP\Createresourcelink.razor" />
+    <None Include="Pages\PagesResourcelinkCP\Deleteresourcelink.razor" />
+    <None Include="Pages\PagesResourcelinkCP\Detailsresourcelink.razor" />
+    <None Include="Pages\PagesResourcelinkCP\Resourcelink.razor" />
+    <None Include="Pages\PagesResourcelinkCP\Updateresourcelink.razor" />
+    <None Include="Pages\PagesSubjectCP\CreatSubject.razor" />
+    <None Include="Pages\PagesSubjectCP\Deletesubject.razor" />
+    <None Include="Pages\PagesSubjectCP\DetailsSubject.razor" />
+    <None Include="Pages\PagesSubjectCP\Subject.razor" />
+    <None Include="Pages\PagesSubjectCP\UpdateSubject.razor" />
+    <None Include="Pages\PagesSubjectUP\CreatSubjectUP.razor" />
+    <None Include="Pages\PagesSubjectUP\DetailsSubjectUP.razor" />
+    <None Include="Pages\PagesSubjectUP\ListLectuterSpecializedSubject.razor" />
+    <None Include="Pages\PagesSubjectUP\ListLectuterSpecializedSubjectSeach.razor" />
+    <None Include="Pages\PagesSubjectUP\ListSubject.razor" />
+    <None Include="Pages\PagesSubjectUP\UpdateSubjectUP.razor" />
+    <None Include="Pages\QuizCPPages\CreateQuizCP.razor" />
+    <None Include="Pages\QuizCPPages\DeleteQuizCP.razor" />
+    <None Include="Pages\QuizCPPages\DetailQuizCP.razor" />
+    <None Include="Pages\QuizCPPages\MainQuizCP.razor" />
+    <None Include="Pages\QuizCPPages\UpdateQuizCP.razor" />
+    <None Include="Pages\QuizQuesstionQuizCP\MainQuizQuesstionQuizCp.razor" />
+    <None Include="Pages\QuizQuesstionQuizCP\QuizQuesstionCreateQuizCp.razor" />
+    <None Include="Pages\QuizQuesstionQuizCP\QuizQuesstionDetailsQuizCp.razor" />
+    <None Include="Pages\QuizQuesstionQuizCP\QuizQuesstionUpdateAnserQuizCp.razor" />
+    <None Include="Pages\UserManagerPages\DetailUserIdentity.razor" />
+    <None Include="Views\Shared\Components\MessagePage\Default.cshtml" />
+    <None Include="wwwroot\js\site.js" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.min.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.min.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.rtl.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.rtl.min.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.min.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.rtl.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.rtl.min.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap.min.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap.rtl.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap.rtl.min.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.js" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.js.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.min.js" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.min.js.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.esm.js" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.esm.js.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.esm.min.js" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.esm.min.js.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.js" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.js.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.min.js" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.min.js.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\jquery.js" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\jquery.min.js" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\jquery.min.map" />
+    <None Include="wwwroot\lib\bootstrap\LICENSE" />
+    <None Include="wwwroot\lib\jquery-validation-unobtrusive\jquery.validate.unobtrusive.js" />
+    <None Include="wwwroot\lib\jquery-validation-unobtrusive\jquery.validate.unobtrusive.min.js" />
+    <None Include="wwwroot\lib\jquery-validation\dist\additional-methods.js" />
+    <None Include="wwwroot\lib\jquery-validation\dist\additional-methods.min.js" />
+    <None Include="wwwroot\lib\jquery-validation\dist\jquery.validate.js" />
+    <None Include="wwwroot\lib\jquery-validation\dist\jquery.validate.min.js" />
+    <None Include="wwwroot\lib\jquery-validation\LICENSE.md" />
+    <None Include="wwwroot\lib\jquery\dist\jquery.js" />
+    <None Include="wwwroot\lib\jquery\dist\jquery.min.js" />
+    <None Include="wwwroot\lib\jquery\dist\jquery.min.map" />
+    <None Include="wwwroot\webcamjs\Configuration.js" />
+    <None Include="wwwroot\webcamjs\webcam.min.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AntDesign" Version="0.13.1" />
+    <PackageReference Include="Blazored.LocalStorage" Version="4.2.0" />
+    <PackageReference Include="Blazored.Toast" Version="3.2.2" />
+    <PackageReference Include="BlazorInputFile" Version="0.2.0" />
+    <PackageReference Include="ClosedXML" Version="0.96.0" />
+    <PackageReference Include="CurrieTechnologies.Razor.SweetAlert2" Version="5.2.1" />
+    <PackageReference Include="EPPlus" Version="6.1.1" />
+    <PackageReference Include="FontStashSharp.Rasterizers.SixLabors.Fonts" Version="1.1.5" />
+    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.57.0.2756" />
+
+    <PackageReference Include="Blazored.Typeahead" Version="4.7.0" />
+    <PackageReference Include="ExcelDataReader" Version="3.6.0" />
+    <PackageReference Include="ExcelDataReader.DataSet" Version="3.6.0" />
+    <PackageReference Include="IdentityServer4" Version="4.1.2" />
+    <PackageReference Include="IdentityServer4.AccessTokenValidation" Version="3.0.1" />
+    <PackageReference Include="iTextSharp.LGPLv2.Core" Version="1.8.0" />
+    <PackageReference Include="MailKit" Version="3.4.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="6.0.9" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="6.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="6.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.ProtectedBrowserStorage" Version="5.0.0-rc.1.20451.17" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="6.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="6.0.8" />
+
+	  <PackageReference Include="Microsoft.AspNetCore.Razor.Language" Version="6.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.8" />
+
+    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
+
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Office.Interop.Word" Version="15.0.4797.1004" />
+    <PackageReference Include="MimeKit" Version="3.4.1" />
+  
+    <PackageReference Include="MudBlazor" Version="6.0.14" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <ProjectReference Include="..\IdentityFPLSP\IdentityFPLSP.csproj" />
+    <ProjectReference Include="..\Server\FPLSP.Server.Data\FPLSP.Server.Data.csproj" />
+    <ProjectReference Include="..\Server\FPLSP.Server.Infratructure\FPLSP.Server.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

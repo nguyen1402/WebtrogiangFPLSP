@@ -1,0 +1,132 @@
+﻿@using FPLSP.Pages.CabinProject.AdminCoSo;
+@using FPLSP.Repositories.Interfaces;
+@using FPLSP.Repositories.Interfaces.CabinProject;
+@using FPLSP.Server.Domain.Dtos;
+@using FPLSP.Server.Domain.Entities.CoresParts;
+@using FPLSP.Server.Infrastructure.ViewModels;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.BookingRequest;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.Cabin;
+@using System.Globalization;
+@using System.ComponentModel.DataAnnotations;
+@if (ShowConfirmation)
+{
+    <div class="modal fade show d-block" id="exampleModal" tabindex="-1" role="dialog">
+
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">@ConfirmationTitle</h5>
+                </div>
+                <div class="modal-body">
+
+                    <div class="form-group pt-2 row">                        
+                        <div class="col-md-6">
+                            <div for="name" class="col-form-label">Giảng Viên: @_LectureVM.FirstOrDefault(c=>c.Id == IdLecturer).Email.ToString().Split("@")[0]</div>
+                            <div for="class" class="col-form-label">Lớp: @_clasVM.FirstOrDefault(c=>c.Id == IdClass).ClassroomName</div>
+                            <div for="subject" class="col-form-label">Môn: @_subjectDtos.FirstOrDefault(c=>c.Id == IdSubject).SubjectCode</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div for="shift" class="col-form-label">Ca dạy: @ShiftName</div>
+                            <div for="day" class="col-form-label">Thứ: @Day.ToString("dddd", new CultureInfo("vi-VN"))</div>
+                            <div for="cabin" class="col-form-label">Phòng: @_cabinViewModels.FirstOrDefault(c=>c.Id == IdCabin).CabinName</div>
+                        </div>
+                        @if (CheckConfirm == 1)
+                        {
+                            <div>
+                                <input id="conten" class="form-control" @bind-value="@_contenOfFeedBack" placeholder="Nguyên nhân hủy phòng" />
+                                <span style="color: red; display:@_displayErrror;">Nguyên nhân hủy phòng không được để trống</span>
+                            </div>
+                        }
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                        @onclick="() => OnConfirmationChange(false)">
+                        Hủy
+                    </button>
+                    <button type="submit" class="btn btn-danger" form="details-form"
+                        @onclick="() => { OnConfirmationChange(true); }">
+                        Xác nhận
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Inject] private ISubjectUPRepo _isubjectUPRepo { get; set; }
+    [Inject] private ILecturersCPRepo _ilecturersCPRepo { get; set; }
+    [Inject] private ICabinRepo _icabinRepo { get; set; }
+    [Inject] private ITaskRepositories<ClassUPViewModel> _iClassRepo { get; set; }
+
+
+    private List<SubjectDto> _subjectDtos = new List<SubjectDto>();
+    private List<ClassUPViewModel> _clasVM = new List<ClassUPViewModel>();
+    private List<LecturersCP> _LectureVM = new List<LecturersCP>();
+    private List<CabinViewModel> _cabinViewModels = new List<CabinViewModel>();
+
+    protected bool ShowConfirmation { get; set; }
+
+    [Parameter]
+    public string ConfirmationTitle { get; set; } = "";
+    [Parameter]
+    public string ConfirmationMessage { get; set; } = "Chi tiết ca dạy";
+
+    [Parameter]
+    public Guid IdClass { get; set; }
+    [Parameter]
+    public Guid IdSubject { get; set; }
+    [Parameter]
+    public Guid IdLecturer { get; set; }
+    [Parameter]
+    public string ShiftName { get; set; }
+    [Parameter]
+    public DateTime Day { get; set; }
+    [Parameter]
+    public Guid IdCabin { get; set; }
+    [Parameter]
+    public int CheckConfirm { get; set; }
+
+    public string _contenOfFeedBack = "";
+    public string _displayErrror = "none";
+
+    [Parameter]
+    public EventCallback<string> ConfirmationChanged { get; set; }
+
+    public void show()
+    {
+        ShowConfirmation = true;
+        StateHasChanged();
+    }
+    protected async Task OnConfirmationChange(bool value)
+    {
+        if (value)
+        {            
+            if (_contenOfFeedBack == string.Empty && CheckConfirm == 1)
+            {
+                _displayErrror = "block";
+            }
+            else
+            {
+                _displayErrror = "none";
+                ShowConfirmation = false;
+                await ConfirmationChanged.InvokeAsync(_contenOfFeedBack);
+            }
+        }
+        else
+        {
+            ShowConfirmation = false;
+            await ConfirmationChanged.InvokeAsync(null);
+        }
+
+    }
+    protected async override Task OnInitializedAsync()
+    {
+        _subjectDtos = await _isubjectUPRepo.GetAllSubjectAsync();
+        _clasVM = await _iClassRepo.GetAllClass();
+        _LectureVM = await _ilecturersCPRepo.GetAllLecturerAsync();
+        _cabinViewModels = await _icabinRepo.GetAllCabinAsync();
+    }
+}

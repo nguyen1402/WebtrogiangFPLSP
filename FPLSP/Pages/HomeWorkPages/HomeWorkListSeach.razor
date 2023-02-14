@@ -1,0 +1,34 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels.HomeWork
+<EditForm Model="@lessonUPListSearch" OnSubmit=@SearchForm>
+    <div class="row pl-5">
+        <div class="col-lg-4"></div>
+        <div class=" col-lg-10">
+            <div class="input-group mb-3">
+                <InputText placeholder="Nhập link cần tìm..." class="form-control" @bind-Value="lessonUPListSearch.Name"></InputText>
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-outline-secondary">🔍</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-1">
+            <a @onclick="@ClearSearch" class="btn btn-outline-success">Clear</a>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+        public EventCallback<HomeWorkSeachList> OnSearch { get; set; }
+
+        private HomeWorkSeachList lessonUPListSearch = new HomeWorkSeachList();
+        
+        private async Task SearchForm(EditContext context)
+        {
+            await OnSearch.InvokeAsync(lessonUPListSearch);
+        }
+        public async Task ClearSearch()
+        {
+            lessonUPListSearch = new HomeWorkSeachList();
+            await SearchForm(null);
+        }
+}

@@ -1,0 +1,235 @@
+﻿@using Blazored.Toast.Services
+@using Blazored.LocalStorage
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using FPLSP.Server.Infrastructure.ViewModels.NewFeed
+@using Microsoft.AspNetCore.Identity
+@inject ILocalStorageService _localStorageService;
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Text.RegularExpressions
+@inject IJSRuntime jsRuntime;
+@inject NavigationManager NavigationManager
+<div class="header " role="banner">
+    <div class="fixed-top" @onclick="ToggleNavMenu">
+        <nav class="navbar navbar-expand-lg bg-light">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-2">
+                        <img src="https://fpt-poly-poc.s3-ap-southeast-1.amazonaws.com/cbh6a-4ltn1.svg" alt=""
+                             height="52">
+                    </div>
+                    <div class="col-lg-10">
+                        <div class="row">
+                            <div class="col-lg-3 mt-3">
+                                <h4>FPLSP | E-Learning</h4>
+                            </div>
+                            <div class="col-lg-9">
+                                <div class="collapse navbar-collapse " id="navbarSupportedContent">
+                                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                                        <li class=" px-3 mt-3  ">
+                                            <a class="navbar-brand" href="/viewclass">Lớp Học Của Tôi</a>
+                                        </li>
+
+                                        <li class=" px-3 mt-3 ">
+                                            <a class="navbar-brand" href="/discoverynew">Khám Phá Thêm</a>
+                                        </li>
+                                        <li class=" px-3 ">
+                                            <div class=" dropdown mt-2">
+                                                <a href="#" class="nav-link" data-bs-toggle="dropdown">
+                                                    <i class="fa fa-bell me-lg-2 position-relative"></i>
+                                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                                        New +
+                                                    </span>
+                                                </a>
+
+                                                <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
+                                                    @foreach (var x in _lstNewFeed.OrderByDescending(c => c.CratedTime).Skip(0).Take(3))
+                                                    {
+
+                                                        <hr class="dropdown-divider">
+
+
+                                                        <a @onclick="()=>Targeter(x.Content)" class="dropdown-item " style="cursor:pointer;">
+                                                            <div>
+                                                                <p class="fst-italic">Người Đăng : @x.Sender | Ngày Đăng: @x.CratedTime</p>
+                                                            </div>
+
+                                                            <span><i class="fa-regular fa-clock"></i>Thời Hạn: @x.CratedTime - @x.EndDate</span>
+                                                            <h6 class="fw-normal mb-0">Tiêu Đề: @x.Title</h6>
+                                                            <small class="txt-wrap">Nội Dung : @x.Content</small>
+                                                        </a>
+
+                                                        <hr class="dropdown-divider">
+
+
+                                                    }
+                                                    <a href="/viewclass" class="dropdown-item text-center">See all notifications</a>
+                                                </div>
+
+
+                                            </div>
+
+                                        </li>
+
+                                        <li class=" px-3 mt-3 ">
+                                            <a class="navbar-brand" @onclick="()=>RemoveLocal()" href="#">Đăng Xuất : @fistusername</a>
+                                        </li>
+                                        <li class=" px-3 mt-2 ">
+                                            <button type="button" @onclick="GetIdStudent">
+                                                <img class="user" src="@imageUser">
+                                            </button>
+                                        </li>
+                                    </ul>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr />
+                </div>
+
+            </div>
+        </nav>
+    </div>
+    <hr />
+</div>
+
+@code {
+    private List<NewFeedOverView> _lstNewFeed = new List<NewFeedOverView>();
+    [Inject]
+    public INewFeedRepo _newFeedRepo { get; set; }
+    [CascadingParameter]
+    private Error _error { get; set; }
+    private bool collapseNavMenu = true;
+    [Inject] private IToastService _toastService { get; set; }
+    [Inject]
+    public UserManager<UserSignIn> _userManager { get; set; }
+    [Inject] public IToastService ToastService { get; set; }
+
+    private string fistusername="";
+    private string imageUser="";
+    [Inject]
+    public AuthenticationStateProvider AuthenticationState { get; set; }
+    [Inject] public IHttpContextAccessor _httpContextAccessor { get; set; }
+    [Inject] public NavigationManager Navigation { get; set; }
+    [Inject]
+    public IStudentUPRepo _StudentUpRepo { get; set; }
+    Guid IdStudent { get; set; }
+    string patern = "^([a-z]{3,13}[0-9]{5}@fpt-edu-vn)$";
+    protected async override Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationState.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            fistusername = user.Claims.ToList()[4].Value.ToString();
+            imageUser = user.Claims.ToList()[6].Value.ToString();
+        }
+        else
+        {
+
+            fistusername = "ViewerUser";
+        }
+
+
+        await GetNewFeed();
+        await ConnectToServer();
+        ToggleNavMenu();
+
+    }
+    private async void RemoveLocal()
+    {
+        await _localStorageService.SetItemAsStringAsync("keyst", "");
+       
+    }
+
+    public async void GetIdStudent()
+    {
+        var mailStudent = fistusername.Replace("-",".");
+       
+        var temp = await _StudentUpRepo.GetAllStudentUPAsync();
+        var student = temp.FirstOrDefault(c => string.Equals(mailStudent, c.Email));
+
+        if (student != null)
+        {
+            Navigation.NavigateTo($"/StudentUPUpdate/{student.Id}");
+        }
+        else
+        {
+            _toastService.ShowError("Lỗi!");
+        }
+
+    }
+
+    private async Task Targeter(string? Taget)
+    {
+
+        await jsRuntime.InvokeVoidAsync("Targeter",Taget);
+    
+    }
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+   
+    private async Task GetNewFeed()
+    {
+        
+       
+        var GetIdUser = _userManager.Users.ToList().Where(c => c.Email == fistusername).Select(c => c.Id).FirstOrDefault();
+            _lstNewFeed = await _newFeedRepo.GetListNewForUser(Guid.Parse(GetIdUser));
+
+
+
+
+    }
+    private async Task ConnectToServer()
+    {
+        try
+        {
+            string url = "http://localhost:5001/notificationhub";
+            HubConnection _connection = null;
+            bool isConnected = false;
+            string connectionStatus = "Closed";
+            _connection = new HubConnectionBuilder()
+                .WithUrl(url)
+                .Build();
+
+            await _connection.StartAsync();
+            isConnected = true;
+            connectionStatus = "Connected :-)";
+            Console.WriteLine("SinalR Is Starting");
+            _connection.Closed += async (s) =>
+            {
+                isConnected = false;
+                connectionStatus = "Disconnected";
+                await _connection.StartAsync();
+                isConnected = true;
+            };
+
+            _connection.On<string>("Noticafications", async (res) =>
+            {
+                await GetNewFeed();
+                if (res == "Done")
+                {
+                    
+                    
+                    this.InvokeAsync(() => this.StateHasChanged());
+                }
+
+
+            });
+        }
+        catch (Exception ex)
+        {
+
+            _error.ProcessError(ex);
+        }
+    }
+
+
+}

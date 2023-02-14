@@ -1,0 +1,89 @@
+﻿ @page "/CreateKOQCP"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Enums
+@using FPLSP.Server.Infrastructure.ViewModels.KìnOfQuestionCPVm
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+
+<h3>Thêm Loại Câu Hỏi</h3>
+<div class="row mt-3 mb-0">
+    <div class="form-group pt-2 col-12">
+        <div class="row pt-2 col-1 ms-0 text-right">
+            <a href="/MainKOQSCP" class="btn btn-outline-danger">Quay Lại</a>
+        </div>
+    </div>
+</div>
+@if (ShowAuthError)
+{
+    <div class="alert alert-danger" role="alert">
+        @Error
+    </div>
+}
+<EditForm Model="koq" OnValidSubmit="Create" class="card card-body bg-light mt-3">
+    <DataAnnotationsValidator />
+    <div class="form-group">
+        <div class="row">
+            <div class="form-group pt-2 col-md-12">
+                <label for="name" class="col-md-3 col-form-label">Tên loại câu hỏi:</label>
+                <div class="col-md-6">
+                    <InputText id="name" class="form-control" @bind-Value="koq.QuestionTypeName" />
+                    <ValidationMessage For="@(() => koq.QuestionTypeName)" />
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-12">
+                <label for="name" class="col-md-2 col-form-label">Loại câu hỏi:</label>
+                <div class="col-md-6">
+                    <InputSelect id="name" class="form-control" @bind-Value="koq.QuestionForm">
+                        @foreach (var item in Enum.GetValues(typeof(QuestionForms)))
+                        {
+                            <option value="@item">@item</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => koq.QuestionForm)" />
+                </div>
+            </div>         
+        </div>
+        <div class="row">
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12 text-right">
+            <button type="submit" class="btn btn-success">Thêm Quiz</button>
+        </div>
+    </div>
+</EditForm>
+@code {
+    [Inject] public NavigationManager Navigation { get; set; }
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+    public KindOfQuestionCPVm koq { get; set; } = new KindOfQuestionCPVm();
+    [Inject] public IKindoOfQuestionCPRepo _koqCPClient { get; set; }
+
+    private async Task Create()
+    {
+
+        ShowAuthError = false;
+        var result = await _koqCPClient.CreateKOQCP(koq);
+
+        if (result != 1)
+        {
+            Error = "Lỗi";
+            ShowAuthError = true;
+            Navigation.NavigateTo("/CreateQuizCP");
+        }
+        else
+        {
+            Navigation.NavigateTo("/MainKOQSCP");
+
+        }
+
+
+    }
+}
+
+
+
+
+

@@ -1,0 +1,32 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels.StudentCP
+
+<EditForm Model="@_studentCPListSearch" OnSubmit="@SearchForm">
+    <div class="row">
+        <div class="col-2"></div>
+        <div class="col-3">
+            <InputSelect class="form-control" @bind-Value="_studentCPListSearch.Status">
+                <option value="">Tất cả</option>
+                <option value="0">Đang hoạt động</option>
+                <option value="1">Ngưng hoạt động</option>
+            </InputSelect>
+        </div>
+        <div class="col-5">
+            <InputText class="form-control" @bind-Value="_studentCPListSearch.NameStudent" placeholder="Nhập Tên hoặc Mã sinh viên"></InputText>
+        </div>
+        <div class="col-2">
+            <button type="submit" class="btn btn-success">Tìm kiếm</button>
+        </div>
+    </div>
+
+</EditForm>
+@code{
+    [Parameter]
+        public EventCallback<StudentCPListSearch> OnSearch { get; set; }
+
+        private StudentCPListSearch _studentCPListSearch = new StudentCPListSearch();
+
+        private async Task SearchForm(EditContext context)
+        {
+            await OnSearch.InvokeAsync(_studentCPListSearch);
+        }
+}

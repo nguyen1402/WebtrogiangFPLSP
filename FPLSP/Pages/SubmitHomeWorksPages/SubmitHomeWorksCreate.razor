@@ -1,0 +1,190 @@
+﻿@page "/SubmitHomeWorksCreate/{idclass}/{lecuId}/{subjectId}/{specializedId}/{idlesson}"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.GiaoVienTaoLop
+@using FPLSP.Server.Infrastructure.ViewModels.StudentsUPVm
+@using FPLSP.Server.Infrastructure.ViewModels.SubmitHomeWorkVM
+@attribute [Authorize(Roles = "LecturerFPLSP")]
+<div class="row pt-3">
+    <h3>Xét hạn bài tập</h3>
+    @if (ShowAuthError)
+    {
+        <div class="alert alert-danger" role="alert">
+            @Error
+        </div>
+    }
+    <EditForm Model="sumit" OnValidSubmit="Create" class="card card-body bg-light mt-3">
+        <DataAnnotationsValidator />
+        <div class="text-danger"><ValidationSummary /></div>
+        <div class="form-group">
+            <div class="row">
+                <div class="col-12 pt-1">
+                    <div class="row">
+                        <div class="form-group pt-2 col-6">
+                            <label for="name" class="col-3 col-form-label">Ngày bắt đầu:</label>
+                            <div class="col-12">
+                                <InputDate id="name" class="form-control" @bind-Value="sumit.StartedDate" />
+
+                                <div class="text-danger"><ValidationMessage For="@(() => sumit.StartedDate)" /></div>
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-6">
+                            <label for="name" class="col-3 col-form-label">Ngày kết thúc:</label>
+                            <div class="col-12">
+                                <InputDate id="name" class="form-control" @bind-Value="sumit.EndTime" />
+
+                                <div class="text-danger"><ValidationMessage For="@(() => sumit.EndTime)" /></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="row">
+                            <div class="col-3">
+                            </div>
+                            <div class="col-6 mt-2 pt-4" style="text-align:center">
+                                <button type="submit" class="btn btn-primary me-2">Xét thời gian</button>
+                                <button type="button" class="btn btn-outline-success me-2" @onclick="ClearForm">Làm Mới</button>
+                                <a @onclick="Quaylai" class="btn btn-outline-danger">Quay Lại</a>
+                            </div>
+                            <div class="col-3">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </EditForm>
+
+    
+</div>
+@code {
+    [Parameter]
+    public string specializedId { get; set; }
+    [Parameter]
+    public string lecuId { get; set; }
+    [Parameter]
+    public string subjectId { get; set; }
+
+    [Parameter]
+    public string idclass { get; set; }
+    [Parameter]
+    public string idlesson { get; set; }
+
+    List<Guid?> lsIdClass;
+
+    private SubmitHomeWorkCreateVM sumit = new SubmitHomeWorkCreateVM();
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    [Inject]
+    public ISubmitHomeWorkApiClient _SubmitHomeWorkApiClient { get; set; }
+    [Inject]
+    public IStudentUPRepo _iStudentUPRepo { get; set; }
+
+    public ListIdStudent listIdStudent;
+    [Inject] private IToastService _toastService { get; set; }
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+
+    public List<ClassSubjectUPDto> CPList { get; set; } = new List<ClassSubjectUPDto>();
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    private SubjectServicesCPListSearch _parameters = new SubjectServicesCPListSearch();
+    [Inject]
+    public IClassSubjectApiClient _iClassSubjectApiClient { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        await GetTasks();
+    }
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _iClassSubjectApiClient.GetPagingParamets(Guid.Parse(subjectId), Guid.Parse(lecuId), Guid.Parse(specializedId), _parameters);
+            CPList = pagingResponse.Items.Where(c => c.ClassId != Guid.Parse(idclass)).ToList();
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+    private async Task Create()
+    {
+        listIdStudent = await _iStudentUPRepo.GetListIdStudents(Guid.Parse(idclass));
+        ShowAuthError = false;
+        sumit.IdSubject = Guid.Parse(subjectId);
+        sumit.IdClass = Guid.Parse(idclass);
+        sumit.IdLesson = Guid.Parse(idlesson);
+        sumit.LsIdStudent = new List<Guid?>();
+        for (var i = 0; i < listIdStudent.idstudents.Count; i++)
+        {
+            sumit.LsIdStudent.Add(listIdStudent.idstudents[i]);
+        }
+        var result = await _SubmitHomeWorkApiClient.Add(sumit);
+
+        if (result != 1)
+        {
+            _toastService.ShowError("Bản ghi đã tồn tại !");
+            Navigation.NavigateTo($"/SubmitHomeWorksCreate/{idclass}/{lecuId}/{subjectId}/{specializedId}/{idlesson}");
+        }
+        else
+        {
+            _toastService.ShowSuccess("Thêm thành công");
+            Navigation.NavigateTo($"/ListLessonClassUP/{idclass}/{specializedId}/{lecuId}/{subjectId}");
+        }
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            CPList.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            CPList.ToList().ForEach(e => e.IsChecked = true);
+            lsIdClass = new List<Guid?>();
+            for (int i = 0; i < CPList.Count; i++)
+            {
+                lsIdClass.Add(CPList[i].ClassId);
+            }
+        }
+    }
+    void CheckManual(Guid? st, bool check)
+    {
+        if (check == true)
+        {
+            foreach (var x in CPList.Where(c => c.ClassId == st))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in CPList.Where(c => c.ClassId == st))
+            {
+                x.IsChecked = true;
+                lsIdClass = new List<Guid?>();
+                lsIdClass.Add(st);
+            }
+        }
+    }
+    private void ClearForm()
+    {
+        sumit.StartedDate = DateTime.Now;
+        sumit.EndTime = DateTime.Now;
+
+    }
+    private void Quaylai()
+    {
+        Navigation.NavigateTo($"/ListLessonClassUP/{idclass}/{specializedId}/{lecuId}/{subjectId}");
+    }
+}

@@ -1,0 +1,64 @@
+﻿@page "/createrole"
+@using FPLSP.Repositories.Interfaces
+@using Microsoft.AspNetCore.Identity
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+    <EditForm Model="@_identityRole" OnValidSubmit="@Create" class="card card-body bg-light mt-5" id="create-form">
+    <DataAnnotationsValidator />
+    <div class="form-group">
+        <div class="row">
+           
+            <div class="form-group pt-2 col-md-6">
+                <label for="name" class="col-md-2 col-form-label">Tên Chức Vụ:</label>
+                <div class="col-md-10"> 
+                    <InputText id="name" class="form-control" @bind-Value="@_identityRole.Name" />
+                        <ValidationMessage For="@(() => _identityRole.Name)" />
+                </div>
+            </div>
+          
+        </div>
+       
+
+        <div class="row">
+        </div>
+    </div>
+
+    <div class="row pt-2">
+        <div class="col-md-12 text-right">
+            <button type="submit" class="btn btn-success" form="create-form">Thêm Chức Vụ</button>
+        </div>
+    </div>
+    <ValidationSummary />
+</EditForm>
+
+@code {
+        [Inject]
+        public IRoleUserIdentityRepo _roleUserIdentityRepo { get; set; }
+        [Inject] public NavigationManager Navigation { get; set; }
+
+        private IdentityRole _identityRole;
+        [Parameter]
+        public string _error { get; set; }
+
+        public CreateRole()
+        {
+            _identityRole = new IdentityRole();
+        }
+
+        private async Task Create()
+        {
+            _identityRole.Id = Guid.NewGuid().ToString();
+            _identityRole.NormalizedName = String.Empty;
+            var result = await _roleUserIdentityRepo.AddRole(_identityRole);
+
+            if (result != true)
+            {
+                Navigation.NavigateTo("/createrole");
+            }
+            else
+            {
+                Navigation.NavigateTo("/listrole");
+                this.StateHasChanged();
+            }
+
+        }}

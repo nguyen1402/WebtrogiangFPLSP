@@ -1,0 +1,713 @@
+﻿@using Blazored.Toast.Services
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.KindOfQuestionCPDtos
+@using FPLSP.Server.Domain.Enums
+@using FPLSP.Server.Infrastructure.ViewModels.QuizCPVm
+@page "/addExcelQuizQuestion/{idspecializedNonDecrypt}/{idsubjectNonDecrypt}/{idquizNonDecrypt}"
+
+<div class="row mb-1">
+    <div class="col-6">
+        <a class="btn btn-outline-danger" @onclick="() => Quaylai()">Quay Lại</a>
+        <button class="btn btn-primary me-md-2" @onclick="test" type="button">Xem dữ liệu</button>
+        <InputFile enctype="multipart/form-data" style="width: 300px" OnChange="@((InputFileChangeEventArgs args) => OnFileSelected(args))" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">Upload</InputFile>
+
+    </div>
+    <div class="d-grid d-md-flex justify-content-md-end col-6">
+
+        <button class="btn btn-primary" type="button" @onclick="CreateExcelQuizQuestion">Lưu</button>
+    </div>
+</div>
+<div class="row mb-1">
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-1 col-6" style="z-index: 1000;right:15px;position: fixed;width: 65px;">
+        <a class="btn btn-outline-success" @onclick="AddQuestion"><i class="fa-solid fa-circle-plus fa-2xl"></i></a>
+    </div>
+</div>
+
+<table class="table table-bordered table-hover table-info text-center  table-striped pt-3 mt-2">
+    <thead>
+    <th scope="col" style="width: 5%"><span class="fs-6">STT</span></th>
+    <th scope="col" style="width: 15%"><span class="fs-6">Câu Hỏi</span></th>
+    <th scope="col" style="width: 10%"><span class="fs-6">Loại Câu hỏi</span></th>
+    <th scope="col" style="width: 15%"><span class="fs-6">Đán Án A</span></th>
+    <th scope="col" style="width: 15%"><span class="fs-6">Đán Án B</span></th>
+    <th scope="col" style="width: 15%"><span class="fs-6">Đán Án C</span></th>
+    <th scope="col" style="width: 15%"><span class="fs-6">Đán Án D</span></th>
+    <th scope="col" style="width: 10%"><span class="fs-6">Chức Năng</span></th>
+    </thead>
+    <tbody>
+        @foreach (var excelQuizQuestion in _lstexcelQuizQuestions.OrderBy(c => c.Index))
+        {
+
+            @if (excelQuizQuestion.IsEditing)
+            {
+                if (excelQuizQuestion.QuestionTypeName == "MatchingItems" || excelQuizQuestion.QuestionTypeName == "MultipleChoise")
+                {
+                    <tr>
+                        <td scope="row">@excelQuizQuestion.Index</td>
+                        <td scope="row"><input type="text" class="form-control mt-3 fw-bold " @bind="@excelQuizQuestion.ContentQuestion" /></td>
+                        <td scope="row">
+                            <select class="form-select mt-3 fw-bold " style="width:100px;" @onchange="(arg)=>CheckKoq(excelQuizQuestion,arg.Value.ToString())">
+                                <option selected value="@excelQuizQuestion.QuestionTypeName">Hiện tại @excelQuizQuestion.QuestionTypeName</option>
+                                @foreach (var Koq in lstKoq)
+                                {
+                                    <option value="@Koq.QuestionTypeName">@Koq.QuestionTypeName</option>
+                                }
+                            </select>
+                        </td>
+                        @foreach (var answer in excelQuizQuestion.ListAnswer)
+                        {
+                            <td scope="row">
+                                <div class="row">
+
+                                    <div class="col-12">
+                                        <input type="text" class="form-control mt-3 fw-bold " @bind="answer.Answer" />
+                                    </div>
+                                    <div class="col-6">
+                                        <select class="form-select mt-3 fw-bold " style="width:100px;" @bind="answer.IsCorrect">
+                                            <option value="1">Đúng</option>
+                                            <option value="0">Sai</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </td>
+
+                        }
+
+                        <td scope="row">
+                            <div class="row">
+                                <div class="col" style="padding:0px">
+                                    <button type="button" aria-label="Cập Nhật" class="btn btn-outline-info" @onclick="() => UpdateExcelQuizQuestion(excelQuizQuestion)">
+                                        <i class="fas fa-check-square" />
+                                    </button>
+                                </div>
+                                <div class="col" style="padding:0px">
+                                    <button type="button" aria-label="Xóa" class="btn btn-outline-info" @onclick="() => DeleteRow(excelQuizQuestion)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else if (excelQuizQuestion.QuestionTypeName == "YesNo")
+                {
+                    <tr>
+                        <td scope="row">@excelQuizQuestion.Index</td>
+                        <td scope="row"><input type="text" class="form-control mt-3 fw-bold " @bind="@excelQuizQuestion.ContentQuestion" /></td>
+                        <td scope="row">
+                            <select class="form-select mt-3 fw-bold " style="width:100px;" @onchange="(arg)=>CheckKoq(excelQuizQuestion,arg.Value.ToString())">
+                                <option selected value="@excelQuizQuestion.QuestionTypeName">Hiện tại @excelQuizQuestion.QuestionTypeName</option>
+                                @foreach (var Koq in lstKoq)
+                                {
+                                    <option value="@Koq.QuestionTypeName">@Koq.QuestionTypeName</option>
+                                }
+                            </select>
+                        </td>
+                        @foreach (var answer in excelQuizQuestion.ListAnswer)
+                        {
+                            <td scope="row" colspan="2">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <input type="text" class="form-control mt-3 fw-bold " @bind="answer.Answer" />
+                                    </div>
+                                    <div class="col-6">
+                                        <select class="form-select mt-3 fw-bold " style="width:100px;" @bind="answer.IsCorrect">
+                                            <option value="1">Đúng</option>
+                                            <option value="0">Sai</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </td>
+
+                        }
+
+                        <td scope="row">
+                            <div class="row">
+                                <div class="col" style="padding:0px">
+                                    <button type="button" aria-label="Cập Nhật" class="btn btn-outline-info" @onclick="() => UpdateExcelQuizQuestion(excelQuizQuestion)">
+                                        <i class="fas fa-check-square" />
+                                    </button>
+                                </div>
+                                <div class="col" style="padding:0px">
+                                    <button type="button" aria-label="Xóa" class="btn btn-outline-info" @onclick="() => DeleteRow(excelQuizQuestion)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else if (excelQuizQuestion.QuestionTypeName == "SupplyItems")
+                {
+                    <tr>
+                        <td scope="row">@excelQuizQuestion.Index</td>
+                        <td scope="row"><input type="text" class="form-control mt-3 fw-bold " @bind="@excelQuizQuestion.ContentQuestion" /></td>
+                        <td scope="row">
+                            <select class="form-select mt-3 fw-bold " style="width:100px;" @onchange="(arg)=>CheckKoq(excelQuizQuestion,arg.Value.ToString())">
+                                <option selected value="@excelQuizQuestion.QuestionTypeName">Hiện tại @excelQuizQuestion.QuestionTypeName</option>
+                                @foreach (var Koq in lstKoq)
+                                {
+                                    <option value="@Koq.QuestionTypeName">@Koq.QuestionTypeName</option>
+                                }
+                            </select>
+                        </td>
+                        @foreach (var answer in excelQuizQuestion.ListAnswer)
+                        {
+                            <td scope="row" colspan="4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <input type="text" class="form-control mt-3 fw-bold " @bind="answer.Answer" />
+                                    </div>
+                                </div>
+                            </td>
+
+                        }
+
+                        <td scope="row">
+                            <div class="row">
+                                <div class="col" style="padding:0px">
+                                    <button type="button" aria-label="Cập Nhật" class="btn btn-outline-info" @onclick="() => UpdateExcelQuizQuestion(excelQuizQuestion)">
+                                        <i class="fas fa-check-square" />
+                                    </button>
+                                </div>
+                                <div class="col" style="padding:0px">
+                                    <button type="button" aria-label="Xóa" class="btn btn-outline-info" @onclick="() => DeleteRow(excelQuizQuestion)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                        </td>
+                    </tr>
+                }
+
+
+
+            }
+            else
+            {
+                if (excelQuizQuestion.QuestionTypeName == "MatchingItems" || excelQuizQuestion.QuestionTypeName == "MultipleChoise")
+                {
+                    <tr>
+
+                        <td scope="row">@excelQuizQuestion.Index</td>
+                        <td scope="row">@excelQuizQuestion.ContentQuestion</td>
+                        <td scope="row">@excelQuizQuestion.QuestionTypeName</td>
+
+                        @foreach (var Answer in excelQuizQuestion.ListAnswer)
+                        {
+                            <td scope="row">
+                                <div class="row">
+                                    <div class="col-12">
+                                        @Answer.Answer
+                                    </div>
+                                    <div class="col-12 text-center">
+                                        @if (Answer.IsCorrect == 1)
+                                        {
+                                            <i class="fa-solid fa-check"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa-solid fa-xmark"></i>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                        }
+                        <td scope="row">
+                            <div class="row">
+                                <div class="col" style="padding:0px">
+                                    <button type="button" aria-label="Chỉnh Sửa" class="btn btn-outline-warning" @onclick="() =>EnableEditing(true,excelQuizQuestion)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                                <div class="col" style="padding:0px">
+                                    <button type="button" aria-label="Xóa" class="btn btn-outline-info" @onclick="() => DeleteRow(excelQuizQuestion)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+                else if (excelQuizQuestion.QuestionTypeName == "YesNo")
+                {
+                    <tr>
+
+                        <td scope="row">@excelQuizQuestion.Index</td>
+                        <td scope="row">@excelQuizQuestion.ContentQuestion</td>
+                        <td scope="row">@excelQuizQuestion.QuestionTypeName</td>
+
+                        @foreach (var Answer in excelQuizQuestion.ListAnswer)
+                        {
+                            <td scope="row" colspan="2">
+                                <div class="row">
+                                    <div class="col-12">
+                                        @Answer.Answer
+                                    </div>
+                                    <div class="col-12 text-center">
+                                        @if (Answer.IsCorrect == 1)
+                                        {
+                                            <i class="fa-solid fa-check"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa-solid fa-xmark"></i>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                        }
+                        <td scope="row">
+                            <div class="row">
+                                <div class="col" style="padding:0px">
+                                    <button type="button" aria-label="Chỉnh Sửa" class="btn btn-outline-warning" @onclick="() =>EnableEditing(true,excelQuizQuestion)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                                <div class="col" style="padding:0px">
+                                    <button type="button" aria-label="Xóa" class="btn btn-outline-info" @onclick="() => DeleteRow(excelQuizQuestion)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else if (excelQuizQuestion.QuestionTypeName == "SupplyItems")
+                {
+                    <tr>
+
+                        <td scope="row">@excelQuizQuestion.Index</td>
+                        <td scope="row">@excelQuizQuestion.ContentQuestion</td>
+                        <td scope="row">@excelQuizQuestion.QuestionTypeName</td>
+
+                        @foreach (var Answer in excelQuizQuestion.ListAnswer)
+                        {
+                            <td scope="row" colspan="4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        @Answer.Answer
+                                    </div>
+                                </div>
+                            </td>
+                        }
+                        <td scope="row">
+                            <div class="row">
+                                <div class="col" style="padding:0px">
+                                    <button type="button" aria-label="Chỉnh Sửa" class="btn btn-outline-warning" @onclick="() =>EnableEditing(true,excelQuizQuestion)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                                <div class="col" style="padding:0px">
+                                    <button type="button" aria-label="Xóa" class="btn btn-outline-info" @onclick="() => DeleteRow(excelQuizQuestion)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+            }
+
+        }
+
+    </tbody>
+</table>
+@code {
+    [Inject]
+    public IQuizCPRepo _quizCPRepo { get; set; }
+    IBrowserFile selectedFiles;
+    public List<ExcelQuizQuestion> _lstexcelQuizQuestions = new List<ExcelQuizQuestion>();
+    public ExcelQuizQuestion _excelQuizQuestions = new ExcelQuizQuestion();
+    public ExcelQuizQuestion _undoExcelQuizQuestions = new ExcelQuizQuestion();
+    public int QuestionNumber { get; set; } = 0;
+    [Parameter]
+    public string idquizNonDecrypt { get; set; }
+    public string idquiz = "";
+    [Parameter]
+    public string idsubjectNonDecrypt { get; set; }
+    public string idsubject = "";
+    [Parameter]
+    public string idspecializedNonDecrypt { get; set; }
+    public string idspecialized = "";
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    List<bool> lstBool = new List<bool>();
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+    public List<KindOfQuestionCPDtos> lstKoq = new List<KindOfQuestionCPDtos>();
+    [Inject]
+    public IQuizQuesstionQuizCPClient _iQuizQuesstionQuizCPClient { get; set; }
+    Uri uri;
+    string maxlevel = "";
+    string IdCoSo = "";
+    protected override async Task OnInitializedAsync()
+    {
+        uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (string.IsNullOrEmpty(uri.Query) == false)
+        {
+            var urifist = uri.Query.Split("?")[1];
+            maxlevel = _cryptoServices.Decrypt(urifist.Split("LDN01")[0].Replace("I0H", "/"));
+            IdCoSo = _cryptoServices.Decrypt(urifist.Split("LDN01")[1].Replace("I0H", "/"));
+        }
+        idquiz = _cryptoServices.Decrypt(idquizNonDecrypt.Replace("I0H", "/"));
+        idsubject = _cryptoServices.Decrypt(idsubjectNonDecrypt.Replace("I0H", "/"));
+        idspecialized = _cryptoServices.Decrypt(idspecializedNonDecrypt.Replace("I0H", "/"));
+
+        lstKoq = await _quizCPRepo.GetAllKoq();
+        lstKoq = lstKoq.GroupBy(c => c.QuestionTypeName).Select(s => lstKoq.FirstOrDefault(c => c.QuestionTypeName == s.Key)).ToList();
+        lstBool.Add(true);
+        lstBool.Add(false);
+    }
+    private void EnableEditing(bool flag, ExcelQuizQuestion ExcelQuizQuestion)
+    {
+        if (flag == false)
+        {
+            _excelQuizQuestions = new ExcelQuizQuestion();
+        }
+        else
+        {
+            _excelQuizQuestions = ExcelQuizQuestion;
+        }
+        var quizques = _lstexcelQuizQuestions.FirstOrDefault(c => c.Id == ExcelQuizQuestion.Id);
+        _undoExcelQuizQuestions = quizques;
+        quizques.IsEditing = flag;
+    }
+    public async Task test()
+    {
+        if (selectedFiles == null)
+        {
+            _toastService.ShowError("Chưa có file nào được chọn");
+            return;
+        }
+
+        if (selectedFiles.Size > 410000)
+        {
+            _toastService.ShowError("File không được vượt quá 400 kB");
+            return;
+        }
+        var a = selectedFiles.GetType().ToString();
+        if (!selectedFiles.ContentType.Contains("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+        {
+            _toastService.ShowError("File đang không đúng định đạng dữ liệu hoặc định dạng Excel");
+            return;
+        }
+        _lstexcelQuizQuestions = new List<ExcelQuizQuestion>();
+        _lstexcelQuizQuestions = await _quizCPRepo.LoadingBigData(selectedFiles, Guid.Parse(idquiz));
+        await UpdateIndex();
+        _toastService.ShowSuccess("Tải dữ liệu thành công");
+    }
+    public async Task UpdateIndex()
+    {
+        foreach (var item in _lstexcelQuizQuestions)
+        {
+            if (item.Index < 0)
+            {
+                item.Index = 0;
+            }
+        }
+    }
+    List<int> _lstErrorIndex = new List<int>();
+    public async Task CreateExcelQuizQuestion()
+    {
+        if (_lstexcelQuizQuestions.Count() == 0)
+        {
+            _toastService.ShowError("Chưa có có dự liệu để thêm");
+            return;
+        }
+        var lstQuizQuesQuiz = await _iQuizQuesstionQuizCPClient.GetAllCauHoi(Guid.Parse(idsubject));
+        var lstQuesByIdQuiz = lstQuizQuesQuiz.Where(c => c.QuizId == Guid.Parse(idquiz)).ToList();
+
+        if (lstQuesByIdQuiz.Count() + _lstexcelQuizQuestions.Count() > 15)
+        {
+            _toastService.ShowError($"Sộ lượng câu hỏi trong bộ quiz đã có là {lstQuesByIdQuiz.Count()} và thêm {_lstexcelQuizQuestions.Count()} đã vượt quá 15 không thể thêm");
+            return;
+        }
+        var lstError = new List<ExcelQuizQuestion>();
+        foreach (var excelQuizQuestion in _lstexcelQuizQuestions)
+        {
+            if (string.IsNullOrEmpty(excelQuizQuestion.ContentQuestion))
+            {
+                _lstErrorIndex.Add(excelQuizQuestion.Index);
+                lstError.Add(excelQuizQuestion);
+                continue;
+            }
+            foreach (var item in excelQuizQuestion.ListAnswer)
+            {
+                if (string.IsNullOrEmpty(item.Answer))
+                {
+                    if (_lstErrorIndex.Any(c => c == excelQuizQuestion.Index))
+                    {
+                        continue;
+                    }
+                    _lstErrorIndex.Add(excelQuizQuestion.Index);
+                    lstError.Add(excelQuizQuestion);
+                    continue;
+                }
+            }
+            if (excelQuizQuestion.QuestionTypeName == "MatchingItems")
+            {
+                var listTrue = excelQuizQuestion.ListAnswer.Where(c => c.IsCorrect == 1).ToList();
+                if (listTrue.Count() != 1)
+                {
+                    if (_lstErrorIndex.Any(c => c == excelQuizQuestion.Index))
+                    {
+                        continue;
+                    }
+                    _lstErrorIndex.Add(excelQuizQuestion.Index);
+                    lstError.Add(excelQuizQuestion);
+                    continue;
+                }
+                if (excelQuizQuestion.ListAnswer.Count() != 4)
+                {
+                    _lstErrorIndex.Add(excelQuizQuestion.Index);
+                    lstError.Add(excelQuizQuestion);
+                    continue;
+                }
+            }
+            if (excelQuizQuestion.QuestionTypeName == "MultipleChoise")
+            {
+                var listTrue = excelQuizQuestion.ListAnswer.Where(c => c.IsCorrect == 1).ToList();
+                if (listTrue.Count() < 1)
+                {
+                    if (_lstErrorIndex.Any(c => c == excelQuizQuestion.Index))
+                    {
+                        continue;
+                    }
+                    _lstErrorIndex.Add(excelQuizQuestion.Index);
+                    lstError.Add(excelQuizQuestion);
+                    continue;
+                }
+                if (excelQuizQuestion.ListAnswer.Count() != 4)
+                {
+                    _lstErrorIndex.Add(excelQuizQuestion.Index);
+                    lstError.Add(excelQuizQuestion);
+                    continue;
+                }
+            }
+            else if (excelQuizQuestion.QuestionTypeName == "YesNo")
+            {
+                var listTrue = excelQuizQuestion.ListAnswer.Where(c => c.IsCorrect == 1).ToList();
+                if (listTrue.Count() != 1)
+                {
+                    if (_lstErrorIndex.Any(c => c == excelQuizQuestion.Index))
+                    {
+                        continue;
+                    }
+                    _lstErrorIndex.Add(excelQuizQuestion.Index);
+                    lstError.Add(excelQuizQuestion);
+                    continue;
+                }
+                if (excelQuizQuestion.ListAnswer.Count() != 2)
+                {
+                    _lstErrorIndex.Add(excelQuizQuestion.Index);
+                    lstError.Add(excelQuizQuestion);
+                    continue;
+                }
+            }
+            else if (excelQuizQuestion.QuestionTypeName == "SupplyItems")
+            {
+                if (excelQuizQuestion.ListAnswer.Count() != 1)
+                {
+                    _lstErrorIndex.Add(excelQuizQuestion.Index);
+                    lstError.Add(excelQuizQuestion);
+                    continue;
+                }
+            }
+        }
+        if (_lstErrorIndex.Count() > 0)
+        {
+            string mess = "Các dự liệu ở vị trí:";
+            string indexError = string.Join(" , ", _lstErrorIndex.ToArray());
+            mess = mess + indexError + " đang trống hoặc đáp án sai với kiểu dữ liệu cần xem lại";
+            _toastService.ShowWarning(mess);
+            _lstErrorIndex.Clear();
+            return;
+        }
+
+        var resul = await _quizCPRepo.CreateExcelQuizQuestion(_lstexcelQuizQuestions);
+        if (resul == 1)
+        {
+            _toastService.ShowSuccess("Thêm thành công");
+            Quaylai();
+        }
+        else
+        {
+            _toastService.ShowError("Thêm không thành công");
+            Quaylai();
+        }
+
+    }
+
+    public async Task AddQuestion()
+    {
+        var quizQues = new ExcelQuizQuestion();
+        quizQues.Index = _lstexcelQuizQuestions.Count() + 1;
+        quizQues.IdQuestion = Guid.Parse(idquiz);
+        quizQues.QuestionTypeName = "MatchingItems";
+        for (int i = 0; i < 4; i++)
+        {
+            var anser = new QuizAnswerExcel();
+            anser.Id = Guid.NewGuid();
+            anser.Answer = "";
+            anser.IdQuizQuestion = quizQues.IdQuestion;
+            anser.IsCorrect = 0;
+            quizQues.ListAnswer.Add(anser);
+        }
+
+        _lstexcelQuizQuestions.Add(quizQues);
+        _toastService.ShowSuccess($"Thêm dữ liệu ở vị trí {quizQues.Index} thành công");
+
+    }
+    public async Task CheckKoq(ExcelQuizQuestion ExcelQuizQuestion, string typeName)
+    {
+        foreach (var excel in _lstexcelQuizQuestions)
+        {
+            if (excel.Id == ExcelQuizQuestion.Id)
+            {
+                excel.QuestionTypeName = typeName;
+
+                if (excel.QuestionTypeName == "MatchingItems" || excel.QuestionTypeName == "MultipleChoise")
+                {
+                    List<QuizAnswerExcel> addlst = new List<QuizAnswerExcel>();
+                    int flag = 0;
+                    foreach (var answerExcel in excel.ListAnswer)
+                    {
+                        if (excel.ListAnswer.Count() < 4 - flag)
+                        {
+                            var anser = new QuizAnswerExcel();
+                            anser.Id = Guid.NewGuid();
+                            anser.Answer = "";
+                            anser.IdQuizQuestion = excel.IdQuestion;
+                            anser.IsCorrect = 0;
+                            addlst.Add(anser);
+                            flag++;
+                        }
+                    }
+
+                    if (addlst.Count() > 0)
+                    {
+                        excel.ListAnswer.AddRange(addlst);
+                        CheckKoq(ExcelQuizQuestion, typeName);
+                    }
+
+                }
+                else if (excel.QuestionTypeName == "YesNo")
+                {
+                    List<QuizAnswerExcel> addlst = new List<QuizAnswerExcel>();
+
+                    List<QuizAnswerExcel> removelst = new List<QuizAnswerExcel>();
+                    int flag = 0;
+                    foreach (var answerExcel in excel.ListAnswer)
+                    {
+                        if (excel.ListAnswer.Count() < 2)
+                        {
+                            var anser = new QuizAnswerExcel();
+                            anser.Id = Guid.NewGuid();
+                            anser.Answer = "";
+                            anser.IdQuizQuestion = excel.IdQuestion;
+                            anser.IsCorrect = 0;
+                            addlst.Add(anser);
+                            flag++;
+                        }
+                        else if (excel.ListAnswer.Count() > 2 + flag)
+                        {
+                            removelst.Add(answerExcel);
+                            flag++;
+                        }
+                    }
+                    if (addlst.Count() > 0)
+                    {
+                        excel.ListAnswer.AddRange(addlst);
+                    }
+                    if (removelst.Count() > 0)
+                    {
+                        foreach (var item in removelst)
+                        {
+                            excel.ListAnswer.Remove(item);
+                        }
+                    }
+
+
+                }
+                else if (excel.QuestionTypeName == "SupplyItems")
+                {
+                    List<QuizAnswerExcel> addlst = new List<QuizAnswerExcel>();
+                    List<QuizAnswerExcel> removelst = new List<QuizAnswerExcel>();
+                    int flag = 0;
+                    foreach (var answerExcel in excel.ListAnswer)
+                    {
+                        if (excel.ListAnswer.Count() < 1)
+                        {
+                            var anser = new QuizAnswerExcel();
+                            anser.Id = Guid.NewGuid();
+                            anser.Answer = "";
+                            anser.IdQuizQuestion = excel.IdQuestion;
+                            anser.IsCorrect = 1;
+                            addlst.Add(anser);
+                            flag++;
+                        }
+                        else if (excel.ListAnswer.Count() > 1 + flag)
+                        {
+                            removelst.Add(answerExcel);
+                            flag++;
+                        }
+                    }
+                    if (addlst.Count() > 0)
+                    {
+                        excel.ListAnswer.AddRange(addlst);
+                    }
+                    if (removelst.Count() > 0)
+                    {
+                        foreach (var item in removelst)
+                        {
+                            excel.ListAnswer.Remove(item);
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+    private async Task DeleteRow(ExcelQuizQuestion ExcelQuizQuestion)
+    {
+        _lstexcelQuizQuestions.Remove(ExcelQuizQuestion);
+    }
+    private async Task UpdateExcelQuizQuestion(ExcelQuizQuestion excelQuizQuestion)
+    {
+        //foreach (var excel in _lstexcelQuizQuestions)
+        //{
+        //    if (excel.Id == excelQuizQuestion.Id)
+        //    {
+        //        excel.ListIsCorrect = excelQuizQuestion.ListIsCorrect;
+        //        excel.ListAnswer = excelQuizQuestion.ListAnswer;
+        //        excel.ContentQuestion = excelQuizQuestion.ContentQuestion;
+        //    }
+        //}
+        EnableEditing(false, excelQuizQuestion);
+    }
+    private async Task UndoChange(ExcelQuizQuestion excelQuizQuestion)
+    {
+
+        EnableEditing(false, excelQuizQuestion);
+
+    }
+    private async void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        _lstexcelQuizQuestions.Clear();
+        selectedFiles = e.File;
+        this.StateHasChanged();
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/quizQuesstionQuizCP/" + _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idquiz).ToString()).Replace("/", "I0H") + $"?{_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H") + "LDN01" + _cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")}");
+        Navigation.NavigateTo(url);
+    }
+}

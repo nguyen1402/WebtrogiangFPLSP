@@ -1,0 +1,42 @@
+﻿@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.SubmitHomeWorkVM
+<EditForm Model="@SubjectListSearch" OnSubmit=@SearchForm>
+    <div class="row">
+        <div class="col-4">
+            <InputSelect @bind-Value="SubjectListSearch.Status" class="form-select">
+                <option value="">Tất cả</option>
+                <option value="0">Chưa nộp bài</option>
+                <option value="1">Đã nộp bài</option>
+            </InputSelect>
+        </div>
+        <div class="col-4">
+            <button type="submit" class="btn btn-primary">Lọc</button>
+            <button class="btn btn-outline-success ms-2" @onclick="() => Undo()">Làm mới</button>
+        </div>
+
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public EventCallback<ListSubmitHomeWorkSeach> OnSearch { set; get; }
+
+
+    [Inject]
+    public ISubmitHomeWorkApiClient _SubmitHomeWorkApiClient { get; set; }
+
+    private ListSubmitHomeWorkSeach SubjectListSearch = new ListSubmitHomeWorkSeach();
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(SubjectListSearch);
+
+    }
+    private async Task Undo()
+    {
+        SubjectListSearch.Status = null;
+        SubjectListSearch.PageNumber = 1;
+        await OnSearch.InvokeAsync(SubjectListSearch);
+
+    }
+}

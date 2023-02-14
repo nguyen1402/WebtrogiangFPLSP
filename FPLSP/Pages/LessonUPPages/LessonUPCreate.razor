@@ -1,0 +1,152 @@
+﻿@page "/lessonUPCreate/{idsubjectUP}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using FPLSP.Server.Infrastructure.ViewModels.LessonContentUP
+@using FPLSP.Server.Infrastructure.ViewModels.LessonUP
+@using FPLSP.Server.Infrastructure.ViewModels.ResourceLinkUP
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<h3>Tạo bài học UP</h3>
+
+<a class="dropdown-item" @onclick="() => CreateSubmit()">Thêm Bài học</a>
+
+<div class="col-md-6 text-center">
+    <a href="/lessonUP/@idsubjectUP" class="btn btn-danger">Quay lại</a>
+</div>
+@code {
+    [Inject] ILessonUPRepo _LessonUPRepo { get; set; }
+    [Inject] ILessonContentUPRepo _lessonContentUPRepo { get; set; }
+
+    [Inject] private IResourceLinkUPRepo _ResourceLinkUPRepo { get; set; }
+    [Inject] private ISubjectUPRepo _subjectUPRepo { get; set; }
+    [Inject] NavigationManager NavigationManager { get; set; }
+
+
+    private List<LessonContentCP> _lstLessonContentCPs = new List<LessonContentCP>();
+    private List<LessonCP> _lstLessonCPs = new List<LessonCP>();
+    private List<LessonUPViewModel> _lstLessonUPViewModels = new List<LessonUPViewModel>();
+    private List<ResourceLinkUPViewModel> _lstresourceLinkUPViewModels = new List<ResourceLinkUPViewModel>();
+    private List<ResourceLink> _lstResourceLinkCPDtos = new List<ResourceLink>();
+
+
+    private List<ResourceLinkUPViewModel> _lstResourceLinkUPs = new List<ResourceLinkUPViewModel>();
+
+    private List<LessonContentUPViewModel> _lstLessonContentUPs = new List<LessonContentUPViewModel>();
+
+    [Parameter]
+    public string idsubjectUP { get; set; }
+    [CascadingParameter]
+    private Error Error { get; set; }
+    public string status { get; set; } = "";
+
+    private LessonUPCreateRequest request = new LessonUPCreateRequest();
+    private LessonContentUPCreateRequest lessonContentUPCreate = new LessonContentUPCreateRequest();
+    private ResourceLinkUPCreateRequest resourceLinkUPCreate = new ResourceLinkUPCreateRequest();
+    private LessonContentUPListSearch _LessonContentUPSearch = new LessonContentUPListSearch();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTasks();
+    }
+
+    private async Task GetTasks()
+    {
+        try
+        {
+            _lstLessonContentCPs = await _LessonUPRepo.GetAllLessonContentCP();
+            _lstLessonCPs = await _LessonUPRepo.GetAllLessonCP();
+            _lstLessonUPViewModels = await _LessonUPRepo.GetAll();
+            _lstResourceLinkCPDtos = await _LessonUPRepo.GetAllResourceLinkCP();
+            _lstresourceLinkUPViewModels = await _ResourceLinkUPRepo.GetAll();
+
+
+            var pagingResponse = await _lessonContentUPRepo.GetList(_LessonContentUPSearch);
+            _lstLessonContentUPs = pagingResponse.Items;
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessError(ex);
+        }
+    }
+    private async Task CreateSubmit()
+    {
+        try
+        {
+            var lstLessonUPByIDSubject = _lstLessonCPs.Where(c => c.SubjectId == Guid.Parse(idsubjectUP));
+
+            foreach (var x in lstLessonUPByIDSubject)
+            {
+                if (_lstLessonUPViewModels.Any(c => c.Id == x.Id))
+                {
+                    continue;
+                }
+                request = new LessonUPCreateRequest()
+                    {
+                        SubjectId = x.SubjectId,
+                        Descriptions = x.Descriptions,
+                        LessonCode = x.LessonCode,
+                        LessonName = x.LessonName,
+                        Status = x.Status,
+                        IsCompleted = false,
+                        Id = x.Id
+                    };
+
+                await _LessonUPRepo.Create(request);
+            }
+            foreach (var item in _lstResourceLinkCPDtos)
+            {
+                if (_lstResourceLinkUPs.Any(c => c.Id == item.Id))
+                {
+                    continue;
+                }
+                if (_lstresourceLinkUPViewModels.All(c => c.Id != item.Id))
+                {
+                    resourceLinkUPCreate = new ResourceLinkUPCreateRequest()
+                        {
+                            Descriptions = item.Descriptions,
+                            Path = item.Path,
+                            Id = item.Id,
+                            ResourcesTitle = item.Descriptions,
+                            Status = item.Status
+                        };
+                    await _ResourceLinkUPRepo.Create(resourceLinkUPCreate);
+                }
+            }
+            _lstLessonUPViewModels = await _LessonUPRepo.GetAll();
+            foreach (var x in _lstLessonContentCPs)
+            {
+                if (_lstLessonContentUPs.Any(c => c.Id == x.Id))
+                {
+                    continue;
+                }
+                if (_lstLessonUPViewModels.Any(c => c.Id == x.IdLesson))
+                {
+                    lessonContentUPCreate = new LessonContentUPCreateRequest()
+                        {
+                            Content = x.Content,
+                            Descriptions = x.Descriptions,
+                            Id = x.Id,
+                            LessonContentCode = x.LessonContentCode,
+                            LessonContentName = x.LessonContentName,
+                            LessonId = x.IdLesson,
+                            ResuorceLinkId = x.ResourceLinkId,
+                            Status = x.Status
+                        };
+                    await _lessonContentUPRepo.Create(lessonContentUPCreate);
+                }
+            }
+
+
+            //request.Status = Convert.ToInt32(status);
+            //request.SubjectId = Guid.Parse(idsubjectUP);
+            //var result = await _LessonUPRepo.Create(request);
+
+            NavigationManager.NavigateTo($"/lessonUP/{idsubjectUP}");
+
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessError(ex);
+        }
+    }
+}

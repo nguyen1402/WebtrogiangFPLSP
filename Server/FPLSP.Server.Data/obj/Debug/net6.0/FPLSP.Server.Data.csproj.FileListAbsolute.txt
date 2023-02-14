@@ -1,0 +1,17 @@
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\bin\Debug\net6.0\FPLSP.Server.Data.deps.json
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\bin\Debug\net6.0\FPLSP.Server.Data.runtimeconfig.json
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\bin\Debug\net6.0\FPLSP.Server.Data.dll
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\bin\Debug\net6.0\FPLSP.Server.Data.pdb
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\bin\Debug\net6.0\FPLSP.Server.Domain.dll
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\bin\Debug\net6.0\FPLSP.Server.Domain.pdb
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\obj\Debug\net6.0\FPLSP.Server.Data.csproj.AssemblyReference.cache
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\obj\Debug\net6.0\FPLSP.Server.Data.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\obj\Debug\net6.0\FPLSP.Server.Data.AssemblyInfoInputs.cache
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\obj\Debug\net6.0\FPLSP.Server.Data.AssemblyInfo.cs
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\obj\Debug\net6.0\FPLSP.Server.Data.csproj.CoreCompileInputs.cache
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\obj\Debug\net6.0\FPLSP.Server.Data.csproj.CopyComplete
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\obj\Debug\net6.0\FPLSP.Server.Data.dll
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\obj\Debug\net6.0\refint\FPLSP.Server.Data.dll
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\obj\Debug\net6.0\FPLSP.Server.Data.pdb
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\obj\Debug\net6.0\FPLSP.Server.Data.genruntimeconfig.cache
+C:\Users\Nguyen Bui\source\repos\FPLSP3\Server\FPLSP.Server.Data\obj\Debug\net6.0\ref\FPLSP.Server.Data.dll

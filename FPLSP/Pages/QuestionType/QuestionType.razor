@@ -1,0 +1,122 @@
+﻿@page "/questiontype"
+@using FPLSP.Components;
+@using FPLSP.Components.QuestionTypeUPComponents
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos.QuestionType
+@using FPLSP.Server.Infrastructure.ViewModels.QuestionType
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+@if (_lstQuestionTypeDto == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <h3>Danh sách báo cáo</h3>
+
+    <div class="d-flex justify-content-end mb-1">
+        <div class="d-flex justify-content-end mb-1">
+            <div class="col-lg-9">
+                <FormSearchQuestionType OnSearch="SearchQuestionTypeUP"></FormSearchQuestionType>
+            </div>
+            <div class="col-lg-2 pl-6">
+                <div class="col-2 pr-16">
+                    <a type="button" class="btn btn-primary" href="/questiontype/add"><i class="fa-solid fa-plus"></i> Add</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="table-responsive ">
+            <table class="table table-light table-bordered">
+                <thead>
+                    <tr>
+                        <th class="col-lg-2">
+                            Tên câu hỏi
+                        </th>
+                        <th>
+                            Loại câu hỏi
+                        </th>
+                        <th class="col-lg-15">Tính năng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in _lstQuestionTypeDto)
+                    {
+                        <tr>
+                            <td>@item.QuestionTypeName</td>
+                            <td>@item.QuestionForm</td>
+                            <td>
+                                <div class="d-flex justify-content-center mb-2">
+                                    <div class="pr-1">
+                                        <a class="btn btn-outline-primary" href="/questiontype/update/@item.Id"><i class="fas fa-edit"></i></a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+
+                    }
+                </tbody>
+            </table>
+            <div class="d-flex justify-content-center mb-2">
+                <div class="p-2">
+                    <a type="button" class="btn btn-primary" href="/questiontype/add"><i class="fa-solid fa-plus"></i> Add</a>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer text-muted">
+            <div class="row mt-3">
+
+                <span>
+                    <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+                </span>
+
+            </div>
+        </div>
+    </div>
+}
+@code
+{
+    [Inject] IQuestionTypeRepo _questionTypeRepo { get; set; }
+    List<QuestionTypeDto> _lstQuestionTypeDto { get; set; } = new List<QuestionTypeDto>();
+    QuestionTypeSearch _questionTypeSearch { get; set; } = new QuestionTypeSearch();
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    private PagingParameters pagingParameters = new PagingParameters();
+    public MetaData MetaData { get; set; } = new MetaData();
+    public string Error { get; set; }
+    int stt;
+    protected override async Task OnInitializedAsync()
+    {
+
+        await GetTasks();
+    }
+    private async Task GetTasks()
+    {
+        stt = 0;
+
+        try
+        {
+            var pagingResponse = await _questionTypeRepo.GetPageList(_questionTypeSearch);
+            _lstQuestionTypeDto = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+    private async Task SelectedPage(int page)
+    {
+        _questionTypeSearch.PageNumber = page;
+        await GetTasks();
+    }
+    public async Task SearchQuestionTypeUP(QuestionTypeSearch questionTypeSearch)
+    {
+
+        _questionTypeSearch = questionTypeSearch;
+        await GetTasks();
+    }
+}

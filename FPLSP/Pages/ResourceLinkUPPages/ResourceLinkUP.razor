@@ -1,0 +1,239 @@
+﻿@page "/resourceLinkUP"
+@using Blazored.Toast.Services
+@using FPLSP.Components.ResourceLinkUPComponents
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.ResourceLinkUP
+
+
+@if (_lstResourceLinkUPs == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <div class="col-md-5">
+        <h3>Tài nguyên bài học</h3>
+    </div>
+    <div class="row pt-3">
+        <div class="col-lg-10">
+
+            <ResourceLinkUPSearch OnSearch="SearchResourceLinkUP"></ResourceLinkUPSearch>
+        </div>
+        <div class="col-lg-2">
+
+            <div class="pl-13">
+                <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Chức Năng
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" @onclick="() => DeleteAll(0)">Xóa tất cả</a></li>
+                    <li><a class="dropdown-item" @onclick="() => DeleteAll(1)">Ngưng hoạt động</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <table class="table table-hover align-middle table-bordered mt-3" style="text-align:center">
+            <thead class="table-success text-center">
+                <tr>
+                    <th width="4%">
+                        @if (_lstResourceLinkUPs.Count > 0)
+                        {
+                            <input type="checkbox" @bind="@Check" @onchange="EventArgs => { CheckAllExpense( EventArgs.Value); } " @bind:event="oninput">
+                        }
+                    </th>
+                    <th width="10%"> Tiêu đề </th>
+                    <th> Đường dẫn </th>
+                    <th width="20%"> Mô tả </th>
+                    <th width="15%"> Trạng thái </th>
+                    <th width="15%"> Chức năng </th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in _lstResourceLinkUPs)
+                {
+                    <tr>
+                        <td width="10"><input type="checkbox" checked=@item.IsChecked @onchange="()=>CheckManual(item.Id,item.IsChecked)"></td>
+                        <td>@item.ResourcesTitle</td>
+                        <td><a href=@item.Path>@item.Path</a></td>
+                        <td><a>@item.Descriptions</a></td>
+                        <td>@(@item.Status == 0 ? "Không hoạt động" : item.Status == 1 ? " Hoạt động" : "Ngưng hoạt động")</td>
+                        <td>
+                            <div class="d-flex justify-content-center mb-2">
+                                <div class="pr-1">
+                                    <a class="btn btn-outline-primary" href="/resourceLinkUPUpdate/@item.Id"><i class="fas fa-edit"></i></a>
+                                </div>
+                                <div class=" pl-1">
+                                    <a class="btn btn-outline-primary" @onclick="()=>OnDelete(item.Id)"><i class="fas fa-trash-alt"></i></a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer text-muted">
+        <div class="row mt-3">
+
+            <span>
+                <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+            </span>
+
+        </div>
+    </div>
+    <Comfirmation ConfirmationMessage="Xác nhận thao tác đã chọn?"
+              ConfirmationTitle="Thao tác đã chọn"
+              ConfirmationChanged="OnConfirmationDelete " @ref="DeleteConfirmation"></Comfirmation>
+}
+@code {
+    [Inject] private IResourceLinkUPRepo _ResourceLinkUPRepo { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    [Inject] public NavigationManager navigationManager { get; set; }
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    private List<ResourceLinkUPDto> _lstResourceLinkUPs = new List<ResourceLinkUPDto>();
+
+    private List<Guid> _listRemove = new List<Guid>();
+
+    private ResourceLinkUPListSearch _resourceLinkUPSearch = new ResourceLinkUPListSearch();
+
+    private bool Check { get; set; }
+    private string deleteID { get; set; }
+    public string thongBao { get; set; } = "";
+    private int _method { get; set; }
+
+    protected Comfirmation DeleteConfirmation { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTasks();
+    }
+    void DeleteAll(int method)
+    {
+        _method = method;
+        _listRemove = _lstResourceLinkUPs.Where(c => c.IsChecked == true).Select(c => c.Id).ToList();
+        DeleteConfirmation.show();
+    }
+    public async Task SearchResourceLinkUP(ResourceLinkUPListSearch resourceLinkUPSearch)
+    {
+        _resourceLinkUPSearch = resourceLinkUPSearch;
+        await GetTasks();
+    }
+
+    public void OnDelete(Guid id)
+    {
+        deleteID = id.ToString();
+        DeleteConfirmation.show();
+    }
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _ResourceLinkUPRepo.GetList(_resourceLinkUPSearch);
+            _lstResourceLinkUPs = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            _toastService.ShowError("Đã xảy ra lỗi, thử lại sau");
+        }
+    }
+
+    void CheckAllExpense(object checkValue)
+    {
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            _lstResourceLinkUPs.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            _lstResourceLinkUPs.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+
+        if (deleteconfirmed && deleteID != null)
+        {
+            var result = await _ResourceLinkUPRepo.Delete(Guid.Parse(deleteID));
+            if (result)
+            {
+                _toastService.ShowSuccess("Xóa thành công");
+                await GetTasks();
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+                await GetTasks();
+            }
+        }
+        else if (deleteconfirmed && _listRemove != null)
+        {
+
+            var result = await _ResourceLinkUPRepo.DeleteList(_method, _listRemove);
+            if (result)
+            {
+                if (_listRemove.Count > 0)
+                {
+
+                    if (_method == 0)
+                    {
+                        thongBao = "Xóa";
+                    }
+                    else if (_method == 1)
+                    {
+                        thongBao = "Ngưng hoạt động";
+                    }
+                    _toastService.ShowSuccess($"{thongBao} {_listRemove.Count} bản ghi thành công");
+                    await GetTasks();
+                }
+                else
+                {
+                    _toastService.ShowError($"Bạn chưa chọn video muốn {thongBao}");
+                    await GetTasks();
+                }
+
+            }
+            else
+            {
+                _toastService.ShowError($"{thongBao} thất bại");
+
+                await GetTasks();
+            }
+        }
+        deleteID = null;
+        _listRemove = null;
+
+        Check = false;
+    }
+
+    void CheckManual(Guid reportId, bool check)
+    {
+        if (check == true)
+        {
+            foreach (var x in _lstResourceLinkUPs.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in _lstResourceLinkUPs.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+
+
+    private async Task SelectedPage(int page)
+    {
+        Check = false;
+        _resourceLinkUPSearch.PageNumber = page;
+        await GetTasks();
+    }
+}

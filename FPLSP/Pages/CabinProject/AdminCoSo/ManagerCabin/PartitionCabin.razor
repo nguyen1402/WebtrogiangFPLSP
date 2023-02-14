@@ -1,0 +1,223 @@
+﻿@page "/listuseridenOfCabin/{maxlevelNonDecrpyt}/{IdCoSoNonDecrpyt}"
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Infrastructure.ViewModels
+@using Microsoft.AspNetCore.Identity
+@attribute [Authorize(Roles = "DirectorOfTraining,Staff")]
+@if (_lstUsers != null && _lstRole != null)
+{
+    <h2 style="margin-bottom: 10px;">Cấp quyền cho người dùng</h2>
+    <div class="row">
+
+        <EditForm class="row" Model="userRoleSearch">
+            <div class="col-lg-6">
+                <InputSelect class="form-select" ValueExpression="@(()=>userRoleSearch.Role)" Value="@userRoleSearch.Role" ValueChanged="@((string? value)=> SearchRole(value))">
+                    <option value="">Tất cả các quyền</option>
+                    @foreach (var item in _lstRole)
+                    {
+                        if (item.ToString() == "DirectorOfTraining" || item.ToString() == "Staff" || item.ToString() == "Lecturer")
+                        {
+                            <option value="@item">@item</option>
+                        }
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-lg-6">
+                <div class="input-group">
+                    <input placeholder="🔍Tìm kiếm theo mã giảng viên..." class="form-control" @bind-value="@userRoleSearch.Name" @onkeyup="()=>SearchTask(null)" @bind-value:event="oninput" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm" />
+                </div>
+            </div>
+
+        </EditForm>
+        <table class="table table-hover align-middle table-bordered mt-3 text-center table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">STT</th>
+                    <th scope="col">Tên người dùng</th>
+                    <th scope="col">Vai Trò</th>
+                    <th scope="col">Tác Vụ</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                @if (maxlevel == "5")
+                {
+                    int stt = 0;
+                    @foreach (var x in _lstUsers)
+                    {
+                        stt++;
+                        <tr>
+                            <td>@stt</td>
+                            <td>@x.UserName</td>
+                            <td>
+                                @if (x.ListRoles.Count() == 0)
+                                {
+                                <th>Chưa cấp quyền</th>
+                                }
+                                else
+                                {
+                                    var listRoleCabin = new List<string>();
+                                    foreach (var role in x.ListRoles.ToList())
+                                    {
+                                        if (role.ToString() == "DirectorOfTraining" || role.ToString() == "Staff" || role.ToString() == "Lecturer")
+                                        {
+                                            listRoleCabin.Add(role);
+                                        }
+                                    }
+                                    if (listRoleCabin.Count() == 0)
+                                    {
+                                    <th>Chưa cấp quyền</th>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var z in String.Join(" , ", listRoleCabin.ToArray()).ToList())
+                                        {
+                                        <th>@z </th>
+                                        }
+                                    }
+
+                                }
+
+                            </td>
+
+                            <td><a href="/detailuserCabin/@_cryptoServices.Encrypt(x.Id.ToString()).Replace("/", "cabin" )/@_cryptoServices.Encrypt(maxlevel.ToString()).Replace("/", "cabin" )/@_cryptoServices.Encrypt(getIdCoSo.ToString()).Replace("/", "cabin" )" class="btn btn-primary">Cập nhật quyền</a></td>
+                        </tr>
+                    }
+                }
+
+                else if (maxlevel == "3")
+                {
+                    int stt = 0;
+                    @foreach (var x in _lstUsers)
+                    {
+                        stt++;
+                        <tr>
+                            <td>@stt</td>
+                            <td>@x.UserName</td>
+                            <td>
+                                @if (x.ListRoles.Count() == 0)
+                                {
+                                <th>Chưa cấp quyền</th>
+                                }
+                                else
+                                {
+                                    var listRoleCabin = new List<string>();
+                                    foreach (var role in x.ListRoles.ToList())
+                                    {
+                                        if (role.ToString() == "DirectorOfTraining" || role.ToString() == "Staff" || role.ToString() == "Lecturer")
+                                        {
+                                            listRoleCabin.Add(role);
+                                        }
+                                    }
+                                    if (listRoleCabin.Count() == 0)
+                                    {
+                                    <th>Chưa cấp quyền</th>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var z in String.Join(" , ", listRoleCabin.ToArray()).ToList())
+                                        {
+                                        <th>@z </th>
+                                        }
+                                    }
+
+                                }
+                            </td>
+                            <td>
+                                <a href="/detailuserCabin/@_cryptoServices.Encrypt(x.Id.ToString()).Replace("/", "cabin" )/@_cryptoServices.Encrypt(maxlevel).ToString().Replace("/", "cabin" )/@_cryptoServices.Encrypt(getIdCoSo.ToString()).Replace("/", "cabin" )" class="btn btn-primary">Cập nhật quyền</a>
+                            </td>
+                        </tr>
+                    }
+                }
+
+            </tbody>
+        </table>
+        <div class="card-footer text-muted">
+            <div class="row mt-3">
+
+                <span>
+                    <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+                </span>
+
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+@code {
+    [Inject]
+    public IRoleUserIdentityRepo _roleUserIdentityRepo { get; set; }
+    [Inject] public IUserIdentityRepo _UserIdentityRepo { get; set; }
+    private List<UserInListRoles> _lstUsers { get; set; }
+    private UserRoleSearch userRoleSearch = new UserRoleSearch();
+    private List<IdentityRole> _lstRole { get; set; }
+    public MetaData MetaData { get; set; } = new MetaData();
+    private string ExceptRoleName = "";
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    [Parameter]
+    public string maxlevelNonDecrpyt { get; set; }
+    [Parameter]
+    public string IdCoSoNonDecrpyt { get; set; }
+
+    private string maxlevel = "";
+    public string IdCoSo = "";
+    private string getIdCoSo = "";
+    protected override async Task OnInitializedAsync()
+    {
+        //giải mã hóa router values tại đây để phục vụ cho các chức năng khác
+        maxlevel = _cryptoServices.Decrypt(maxlevelNonDecrpyt.Replace("cabin", "/"));
+        IdCoSo = _cryptoServices.Decrypt(IdCoSoNonDecrpyt.Replace("cabin", "/"));
+        getIdCoSo = IdCoSo;
+
+        if (maxlevel == "5")
+        {
+            ExceptRoleName = "DirectorOfTraining";
+        }
+        else if (maxlevel == "3")
+        {
+            ExceptRoleName = "Staff";
+        }
+
+        _lstRole = await _roleUserIdentityRepo.GetAllRolesAsync();
+        await GetTasks();
+    }
+    private async Task GetTasks()
+    {
+    load:
+        try
+        {
+
+            var pagingResponse = await _UserIdentityRepo.GetAllUser(userRoleSearch);
+            //kiểm tra xem nếu khác quyền admin core thì tất cả phải được lọc theo cơ sở đào tạo
+
+            _lstUsers = pagingResponse.Items.Where(c => c.IdTrainingFacility == Guid.Parse(IdCoSo)).ToList();
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception)
+        {
+
+            goto load;
+        }
+
+    }
+    private async Task SelectedPage(int page)
+    {
+        userRoleSearch.PageNumber = page;
+        await GetTasks();
+    }
+
+    private async Task SearchRole(string role)
+    {
+        userRoleSearch.Role = role;
+        await SearchTask(null);
+    }
+    private async Task SearchTask(EditContext context)
+    {
+        await GetTasks();
+    }
+}

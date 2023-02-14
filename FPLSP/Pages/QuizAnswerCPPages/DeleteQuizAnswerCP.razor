@@ -1,0 +1,68 @@
+﻿@page "/DeleteQuizAnswerCP/{Id}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.QuizAnswerCPVm
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<h3>Xóa QuizAnswer</h3>
+
+@if (QuizAnswer != null)
+{
+    <div class="form-group">
+        <div class="row">
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Mã câu hỏi: <b>@QuizAnswer.QuestionCode</b></label>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                <label for="name" class="col-md-6 col-form-label">Câu trả lời: <b>@QuizAnswer.Answer</b></label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group pt-2 col-md-2">
+                <EditForm Model="QuizAnswer" OnValidSubmit="Delete" class="card card-body bg-light mt-3">
+                    <DataAnnotationsValidator />
+                    <div class="form-group row">
+                        <label for="name" class="row">
+                            <p>
+                                <b style="color : red">Bạn có muốn xóa không ?</b>
+                            </p>
+                        </label>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-2 text-center">
+                            <button type="submit" class="btn btn-danger">Xóa</button>
+                        </div>
+                        <div class="col-md-10 text-center">
+                            <a href="/MainQuizAnswerCP" class="btn btn-primary">Quay Lại</a>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+            <div class="form-group pt-2 col-md-4">
+                
+            </div>
+        </div>
+
+    </div>
+}
+@code {
+
+    [Inject] public IQuizAnswerCPRepo _quizanswerCPClient { get; set; }
+    public QuizAnswerCPVm QuizAnswer { get; set; } = new QuizAnswerCPVm();
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+    [Parameter]
+    public string Id { get; set; }
+    [Inject] public NavigationManager Navigation { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        QuizAnswer = await _quizanswerCPClient.GetQuizAnswerCPbyId(Guid.Parse(Id));
+
+    }
+    private async Task Delete()
+    {
+
+        ShowAuthError = false;
+        var result = await _quizanswerCPClient.DeleteQuizAnswerCP(Guid.Parse(Id));
+        Navigation.NavigateTo("/MainQuizAnswerCP");
+    }
+}

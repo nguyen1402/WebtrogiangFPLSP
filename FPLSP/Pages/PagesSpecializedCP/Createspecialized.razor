@@ -1,0 +1,102 @@
+﻿@page "/createspecialized"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.Specialized
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<h3>Thêm chuyên ngành</h3>
+<div class="d-flex justify-content-center mb-2">
+    <div class="mx-auto">
+        <MudPaper Class="border-solid border-1 mud-border-primary pa-4" Elevation="0" Width="1300px">
+            <EditForm Model="model" OnValidSubmit="Create">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="" style="height:290px">
+                    <MudGrid Class="align-content-center">
+                        <div class="container-md">
+                            <MudItem xs="12">
+                                <div class="row p-md-5">
+                                    <div class="col-md-6">
+                                        <MudTextField @bind-Value="model.SpecializationName" Label="Tên Chuyên Ngành" Variant="Variant.Outlined" Clearable="true" />
+                                        <ValidationMessage For="@(() => model.SpecializationName)" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <MudTextField @bind-Value="model.SpecializedCode" Label="Mã ngành" Variant="Variant.Outlined" Clearable="true"></MudTextField>
+                                        <ValidationMessage For="@(() => model.SpecializedCode)" />
+                                    </div>
+                                    <div class="col md-0" style="padding-top:20px">
+                                        <MudSelect Class="align-content-center" @bind-Value="model.Status" Dense="true" T="int" Label="Trạng thái" Variant="Variant.Outlined">
+                                            <MudSelectItem T=int Value="0">
+                                                Chưa đủ sinh viên
+                                            </MudSelectItem>
+                                            <MudSelectItem T=int Value="1">
+                                                Chờ đi vào hoạt động
+                                            </MudSelectItem>
+                                            <MudSelectItem T=int Value="2">
+                                                Ngưng hoạt động
+                                            </MudSelectItem>
+                                            <MudSelectItem T=int Value="3">
+                                                Đang hoạt động
+                                            </MudSelectItem>
+                                        </MudSelect>
+                                        <ValidationMessage For="@(() => model.Status)" />
+                                        <div style="text-align:center">
+                                            <MudButton Variant="Variant.Filled" DisableElevation="true" Color="Color.Success" Size="Size.Large" Class="mt-4" OnClick="Create">Thêm mới</MudButton>
+                                            <MudButton Variant="Variant.Filled" DisableElevation="true" Color="Color.Error" Size="Size.Large" Class="mt-4"> <a href="/specialized" style="text-decoration:none;color:white">Quay Lại</a></MudButton>
+                                        </div>
+                                    </div>
+                                </div>
+                            </MudItem>
+                        </div>
+                    </MudGrid>
+                </div>
+            </EditForm>
+        </MudPaper>
+    </div>
+</div>
+<FPLSP.Components.Comfirmation ConfirmationMessage="Bạn có chắc muốn tạo thêm môn cho chuyên ngành này không ?"
+                               ConfirmationTitle="Tạo môn học"
+                               ConfirmationChanged="OnConfirmation" @ref="Confirmation"></FPLSP.Components.Comfirmation>
+
+
+@code {
+
+
+    private SpecializedVM model = new SpecializedVM();
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    [Inject]
+    public ISpecializedCPRepo _iSpecializedClient { get; set; }
+    [Inject]
+    IToastService _toast { get; set; }
+    protected Comfirmation Confirmation { get; set; }
+    private async Task Create()
+    {
+        model.Id = Guid.NewGuid();
+        var result = await _iSpecializedClient.Create(Guid.Empty, model);
+
+        if (result == 1)
+        {
+            _toast.ShowSuccess("Thêm thành công");
+            Confirmation.show();
+            //Navigation.NavigateTo("/specialized");
+        }
+        else
+        {
+            _toast.ShowError("Có lỗi xảy ra");
+        }
+
+    }
+    public async Task OnConfirmation(bool confirmed)
+    {
+        if (confirmed)
+        {
+            var url = Path.Combine("/createsubject/", model.Id.ToString());
+            Navigation.NavigateTo(url);
+        }
+        else
+        {
+            Navigation.NavigateTo("/createspecialized");
+        }
+    }
+}

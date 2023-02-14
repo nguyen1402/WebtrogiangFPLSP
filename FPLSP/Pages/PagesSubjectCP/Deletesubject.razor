@@ -1,0 +1,52 @@
+﻿@page "/deletesubject/{id}"
+@using FPLSP.Repositories
+@using FPLSP.Server.Domain.Dtos
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<div class="row pt-3">
+    <h3>Xóa Môn</h3>
+
+@if (subject != null)
+{
+    <EditForm Model="subject" OnValidSubmit="Delete" class="card card-body bg-light mt-5">
+        <DataAnnotationsValidator />
+        <div class="form-group row">
+            <label for="name" class="row">
+                <p>
+                    <b style="color : red">You chắc chắn want delete to ?</b> subject <b>@subject.SubjectName</b>
+                     ???
+                </p>
+            </label>
+
+        </div>
+        <div class="row pt-2">
+            <div class="col-md-6 text-center">
+                <button type="submit" class="btn btn-danger">Xóa</button>
+            </div>
+            <div class="col-md-6 text-center">
+                <a href="/subjects/@Guid.Empty" class="btn btn-primary">Quay Lại</a>
+            </div>
+        </div>
+    </EditForm>
+}
+</div>
+@code {
+    private SubjectDto subject;
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    [Inject]
+    ISubjectClient _iSubjectClient { get; set; }
+    [Parameter]
+    public string Id { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        subject = await _iSubjectClient.GetSubjectbyId(Guid.Parse(Id));
+    }
+
+    private async Task Delete()
+    {
+        await _iSubjectClient.DeleteSubject(Guid.Parse(Id));
+        Navigation.NavigateTo($"/subjects/{Guid.Empty}");
+    }
+}

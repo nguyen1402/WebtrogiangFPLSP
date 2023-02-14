@@ -1,0 +1,156 @@
+﻿@page "/ExamUpdate/{id:guid}"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using FPLSP.Server.Infrastructure.ViewModels.Exams
+
+<h3>Cập Nhập Đề Thi</h3>
+
+
+@if (_examUpdateVm != null)
+{
+    <div class="row">
+        <div class="col-1">
+        </div>
+        <div class="d-flex justify-content-center col-10 ">
+            <EditForm Model="_examUpdateVm" OnValidSubmit="Update" class="card card-body bg-light mt-5 row-md-10 justify-content-center">
+                <DataAnnotationsValidator />
+                <div class="form-group row  mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-code"></i> Mã Đề Thi:</label>
+                    <div class="col-md-10">
+                        <InputText id="name" class="form-control" @bind-Value="_examUpdateVm.ExamCode" />
+                        <div class="text-danger">
+                            <ValidationMessage For="@(() => _examUpdateVm.ExamCode)"></ValidationMessage>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row  mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-sharp fa-solid fa-address-card"></i> Tên Đề Thi:</label>
+                    <div class="col-md-10">
+                        <InputText id="name" class="form-control" @bind-Value="_examUpdateVm.ExamName" />
+                        <div class="text-danger">
+                            <ValidationMessage For="@(() => _examUpdateVm.ExamName)"></ValidationMessage>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row  mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-check"></i> Trạng Thái:</label>
+                    <div class="col-md-10">
+                        <InputSelect class="form-control" @bind-Value="_examUpdateVm.Status">
+                            <option value="1">Mở</option>
+                            <option value="0">Đóng</option>
+                        </InputSelect>
+                    </div>
+                </div>
+
+                <div class="form-group row  mt-2">
+                    <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-book"></i> Môn Học:</label>
+                    <div class="col-md-10">
+                        <InputSelect class="form-select" @bind-Value="_examUpdateVm.SubjectId">
+                            @if (subjectDtos != null)
+                            {
+                                @foreach (var item in subjectDtos)
+                                {
+                                    <option value="@item.Id">@item.SubjectName</option>
+                                }
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+                <div class="row pt-2">
+                    <div class="col-4"></div>
+                    <div class="col-4" style="text-align: center">
+                        <button type="submit" class="btn btn-primary me-2">Cập Nhật</button>
+                        <button type="button" class="btn btn-success me-2" @onclick="Restore">Khôi Phục</button>
+                        <a href="/ExamList" class="btn btn-danger">Quay Lại</a>
+                    </div>
+                    <div class="col-4"></div>
+                </div>
+            </EditForm>
+
+        </div>
+        <div class="col-1">
+        </div>
+    </div>
+}
+@code{
+    private ExamUpdateVm _examUpdateVm;
+    [Inject] public NavigationManager Navigation { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+
+    [Inject] IExamCPServicesRepo _examApiClient { get; set; }
+    [Inject] private ISubjectClient subjectClient { get; set; }
+
+    private List<SubjectDto> subjectDtos = new List<SubjectDto>();
+    private List<ExamCPDto> ExamDtos = new List<ExamCPDto>();
+    private ExamCP examCp = new ExamCP();
+    private ExamListSearchVm ExamListSearchVm = new ExamListSearchVm();
+
+    [Parameter] public Guid Id { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        ExamDtos = await _examApiClient.GetAllExamCPListAsync();
+
+        await Get();
+    }
+
+    private async Task Get()
+    {
+        subjectDtos = await subjectClient.GetAllSubjectAsync();
+        examCp = await _examApiClient.GetExamCPById(Id);
+        var examUpdate = new ExamUpdateVm()
+            {
+                ExamCode = examCp.ExamCode,
+                ExamName = examCp.ExamName,
+                Status = examCp.Status,
+                SubjectId = examCp.SubjectId
+            };
+        _examUpdateVm = examUpdate;
+
+
+    }
+
+
+    private async Task Update()
+    {
+        if (CheckCode(_examUpdateVm.ExamCode))
+        {
+            _toastService.ShowError("Lỗi! mã đề bị trùng");
+            Navigation.NavigateTo($"/ExamUpdate/{examCp.Id}");
+        }
+        else
+        {
+            var result = await _examApiClient.UpdateExamCP(Id, _examUpdateVm);
+
+            if (result)
+            {
+                _toastService.ShowSuccess("Sửa Thành Công");
+                Navigation.NavigateTo("/ExamList");
+            }
+            else
+            {
+                _toastService.ShowError("Lỗi! không Sửa được bài kiểm tra");
+                Navigation.NavigateTo($"/ExamUpdate/{examCp.Id}");
+            }
+        }
+    }
+
+    private async void Restore()
+    {
+        await Get();
+        _examUpdateVm.ExamCode = examCp.ExamCode;
+        _examUpdateVm.ExamName = examCp.ExamName;
+        _examUpdateVm.Status = examCp.Status;
+        _examUpdateVm.SubjectId = examCp.SubjectId;
+
+    }
+
+    private bool CheckCode(string input)
+    {
+        var sdfdsf = ExamDtos.Any(c => Equals(input, c.ExamCode));
+        return sdfdsf;
+    }
+}

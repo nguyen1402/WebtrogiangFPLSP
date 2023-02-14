@@ -1,0 +1,27 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels.LectuterSpecializedCP
+<EditForm Model="@lessonContentListSearch" OnSubmit=@SearchForm>
+    <div class="row">
+        <div class="col">
+            <InputText placeholder="Nhập email cần tìm" class="form-control" @bind-Value="lessonContentListSearch.Name"></InputText>
+        </div>
+        <div class="col">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+
+    [Parameter]
+    public EventCallback<LectuterSpecializedCPListSearch> OnSearch { set; get; }
+
+
+    private LectuterSpecializedCPListSearch lessonContentListSearch = new LectuterSpecializedCPListSearch();
+    
+
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(lessonContentListSearch);
+
+    }
+}

@@ -1,0 +1,246 @@
+﻿@page "/createlessoncontent/{idspecializedNonDecrypt}/{idsubjectNonDecrypt}/{idlessonNonDecrypt}"
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.LessonContentCP
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<div class="row pt-3">
+    <h3 class="ps-0">Thêm nội dung bài : @lesson.LessonCode-@lesson.LessonName</h3>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/SpecializedCP/@_cryptoServices.Encrypt((maxlevel).ToString()).Replace("/", "I0H")/@_cryptoServices.Encrypt((IdCoSo).ToString()).Replace("/", "I0H")">Chuyên ngành</a></li>
+            <li class="breadcrumb-item"><a href="/createsubject/@_cryptoServices.Encrypt((@idspecialized).ToString()).Replace("/", "I0H")">@namespecialized</a></li>
+            <li class="breadcrumb-item"><a href="/createsubject/@_cryptoServices.Encrypt((@idspecialized).ToString()).Replace("/", "I0H")">@subject.SubjectName</a></li>
+            <li class="breadcrumb-item"><a href="/createlesson/@_cryptoServices.Encrypt((@idspecialized).ToString()).Replace("/", "I0H")/@_cryptoServices.Encrypt((@idsubject).ToString()).Replace("/", "I0H")">@nameLesson</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Tạo mới nội dung bài</li>
+        </ol>
+    </nav>
+    @if (ShowAuthError)
+    {
+        <div class="alert alert-danger" role="alert">
+            @Error
+        </div>
+    }
+    <EditForm Model="lessonContent" OnValidSubmit="Create" class="card card-body bg-light mt-1">
+        <DataAnnotationsValidator />
+        <div class="row" style="text-align:center"><p>Lưu ý: Hãy chọn link trước khi nhập dữ liệu( nếu không có link thì ấn thêm )</p></div>
+        <div class="row">
+            <div class="col-4">
+                <div class="row justify-content-center" style="text-align: center">
+                    @if (lessonContent.PathId() != null)
+                    {
+                        <iframe class="modal-xl" style="text-align:center;height: 371px;width:412px;padding-top: 10px;" src='https://www.youtube.com/embed/@lessonContent.PathId()' frameborder='0' allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe>
+                    }
+                    else
+                    {
+                        <h5>Video sẽ được hiển thị ở đây</h5>
+                    }
+                </div>
+            </div>
+            <div class="col-8">
+                <div class="form-group row pt-2">
+                    <label for="name" class="col-md-3 col-form-label float-end">Link tài nguyên:</label>
+                    <div class="col-md-7">
+                        <InputSelect class="form-select" @bind-Value="lessonContent.Path">
+                            <option value="">Chọn link tài nguyên</option>
+                            @if (lsDtoLink != null)
+                            {
+                                @foreach (var item in lsDtoLink)
+                                {
+                                    <option value="@item.Path">@item.ResourcesTitle - @item.Descriptions</option>
+                                }
+                            }
+                        </InputSelect>
+                        <div class="text-danger"><ValidationMessage For="@(() => lessonContent.Path)" /></div>
+
+                    </div>
+                    <div class="col-md-2" style="text-align:center">
+                        <a @onclick="()=>CreateLink()" class="btn btn-success">Thêm Link</a>
+                    </div>
+                </div>
+                <div class="form-group row pt-2">
+                    <label for="name" class="col-md-3 col-form-label float-end">Vị trí nội dung bài học:</label>
+                    <div class="col-md-9">
+                        <InputNumber min=1 max=100 id="name" class="form-control" @bind-Value="lessonContent.Index"></InputNumber>
+                        <div class="text-danger"><ValidationMessage For="@(() => lessonContent.Index)" /></div>
+                    </div>
+                </div>
+                <div class="form-group row pt-2">
+                    <label for="name" class="col-md-3 col-form-label float-end">Mã nội dung bài học:</label>
+                    <div class="col-md-9">
+                        <input id="name" class="form-control" value="@lessonContent.LessonContentCode" disabled />
+                    </div>
+                </div>
+                <div class="form-group row pt-2">
+                    <label for="name" class="col-md-3 pe-0 col-form-label float-end">Tiêu đề nội dung bài học:</label>
+                    <div class="col-md-9">
+                        <InputText id="name" class="form-control" @bind-Value="lessonContent.LessonContentName" />
+                        <div class="text-danger"><ValidationMessage For="@(() => lessonContent.LessonContentName)" /></div>
+                    </div>
+                </div>
+                <div class="form-group row pt-2">
+                    <label for="name" class="col-md-3 col-form-label float-end">Nội dung bài học:</label>
+                    <div class="col-md-9">
+                        <InputTextArea rows=3 cols=55 id="name" class="form-control" @bind-Value="lessonContent.Content" />
+                        <div class="text-danger"><ValidationMessage For="@(() => lessonContent.Content)" /></div>
+
+                    </div>
+                </div>
+                <div class="form-group row pt-2">
+                    <label for="name" class="col-md-3 col-form-label float-end">Mô tả:</label>
+                    <div class="col-md-9">
+                        <InputText id="name" class="form-control" @bind-Value="lessonContent.Descriptions" />
+                        <div class="text-danger"><ValidationMessage For="@(() => lessonContent.Descriptions)" /></div>
+                    </div>
+                </div>
+                <div class="form-group row pt-2">
+                    <label for="name" class="col-md-3 col-form-label float-end">Trạng thái:</label>
+                    <div class="col-md-9">
+                        <InputSelect class="form-select" @bind-Value="lessonContent.Status">
+                            <option value="0">Không hoạt động</option>
+                            <option value="1">Đang hoạt động</option>
+                        </InputSelect>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-4">
+            </div>
+            <div class="col-md-4 text-center">
+                <button type="submit" class="btn btn-success me-2">Tạo mới</button>
+                <button type="button" class="btn btn-outline-success me-2" @onclick="ClearForm">Làm Mới</button>
+                <a @onclick="()=>Quaylai()" class="btn btn-danger">Quay Lại</a>
+            </div>
+            <div class="col-md-4">
+            </div>
+        </div>
+
+    </EditForm>
+
+</div>
+
+@code {
+    private LessonContentCreateVM lessonContent = new LessonContentCreateVM();
+
+    [Parameter]
+    public string idsubjectNonDecrypt { get; set; }
+
+    [Parameter]
+    public string idlessonNonDecrypt { get; set; }
+    [Parameter]
+    public string idspecializedNonDecrypt { get; set; }
+
+    public string idsubject = "";
+    public string idlesson = "";
+    public string idspecialized = "";
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    [Inject]
+    public ILessonContentCPRepo _iLessonContentClient { get; set; }
+
+
+    [Inject]
+    public ILessonCPRepo _iLessonClient { get; set; }
+    private LessonDto lesson { get; set; } = new LessonDto();
+
+    [Inject]
+    public IResourceLinkRepo _iResourcelinkClient { get; set; }
+
+    private IEnumerable<ResourceLinkDto> lsDtoLink;
+    [Inject] private IToastService _toastService { get; set; }
+    private string nameLesson;
+    private string codeLesson;
+    public SpecializedDto specializedDto { get; set; } = new SpecializedDto();
+    string namespecialized { get; set; }
+    [Inject]
+    public ISpecializedCPRepo _iSpecialized { get; set; }
+    private SubjectDto subject { get; set; } = new SubjectDto();
+
+    [Inject]
+    public ISubjectClient _iSubjectClient { get; set; }
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+
+    Uri uri;
+    string maxlevel = "";
+    string IdCoSo = "";
+    protected async override Task OnInitializedAsync()
+    {
+        uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (string.IsNullOrEmpty(uri.Query) == false)
+        {
+            var urifist = uri.Query.Split("?")[1];
+            maxlevel = _cryptoServices.Decrypt(urifist.Split("LDN01")[0].Replace("I0H", "/"));
+            IdCoSo = _cryptoServices.Decrypt(urifist.Split("LDN01")[1].Replace("I0H", "/"));
+        }
+        idsubject = _cryptoServices.Decrypt(idsubjectNonDecrypt.Replace("I0H", "/"));
+        idlesson = _cryptoServices.Decrypt(idlessonNonDecrypt.Replace("I0H", "/"));
+        idspecialized = _cryptoServices.Decrypt(idspecializedNonDecrypt.Replace("I0H", "/"));
+
+
+        specializedDto = await _iSpecialized.GetbyId(Guid.Empty, Guid.Parse(idspecialized));
+        namespecialized = specializedDto.SpecializationName;
+        subject = await _iSubjectClient.GetSubjectbyId(Guid.Parse(idsubject));
+        lesson = await _iLessonClient.GetbyId(Guid.Parse(idlesson));
+        nameLesson = lesson.LessonName;
+        lsDtoLink = await _iResourcelinkClient.GetAllAsync();
+        lesson = await _iLessonClient.GetbyId(Guid.Parse(idlesson));
+        var alllesson = await _iLessonContentClient.GetAll(Guid.Parse(idlesson));
+        if (alllesson.Count() < 9)
+        {
+            lessonContent.LessonContentCode = "BH0" + (alllesson.Count() + 1);
+
+        }
+        else
+        {
+            lessonContent.LessonContentCode = "BH" + (alllesson.Count() + 1);
+        }
+        lessonContent.Status = 1;
+        var countlessoncontent = await _iLessonContentClient.GetAll(Guid.Parse(idlesson));
+        lessonContent.Index = countlessoncontent.Count() + 1;
+    }
+
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+    private async Task Create()
+    {
+        var result = await _iLessonContentClient.Create(Guid.Parse(idlesson), lessonContent);
+        if (result != 1)
+        {
+            _toastService.ShowError("Lỗi! Vui lòng thử lại");
+            var url = Path.Combine("/createlessoncontent", idspecialized, idsubject, idlesson);
+            Navigation.NavigateTo(url);
+        }
+        else
+        {
+            _toastService.ShowSuccess("Thêm thành công");
+            var url = Path.Combine("/lessoncontent", idspecialized, idsubject, idlesson);
+            Navigation.NavigateTo(url);
+        }
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine("/createlesson", idspecializedNonDecrypt, idsubjectNonDecrypt);
+        Navigation.NavigateTo(url);
+    }
+    private void ClearForm()
+    {
+        lessonContent.Descriptions = null;
+        lessonContent.Content = null;
+        lessonContent.Status = 1;
+        lessonContent.Path = null;
+        lessonContent.LessonContentName = null;
+    }
+
+    private async Task CreateLink()
+    {
+        var url = Path.Combine("/createresourcelink/", _cryptoServices.Encrypt((idspecialized).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idsubject).ToString()).Replace("/", "I0H") + "/" + _cryptoServices.Encrypt((idlesson).ToString()).Replace("/", "I0H"));
+        Navigation.NavigateTo(url);
+    }
+}

@@ -1,0 +1,46 @@
+﻿@*@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.ResourceLink
+
+
+<EditForm Model="@resourceLinkListSearch" OnSubmit=@SearchForm>
+    <div class="row">
+        <div class="col-4">
+            <InputSelect @bind-Value="resourceLinkListSearch.Status" class="form-select">
+                <option value="">Tất cả</option>
+                <option value="0">Không hoạt động</option>
+                <option value="1">Đang hoạt động</option>
+            </InputSelect>
+        </div>
+        <div class="col-4 ps-0 pe-0">
+            <InputText placeholder="Nhập tiêu đề link" class="form-control" @bind-Value="resourceLinkListSearch.Name"></InputText>
+        </div>
+        <div class="col-4">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+            <button class="btn btn-outline-success ms-2" @onclick="() => Undo()">Làm mới</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public EventCallback<ResourceLinkListSearch> OnSearch { set; get; }
+
+
+    private ResourceLinkListSearch resourceLinkListSearch = new ResourceLinkListSearch();
+    
+
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(resourceLinkListSearch);
+
+    }
+
+    private async Task Undo()
+    {
+        resourceLinkListSearch.Name = "";
+        resourceLinkListSearch.Status = null;
+        resourceLinkListSearch.PageNumber = 1;
+        await OnSearch.InvokeAsync(resourceLinkListSearch);
+
+    }
+}*@

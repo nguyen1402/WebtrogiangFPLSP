@@ -1,0 +1,328 @@
+﻿@page "/semesterblock"
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject
+@using FPLSP.Repositories.Interfaces.CabinProject
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@inject HttpClient httpClient
+@attribute [Authorize(Roles = "DirectorOfTraining")]
+<h3>Quản Lý Block, Kì Học</h3>
+@if (lstblock == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <div class="row">
+        <div class="col-lg-10">
+            <div class="pl">
+                <SemesterBlockComponents OnSearch="SearchSemester"></SemesterBlockComponents>
+            </div>
+        </div>
+        <div class="col-lg-2">
+            <div class="pl-13 d-flex justify-content-end mr-6">
+                <a type="button" class="btn btn-primary " @onclick="()=> OpenDialog()"><i class="fa-solid fa-plus"></i> Thêm</a>
+                @*                <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Chức Năng
+            </button>
+            <ul class="dropdown-menu">
+            <li><a class="dropdown-item">Đang phát triển thêm</a></li>
+            </ul>*@
+
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="table-responsive ">
+            <table class="table table-light table-bordered">
+                <thead>
+                    <tr>
+
+                        <th width="10%">
+                            Kì
+                        </th>
+                        <th width="10%">
+                            Block
+                        </th>
+                        <th width="10%">Ngày bắt đầu</th>
+                        <th width="10%">
+                            Ngày kết thúc
+                        </th>
+                        <th width="2%">
+                            Trạng thái
+                        </th>
+                        <th width="1%">Tính năng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in semesterBlock)
+                    {
+                        @if (item.Status != 1)
+                        {
+                            <tr>
+
+                                <td>@item.NameofSemester</td>
+                                <td>@item.NameofBlock</td>
+                                <td>@item.StartTime.ToString("dd-MM-yyyy")</td>
+                                <td>@item.EndTime.ToString("dd-MM-yyyy")</td>
+                                <td>
+                                    @if (item.Checked == (bool)true)
+                                {
+
+                                    <label class="toggle toggle-alternative">
+                                        <input type="checkbox" id="checkboxB" class="checkbox" checked="checked" @onclick="()=> ChangeStatus(item.IdBlock,item.IdSemester,true)" />
+                                        <span class="toggle-text"></span>
+                                        <span class="toggle-handle"></span>
+                                    </label>
+
+                                }
+                                else
+                                {
+
+                                    <label class="toggle toggle-alternative">
+                                            <input type="checkbox" id="checkboxB" class="checkbox" @onclick="()=> ChangeStatus(item.IdBlock, item.IdSemester,false)" />
+                                        <span class="toggle-text"></span>
+                                        <span class="toggle-handle"></span>
+                                    </label>
+
+                                }
+                                </td>
+                                <td>
+                                    <div class="d-flex d-flex justify-content-end mr-4">
+
+                                        <div class="pr-1">
+                                            <a class="btn btn-primary " type="button" title="Sửa" id="show-emp" href="semesterblock/update/@_cryptoServices.Encrypt(item.IdBlock.ToString()).Replace("/", "danhhn" )/@_cryptoServices.Encrypt(item.IdSemester.ToString()).Replace("/", "danhhn" )">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                        <div class=" pl-1">
+                                            <a class="btn btn-danger " type="button" title="Xóa" @onclick="()=>Delete(item.IdBlock,item.IdSemester)">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+            <div class="d-flex justify-content-center mb-2">
+                <div class="row">
+                    <div class="col-11 align-self-center">
+                        <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <Comfirmation ConfirmationMessage="Bạn muốn xóa không?"
+              ConfirmationTitle="Xác nhận"
+              ConfirmationChanged="OnConfirmationDelete " @ref="DeleteConfirmation"></Comfirmation>
+    <SemesterBlockAdd OnAdd="OnConfirmAdd" @ref="semesterBlockAdd"></SemesterBlockAdd>
+
+
+}
+@code {
+    [Inject] private CryptoServices _cryptoServices { get; set; }
+    private Guid idBlock { get; set; }
+    private Guid idBlockDel { get; set; }
+    private Guid idSemesterDel { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    [Inject] private NavigationManager navigationManager { get; set; }
+    protected Comfirmation DeleteConfirmation { get; set; }
+    protected SemesterBlockAdd semesterBlockAdd { get; set; }
+    public MetaData MetaData { get; set; } = new MetaData();
+    [Inject] private ISemesterBlockRepo _semesterBlockRepo { get; set; }
+    [Inject] private ISemesterRepo _semesterRepo { get; set; }
+    [Inject] private IBlockRepo _blockRepo { get; set; }
+    SemesterBlockSearch _semesterBlockSearch = new SemesterBlockSearch();
+    List<SemesterBlockDto> _lstSemesterBlockSearch = new List<SemesterBlockDto>();
+    List<SemesterDto> semester = new List<SemesterDto>();
+    List<BlockDto> lstblock = new List<BlockDto>();
+    List<SemesterBlockVM> semesterBlock = new List<SemesterBlockVM>();
+    [Parameter] public Guid IdTrain { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTasks();
+    }
+    private async Task GetTasks()
+    {
+
+        try
+        {
+
+            semester = await _semesterRepo.GetAll();
+            lstblock = await _blockRepo.GetAll();
+            var pagingResponse = await _semesterBlockRepo.GetPageList(_semesterBlockSearch);
+            _lstSemesterBlockSearch = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+            var lstsemesterBlock = from a in _lstSemesterBlockSearch
+                                   join b in semester
+                                   on a.IdSemester equals b.Id
+                                   join c in lstblock
+                                   on a.IdBlock equals c.Id
+                                   select new
+                                   {
+                                       a.IdBlock,
+                                       a.IdSemester,
+                                       b.NameofSemester,
+                                       c.NameOfBlock,
+                                       a.StartTime,
+                                       a.EndTime,
+                                       a.IndexOfSemesterBlock,
+                                       a.Status,
+
+                                   };
+            semesterBlock = new List<SemesterBlockVM>();
+            if (_semesterBlockSearch.Search != null)
+            {
+                foreach (var item in lstsemesterBlock)
+                {
+                    SemesterBlockVM vM = new SemesterBlockVM()
+                        {
+                            IdBlock = item.IdBlock,
+                            IdSemester = item.IdSemester,
+                            NameofSemester = item.NameofSemester,
+                            NameofBlock = item.NameOfBlock,
+                            StartTime = item.StartTime,
+                            EndTime = item.EndTime,
+                            IndexOfSemesterBlock = item.IndexOfSemesterBlock,
+                            Status = item.Status
+                        };
+                    semesterBlock.Add(vM);
+                    semesterBlock = semesterBlock.Where(x => x.NameofBlock.Contains(_semesterBlockSearch.Search) || x.NameofSemester.Contains(_semesterBlockSearch.Search)).ToList();
+                }
+            }
+            else
+            {
+                foreach (var item in lstsemesterBlock)
+                {
+                    SemesterBlockVM vM = new SemesterBlockVM()
+                        {
+                            IdBlock = item.IdBlock,
+                            IdSemester = item.IdSemester,
+                            NameofSemester = item.NameofSemester,
+                            NameofBlock = item.NameOfBlock,
+                            StartTime = item.StartTime,
+                            EndTime = item.EndTime,
+                            IndexOfSemesterBlock = item.IndexOfSemesterBlock,
+                            Status = item.Status
+                        };
+                    semesterBlock.Add(vM);
+                }
+            }
+
+
+            //foreach (var item in semesterBlock)
+            //{
+            //    if (((item.EndTime.Day < DateTime.Now.Day) && item.EndTime.Month <= DateTime.Now.Month && item.EndTime.Year <= DateTime.Now.Year || (item.EndTime.Month < DateTime.Now.Month && item.EndTime.Year <= DateTime.Now.Year) || (item.EndTime.Year < DateTime.Now.Year)) && item.Status == 0)
+            //    {
+            //        var changeStatusCabin = semesterBlock.FirstOrDefault(x => x.IdBlock == item.IdBlock && x.IdSemester == item.IdSemester);
+            //        changeStatusCabin.Status = 2;
+            //        var check = await _semesterBlockRepo.UpdateSemesterBlock(changeStatusCabin);
+            //    }
+            //}
+            foreach (var item in semesterBlock)
+            {
+                if (item.Status == 0)
+                {
+                    item.Checked = true;
+                }
+                else if (item.Status == 2)
+                {
+                    item.Checked = false;
+                }
+            }
+            semesterBlock = semesterBlock.OrderByDescending(x => x.EndTime).ToList();
+        }
+        catch (HttpRequestException ex)
+        {
+            return;
+        }
+
+    }
+    private async void Delete(Guid IdBlock, Guid IdSemester)
+    {
+        idBlockDel = IdBlock;
+        idSemesterDel = IdSemester;
+        DeleteConfirmation.show();
+
+    }
+    private async Task ChangeStatus(Guid idBlock, Guid idSemeester, bool? Checked)
+    {
+
+        var changeStatus = semesterBlock.FirstOrDefault(x => x.IdBlock == idBlock && x.IdSemester == idSemeester);
+        if (!(bool)Checked && changeStatus != null)
+        {
+            
+            changeStatus.Status = 0;
+            await _semesterBlockRepo.UpdateSemesterBlock(changeStatus);
+            semesterBlock = semesterBlock.Where(x => x.IdBlock != idBlock && x.IdSemester != idSemeester && x.Status == 0).ToList();
+            foreach (var item in semesterBlock)
+            {
+                item.Status = 2;
+                await _semesterBlockRepo.UpdateSemesterBlock(item);
+            }
+            _toastService.ShowSuccess("Thay đổi trạng thái thành công");
+            await GetTasks();
+        }
+        else
+        {
+            
+            changeStatus.Status = 2;
+            await _semesterBlockRepo.UpdateSemesterBlock(changeStatus);
+            _toastService.ShowSuccess("Thay đổi trạng thái thành công");
+            await GetTasks();
+        }
+
+
+    }
+    private void Update(Guid IdBlock, Guid IdSemester)
+    {
+        string idb = _cryptoServices.Encrypt(IdBlock.ToString()).Replace("/", "sem");
+        string ids = _cryptoServices.Encrypt(IdSemester.ToString()).Replace("/", "sem");
+        //navigationManager.NavigateTo($"/semesterblock/update/{IdBlock.ToString()}/{IdSemester.ToString()}");
+        navigationManager.NavigateTo($"/semesterblock/update/{idb}/{ids}");
+
+    }
+    private async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (deleteconfirmed)
+        {
+            await _semesterBlockRepo.DeleteSemesterBlock(Convert.ToString(idBlockDel), Convert.ToString(idSemesterDel));
+            await GetTasks();
+        }
+
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _semesterBlockSearch.PageNumber = page;
+        await GetTasks();
+    }
+    public async Task SearchSemester(SemesterBlockSearch semesterBlockSearch)
+    {
+        _semesterBlockSearch = semesterBlockSearch;
+        await GetTasks();
+    }
+    private void OpenDialog()
+    {
+        if (semesterBlockAdd != null)
+        {
+            semesterBlockAdd.show();
+        }
+
+    }
+    private async Task OnConfirmAdd(bool check)
+    {
+        if (check)
+        {
+            await GetTasks();
+        }
+
+
+    }
+}

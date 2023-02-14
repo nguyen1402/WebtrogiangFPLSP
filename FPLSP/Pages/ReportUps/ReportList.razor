@@ -1,0 +1,273 @@
+﻿@page "/reportlist/{classUPId}"
+@using FPLSP.Components;
+@using FPLSP.Components.ReportClassUP
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.ReportClassUP
+@using Blazored.Toast.Services
+
+
+@if (_report == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <h3>Danh sách báo cáo</h3>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="pl-16">
+                <ReportSearch OnSearch="SearchTask"></ReportSearch>
+
+            </div>
+        </div>
+        <div class="col-lg-3">
+
+            <div class="pl-13">
+                <a type="button" class="btn btn-outline-danger" href="reportcreate/@classUPId"><i class="fa-solid fa-plus"></i> Thêm</a>
+                <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Chức Năng
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" @onclick="() => DeleteAll()">Xóa</a></li>
+                </ul>
+
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <table class="table table-hover align-middle table-bordered mt-3" style="text-align:center">
+            <thead class="table-success">
+                <tr>
+                    <th width="5%">
+                        @if (_report.Count > 0)
+                        {
+                            <input type="checkbox" @bind="@Check" @onchange="EventArgs => { CheckAllExpense( EventArgs.Value); } " @bind:event="oninput">
+                        }
+                    </th>
+                    <th>
+                        STT
+                    </th>
+                    <th class="col-lg-2">
+                        Số lượt báo cáo
+                    </th>
+                    <th>
+                        Đánh giá
+                    </th>
+                    <th>
+                        Mô tả
+                    </th>
+                    <th>Lớp học</th>
+                    <th>
+                        Trạng thái
+                    </th>
+                    <th class="col-lg-15">Chức năng</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in _report)
+                {
+                    if (item.IsDeleted == false)
+                    {
+                        stt++;
+                        <tr>
+                            <td width="10"><input type="checkbox" checked=@item.IsChecked @onchange="()=>CheckManual(item.Id,item.IsChecked)"></td>
+                            <td>@stt</td>
+                            <td>@item.ReportAmount</td>
+                            <td>@Reportlv(@item.ReportLevel)</td>
+                            <td>@item.Describe</td>
+                            <td>@item.ClassCode</td>
+                            @if (@item.Status == 0)
+                            {
+                                <td>
+                                    Đang đánh giá
+                                </td>
+                            }
+                            else
+                            {
+                                <td>
+                                    Đã đánh giá
+                                </td>
+                            }
+                            <td>
+                                <div class="d-flex justify-content-center mb-2">
+                                    <div class="pr-1">
+                                        <a class="btn btn-outline-primary" href="/reportupdate/@item.Id/@classUPId"><i class="fas fa-edit"></i></a>
+                                    </div>
+                                    <div class=" pl-1">
+                                        <a class="btn btn-outline-primary" @onclick="()=>OnDelete(item.Id)"><i class="fas fa-trash-alt"></i></a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer text-muted">
+        <div class="row mt-3">
+
+            <span>
+                <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+            </span>
+
+        </div>
+    </div>
+    <Comfirmation ConfirmationMessage="Bạn muốn xóa đánh giá lớp học?"
+              ConfirmationTitle="Xóa đánh giá lớp học"
+              ConfirmationChanged="OnConfirmationDelete " @ref="DeleteConfirmation"></Comfirmation>
+}
+
+@code
+ {
+        [Inject] private IReportClassUPRepo _reportClassUPRepo { get; set; }
+        [Inject] private IToastService _toastService { get; set; }
+        [Inject] private NavigationManager navigationManager { get; set; }
+
+    private List<ReportUPDto> _report = new List<ReportUPDto>();
+
+    private List<Guid> _removeReport = new List<Guid>();
+    public MetaData MetaData { get; set; } = new MetaData();
+    private bool Check = false;
+    private ReportClassUpSearch _reportUPParameters = new ReportClassUpSearch();
+    protected Comfirmation DeleteConfirmation { get; set; }
+
+    private string _idReport; //id của ReportClassUP
+    [Parameter]
+    public string classUPId { get; set; }
+    private int stt = 0;
+    protected override async Task OnInitializedAsync()
+    {
+
+        await GetTasks();
+    }
+    private string Reportlv(int a)
+    {
+        if (a == 0)
+        {
+            return "Thấp";
+        }
+        if (a == 1)
+        {
+            return "Trung bình";
+        }
+        return "Cao";
+    }
+
+    private async Task GetTasks()
+    {
+        var pagingReportDtos = await _reportClassUPRepo.GetPagingReportClassUPs(Guid.Parse(classUPId), _reportUPParameters);
+        stt = 0;
+        _report = pagingReportDtos.Items;
+        MetaData = pagingReportDtos.MetaData;
+    }
+    private async Task SelectedPage(int page)
+    {
+        Check = false;
+        _reportUPParameters.PageNumber = page;
+        await GetTasks();
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        stt = 0;
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            _report.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            _report.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+
+    void CheckManual(Guid reportId, bool check)
+    {
+        stt = 0;
+        if (check == true)
+        {
+            foreach (var x in _report.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in _report.Where(c => c.Id == reportId))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    void DeleteAll()
+    {
+        stt = 0;
+        _removeReport = _report.Where(c => c.IsChecked == true).Select(c => c.Id).ToList();
+        DeleteConfirmation.show();
+    }
+    public async Task OnDelete(Guid id)
+    {
+        _idReport = id.ToString();
+        DeleteConfirmation.show();
+    }
+    public async Task SearchTask(ReportClassUpSearch reportClassUpSearch)
+    {
+        _reportUPParameters = reportClassUpSearch;
+        await GetTasks();
+    }
+
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        stt = 0;
+        if (deleteconfirmed && _idReport != null)
+        {
+            var result = await _reportClassUPRepo.RemoveReportClassUP(_idReport);
+            if (result)
+            {
+                _toastService.ShowSuccess("Xóa thành công");
+                await GetTasks();
+                navigationManager.NavigateTo($"/reportlist/{classUPId}");
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+                await GetTasks();
+                navigationManager.NavigateTo($"/reportlist/{classUPId}");
+            }
+        }
+        else if (deleteconfirmed && _removeReport != null)
+        {
+
+            var result = await _reportClassUPRepo.RemoveListReportClassUP(_removeReport);
+            if (result)
+            {
+                if (_removeReport.Count > 0)
+                {
+                    _toastService.ShowSuccess($"Xóa {_removeReport.Count} bản ghi thành công");
+                    await GetTasks();
+                    navigationManager.NavigateTo($"/reportlist/{classUPId}");
+                }
+                else
+                {
+                    _toastService.ShowError($"Bạn chưa chọn báo cáo muốn xóa");
+                    await GetTasks();
+                    navigationManager.NavigateTo($"/reportlist/{classUPId}");
+                }
+
+            }
+            else
+            {
+                _toastService.ShowError("Xóa thất bại");
+
+                await GetTasks();
+                navigationManager.NavigateTo($"/reportlist/{classUPId}");
+            }
+        }
+        _idReport = null;
+        _removeReport = null;
+
+        Check = false;
+    }
+ }

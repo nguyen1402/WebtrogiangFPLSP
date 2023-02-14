@@ -1,0 +1,133 @@
+﻿@page "/SubmitHomeWorksList/{idclass}/{lecuId}/{subjectId}/{specializedId}/{idlesson}"
+@using FPLSP.Components.LocNopBai
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.SubmitHomeWorkVM
+@attribute [Authorize(Roles = "LecturerFPLSP")]
+<div class="row">
+
+    <div class="col-md-2 text-center">
+        <a @onclick="Quaylai" class="btn btn-danger">Quay lại</a>
+    </div>
+    <div class="col-lg-10">
+        <SubmitHomeWorksSeach OnSearch="SearchLessonUP"></SubmitHomeWorksSeach>
+    </div>
+</div>
+@if (_lstDtos == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    @if (_lstDtos.Any())
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Mã Sinh Viên</th>
+                    <th>Tên sinh viên</th>
+                    <th>Trạng thái</th>
+                    <th>Link bài tập</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in _lstDtos)
+                {
+                    <tr>
+                        <td>@item.StudentCode</td>
+                        <td>@item.StudentName</td>
+
+                        @if (@item.Status == 0)
+                        {
+                            <td>Chưa nộp bài</td>
+                        }
+                        else
+                        {
+                            <td>Đã nộp bài</td>
+                        }
+
+                        <td>@item.SubmitLink</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="footer text-muted">
+            <div class="row mt-3">
+
+                <span>
+                    <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+                </span>
+
+            </div>
+        </div>
+    }
+    else
+    {
+
+        <h5> Danh sách rỗng</h5>
+    }
+}
+@code {
+    [Parameter]
+    public string specializedId { get; set; }
+    [Parameter]
+    public string lecuId { get; set; }
+    [Parameter]
+    public string subjectId { get; set; }
+
+    [Parameter]
+    public string idclass { get; set; }
+
+    [Parameter]
+    public string idlesson { get; set; }
+
+
+    private List<SubmitHomeWorkDtos> _lstDtos { get; set; }
+    [Inject] public NavigationManager NavigationManager { get; set; }
+
+    [Inject]
+    public ISubmitHomeWorkApiClient _SubmitHomeWorkApiClient { get; set; }
+
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    private ListSubmitHomeWorkSeach _lsUPSearch = new ListSubmitHomeWorkSeach();
+
+    [CascadingParameter]
+    private Error Error { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTasks();
+    }
+
+    public async Task SearchLessonUP(ListSubmitHomeWorkSeach LessonUPSearch)
+    {
+        _lsUPSearch = LessonUPSearch;
+        await GetTasks();
+    }
+
+    private async Task Quaylai()
+    {
+        NavigationManager.NavigateTo($"/ListLessonClassUP/{idclass}/{specializedId}/{lecuId}/{subjectId}");
+    }
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _SubmitHomeWorkApiClient.ThongkeNopbai(_lsUPSearch, Guid.Parse(idclass), Guid.Parse(idlesson));
+            _lstDtos = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            Error.ProcessError(ex);
+        }
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _lsUPSearch.PageNumber = page;
+        await GetTasks();
+    }
+}

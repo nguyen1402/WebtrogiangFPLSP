@@ -1,0 +1,1187 @@
+﻿@page "/ViewChiTitet/{idclassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}"
+@using Blazored.Toast.Services;
+@using FPLSP.Components.SearchMaSV
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Dtos.StudentStatisticVM
+@using FPLSP.Server.Domain.Dtos.StudentUPDtos;
+@using FPLSP.Server.Domain.Entities.UserParts
+@using FPLSP.Server.Infrastructure.ViewModels
+@using FPLSP.Server.Infrastructure.ViewModels.GiaoVienTaoLop;
+@using FPLSP.Server.Infrastructure.ViewModels.LecturerCPVm
+@using FPLSP.Server.Infrastructure.ViewModels.NewFeed;
+@using FPLSP.Server.Infrastructure.ViewModels.StudentStatistics
+@using FPLSP.Server.Infrastructure.ViewModels.StudentsUPVm;
+@using FPLSP.Server.Infrastructure.ViewModels.Subject;
+@attribute [Authorize(Roles = "LecturerFPLSP")]
+@if (encounter != 14)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <div class="row pt-3 pb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">Chuyên ngành: <a style="color:blue;box-shadow: 0 1px" @onclick="() => ResToSpec()"> @lstSpecAll.Where(c=>c.Id == Guid.Parse(specializedId)).Select(c=>c.SpecializationName).FirstOrDefault()</a></li>
+                <li class="breadcrumb-item">Môn :<a style="color:blue;box-shadow: 0 1px" @onclick="() => Quaylai()">@thongtinlop.NameMon</a></li>
+                <li class="breadcrumb-item">Lớp :<a style="color:blue;box-shadow: 0 1px" @onclick="() => RedirectToDetails()">@thongtinlop.NameClass</a></li>
+                @*<li class="breadcrumb-item active" aria-current="page">Danh sách sinh viên</li>*@
+            </ol>
+        </nav>
+    </div>
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+        <MudTabPanel Text="Thông tin lớp">
+            <MudText>
+                <div class="row">
+                    <p style="font-family: Arial, Helvetica, sans-serif;font-size:large;color: #F27125">Thông tin lớp</p>
+                    @if (thongtinlop != null)
+                    {
+                        <div class="">
+                            <div class="">
+                                <div class="accordion-body" style="font-family: Arial, Helvetica, sans-serif;font-size:large">
+                                    Chủ nhiệm : <strong> @lecturersCP.LecturersName</strong> <br /> Liên Hệ : <strong> @lecturersCP.Email - @lecturersCP.PhoneNumber</strong> <br /> Sĩ số : <strong> @counttong</strong>/<strong> @maxlop</strong><br /> Số bài tập : <strong>@thongtinlop.CountHomework </strong><br /> Số quiz : <strong> @thongtinlop.CountQuiz </strong> <br /> Tài liệu tham khảo : <strong> @counttailieu </strong> <br /> Ngày tạo : <strong> @TTLop.DateCreated.Day/@TTLop.DateCreated.Month/@TTLop.DateCreated.Year </strong><br /> Ngày bắt đầu : <strong> @TTLop.DateCreated.Day/@TTLop.DateCreated.Month/@TTLop.DateCreated.Year</strong><br />Ngày kết thúc : <strong> @TTLop.EndDate.Day/@TTLop.EndDate.Month/@TTLop.EndDate.Year </strong>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </MudText>
+        </MudTabPanel>
+        <MudTabPanel Text="Sinh viên">
+            <MudText>
+                <div class="row pt-3">
+                    <div class="col-3  d-flex">
+                        <div class="pt-3">
+                            <p style="font-family: Arial, Helvetica, sans-serif;font-size:large;color: #F27125">Danh sách sinh viên</p>
+                        </div>
+                    </div>
+                    <div class="col-6  d-flex">
+                        <div class="p-2" stype="text-aline:center">
+                            <FPLSP.Pages.StudentUPPages.StudentUPSearch OnSearch="SearchStudentUP"></FPLSP.Pages.StudentUPPages.StudentUPSearch>
+                        </div>
+                    </div>
+                    <div class="col-3  d-flex flex-row-reverse">
+                        @if (_lststudentUpDtosALL.Where(c => c.IsChecked == true).ToList().Count() > 0)
+                        {
+                            <div class="p-2">
+                                <a class=" btn btn-outline-danger" title="Xóa sinh viên khỏi lớp" @onclick="() => Removes()">Xóa sinh viên</a>
+                            </div>
+                        }
+
+                        @if (_lststudentUpDtosALL.Where(c => c.IsChecked == true).ToList().Count() == 0)
+                        {
+                            <div class="p-2">
+                                <a class=" btn btn-outline-primary" title="Thêm sinh viên vào lớp" @onclick="() => AddStudentInClass()">Thêm sinh viên</a>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="row">
+                    @if (_lststudentUpDtosALL.Count() > 0)
+                    {
+                        <table class="table table-hover align-middle table-bordered mt-3" style="text-align:center">
+                            <thead class="table-success">
+                                <tr>
+                                    <th><input type="checkbox" @bind="@Check" @onchange="EventArgs => {CheckAllExpense( EventArgs.Value);} " @bind:event="oninput"></th>
+                                    <th stype="width:10%">Ảnh</th>
+                                    <th stype="width:15%">Mã Sinh Viên</th>
+                                    <th stype="width:20%">Tên Sinh Viên</th>
+                                    <th stype="width:15%">Email</th>
+                                    <th stype="width:10%">Số điện thoại</th>
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in _lststudentUpDtosALL)
+                                {
+                                    <tr>
+                                        <td><input type="checkbox" checked=@item.IsChecked @onchange="()=>CheckManual(item.Id,item.IsChecked)"></td>
+                                        <td><img src="@item.ImageUrl" onerror="this.src='./css/images/Others/logoFPT.png'" alt="@item.ImageUrl" height=100px width=100px style="object-fit:contain"></td>
+                                        <td>@item.StudentCode</td>
+                                        <td>@item.StudentName</td>
+                                        <td>@item.Email</td>
+                                        <td>@item.PhoneNumber</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        @if (encounter != 14)
+                        {
+                            <LoadingIndicator></LoadingIndicator>
+                        }
+                        else
+                        {
+                            <h5>Danh sách sinh viên trống</h5>
+                        }
+                    }
+
+                </div>
+                <div class="footer text-muted">
+                    <div class="row mt-3">
+                        <Pagingation MetaData="MetaDataSinhvien" Spread="2" SelectedPage="SelectedPageSinhvien"></Pagingation>
+                    </div>
+                </div>
+            </MudText>
+        </MudTabPanel>
+        <MudTabPanel Text="Bài tập">
+            <MudText>
+                <div class="row pt-3">
+                    <div class="col-md-3 pt-2">
+                        <p style="font-family: Arial, Helvetica, sans-serif;font-size:large;color: #F27125">Bài tập</p>
+                    </div>
+                    <div class="col-md-1 pl-1">
+                        <div class="col-lg-12">
+                            <EditForm Model="@listidlesson">
+                                <select class="form-select" @onchange="args=>SearchCodeBaitap(args.Value.ToString()) ">
+                                    @if (listidlesson != null)
+                                    {
+                                        <option value="">Lọc</option>
+                                        @for (var i = 1; i <= listidlesson.CountLessson; i++)
+                                        {
+                                            <option value="@listidlesson.Listidlesson[i-1]">Bài @i</option>
+                                        }
+                                    }
+                                </select>
+                            </EditForm>
+                        </div>
+
+                    </div>
+                    <div class="col-md-5">
+                        <SearchMaSV OnSearch="SearchTaskBaitap"></SearchMaSV>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="row pl-10">
+                            <div class="col-md-8 pl-7">
+                                @* <a class="btn btn-outline-primary" title="Thông tin sinh viên" @onclick="()=> RedirectToDetails()">Thông tin sinh viên</a>*@
+                            </div>
+                            <div class="col-md-2">
+                                @*<a class="btn btn-outline-danger" @onclick="() => Quaylai()" title="Quay lại"><i class="bi bi-arrow-return-right"></i></a>*@
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @if (thongtinlop.CountHomework <= 0)
+                {
+                    <h5>Chưa có bài tập nào !</h5>
+                }else if (flag == true)
+                {
+                    <LoadingIndicator></LoadingIndicator>
+                }
+                else if (CPList.Count() > 0 && flag == false)
+                {
+                    <div class="row">
+
+                        <div class="row">
+                            <h6 class="col-md-2">
+                                Hiển thị : <span class="badge bg-warning">@CPList.Count/@maxlop</span>
+                            </h6>
+                            @if (@CPList[0].CountSubmit == 0 && @CPList[0].CountDonSubmit == 0)
+                            {
+                                <h6 class="col-md-2">
+                                    Đã nộp đủ : <span class="badge bg-success">@thongtinlop.CountSubmit</span>
+                                </h6>
+                                <h6 class="col-md-2">
+                                    Chưa nộp đủ : <span class="badge bg-danger">@thongtinlop.CountDonSubmit</span>
+                                </h6>
+                            }
+                            else
+                            {
+                                <h6 class="col-md-2">
+                                    Nộp đủ : <span class="badge bg-success">@CPList[0].CountSubmit</span>
+                                </h6>
+                                <h6 class="col-md-2">
+                                    Chưa nộp đủ : <span class="badge bg-danger">@CPList[0].CountDonSubmit</span>
+                                </h6>
+                            }
+                        </div>
+
+                    </div>
+
+                    <div class="row">
+                        <table class="table">
+                            <thead class="text-center">
+                                <tr>
+                                    <th style="width: 2%">Mã SV</th>
+                                    <th style="width: 8%">Họ Tên</th>
+
+                                    @for (var i = 1; i <= thongtinlop.CountLessson; i++)
+                                    {
+                                        <th style="width: 6%">Bài @i</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody class="text-center">
+                                @foreach (var item in CPList)
+                                {
+                                    <tr>
+                                        <td class="align-middle">
+                                            @item.StudentCode
+                                        </td>
+                                        <td class="align-middle">
+                                            @item.StudentName
+                                        </td>
+                                        @{
+                                            int i = 0;
+                                        }
+                                        @foreach (var item2 in item.Listidlesson)
+                                        {
+
+                                            @if (item2 == item.Link[i].Idbaihoc)
+                                            {
+                                                <td class="align-middle">
+                                                    <a class="btn btn-outline-primary" @onclick="() => OnButton(idclass,subjectId,item2.ToString(),item.IdStudent.ToString())">
+                                                        @_lsSubmit.Where(c=>c.IdClass == Guid.Parse(idclass) && c.IdSubject == Guid.Parse(subjectId) && c.IdLesson == item2 && c.IdStudent == item.IdStudent && c.Status == 1).Count()
+                                                        /
+                                                        @_lsSubmit.Where(c=>c.IdClass == Guid.Parse(idclass) && c.IdSubject == Guid.Parse(subjectId) && c.IdLesson == item2 && c.IdStudent == item.IdStudent).Count()
+                                                    </a> @*thongtinlop.Listidlesson[0].ToString(),CPList[4].IdStudent.ToString()*@
+                                                </td>
+                                            }
+                                            else
+                                            {
+                                                <td style="color : black; text-decoration: none" class="align-middle">Bài tập rỗng</td>
+                                            }
+                                            i++;
+                                        }
+
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                    </div>
+                }
+                else
+                {
+                        <h5>Không có bài tập nào !</h5>
+                }
+                <div class="footer text-muted">
+                    <div class="row mt-3">
+
+                        <span>
+                            <Pagingation MetaData="MetaDataBaitap" Spread="2" SelectedPage="SelectedPageBaitap"></Pagingation>
+                        </span>
+
+                    </div>
+                </div>
+
+                <ViewHomeworkStudents @ref="viewHomeworkStudents">
+                </ViewHomeworkStudents>
+
+            </MudText>
+        </MudTabPanel>
+        <MudTabPanel Text="Quiz">
+            <MudText>
+                <div class="row pt-3">
+                    <div class="col-2 pt-2">
+                        <p style="font-family: Arial, Helvetica, sans-serif;font-size:large;color: #F27125">Quiz</p>
+                    </div>
+                    <div class="col-md-2">
+
+                        <div class="row">
+                            <div class="col-5">
+                            </div>
+                            <div class="col-7">
+                                <EditForm Model="@listidlesson">
+                                    <select class="form-select" @onchange="args=>SearchCodeQuiz(args.Value.ToString()) ">
+                                        @if (thongtinlop != null)
+                                        {
+                                            <option value="">Lọc</option>
+                                            @for (var i = 1; i <= listidlesson.CountQuiz; i++)
+                                            {
+                                                <option value="@listidlesson.Listidquiz[i-1]">Quiz @i</option>
+                                            }
+                                        }
+                                    </select>
+                                </EditForm>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="col-md-5">
+                        <SearchMaSV OnSearch="SearchCodeQuiz"></SearchMaSV>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="row pl-10">
+                            <div class="col-md-2">
+                                @*<a class="btn btn-outline-primary" title="Đến bài học" @onclick="()=> RedirectToBaiHoc()"><i class="bi bi-book-half"></i></a>*@
+                            </div>
+                            <div class="col-md-8">
+                                @*<a class="btn btn-outline-primary" title="Thêm sinh viên" @onclick="()=> RedirectToDetails()"><i class="bi bi-person-plus"></i></a>*@
+                            </div>
+                            <div class="col-md-1">
+                                @*<a class="btn btn-outline-danger" @onclick="() => Quaylai()"><i class="bi bi-arrow-return-right"></i></a>*@
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @if (thongtinlop.CountQuiz <= 0)
+                {
+                    <h5>Không có quiz nào !</h5>
+                }
+                else if (flag == true)
+                {
+                    <LoadingIndicator></LoadingIndicator>
+                }
+                else if (CPListQuiz.Count() > 0 && flag == false)
+                {
+                    <div class="row">
+                        <div class="row">
+                            <h6 class="col-md-2">
+                                Hiển thị : <span class="badge bg-warning">@CPListQuiz.Count/@maxlop</span>
+                            </h6>
+                        </div>
+
+                    </div>
+                    <div class="row">
+
+                        <table class="table">
+                            <thead class="text-center">
+                                <tr>
+                                    <th style="width: 2%">Mã SV</th>
+                                    <th style="width: 12%">Họ Tên</th>
+
+                                    @for (var i = 1; i <= thongtinlop.CountQuiz; i++)
+                                    {
+                                        <th style="width: 6%">Quiz @i</th>
+                                    }
+                                    <th style="width: 7%">Trung bình</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-center">
+                                @{
+                                    int x = 0;
+                                }
+                                @foreach (var item in CPListQuiz)
+                                {
+                                    @if(x == 0){
+                                        <tr style="background-color:#B8FFC3">
+                                            <td class="align-middle">
+                                                @item.StudentCode
+                                            </td>
+                                            <td class="align-middle">
+                                                @item.StudentName
+                                            </td>
+                                            @{
+                                                int i = 0;
+                                            }
+                                            @foreach (var item2 in item.ListidQuiz)
+                                            {
+
+                                                @if (item2 == item.Quiz[i].QuizId && item.Quiz[i].ScoreQuizOfStudent >= 50)
+                                                {
+                                                    <td style="color : black; text-decoration: none" class="align-middle">@item.Quiz[i].ScoreQuizOfStudent</td>
+                                                }
+                                                else if (item2 == item.Quiz[i].QuizId && item.Quiz[i].ScoreQuizOfStudent < 50)
+                                                {
+                                                    <td style="color : red; text-decoration: none" class="align-middle">@item.Quiz[i].ScoreQuizOfStudent</td>
+                                                }
+                                                else
+                                                {
+                                                    <td style="color : black; text-decoration: none" class="align-middle">chưa làm</td>
+                                                }
+                                                i++;
+                                            }
+                                            <td class="align-middle">
+                                                @item.Diemtrungbinh
+                                            </td>
+
+                                        </tr>
+                                    }else if ( x== 1)
+                                    {
+                                        <tr style="background-color:#D3FFC0">
+                                            <td class="align-middle">
+                                                @item.StudentCode
+                                            </td>
+                                            <td class="align-middle">
+                                                @item.StudentName
+                                            </td>
+                                            @{
+                                                int i = 0;
+                                            }
+                                            @foreach (var item2 in item.ListidQuiz)
+                                            {
+
+                                                @if (item2 == item.Quiz[i].QuizId && item.Quiz[i].ScoreQuizOfStudent >= 50)
+                                                {
+                                                    <td style="color : black; text-decoration: none" class="align-middle">@item.Quiz[i].ScoreQuizOfStudent</td>
+                                                }
+                                                else if (item2 == item.Quiz[i].QuizId && item.Quiz[i].ScoreQuizOfStudent < 50)
+                                                {
+                                                    <td style="color : red; text-decoration: none" class="align-middle">@item.Quiz[i].ScoreQuizOfStudent</td>
+                                                }
+                                                else
+                                                {
+                                                    <td style="color : black; text-decoration: none" class="align-middle">chưa làm</td>
+                                                }
+                                                i++;
+                                            }
+                                            <td class="align-middle">
+                                                @item.Diemtrungbinh
+                                            </td>
+
+                                        </tr>
+                                    }else if( x == 2)
+                                    {
+                                        <tr style="background-color:#E6FFC0">
+                                            <td class="align-middle">
+                                                @item.StudentCode
+                                            </td>
+                                            <td class="align-middle">
+                                                @item.StudentName
+                                            </td>
+                                            @{
+                                                int i = 0;
+                                            }
+                                            @foreach (var item2 in item.ListidQuiz)
+                                            {
+
+                                                @if (item2 == item.Quiz[i].QuizId && item.Quiz[i].ScoreQuizOfStudent >= 50)
+                                                {
+                                                    <td style="color : black; text-decoration: none" class="align-middle">@item.Quiz[i].ScoreQuizOfStudent</td>
+                                                }
+                                                else if (item2 == item.Quiz[i].QuizId && item.Quiz[i].ScoreQuizOfStudent < 50)
+                                                {
+                                                    <td style="color : red; text-decoration: none" class="align-middle">@item.Quiz[i].ScoreQuizOfStudent</td>
+                                                }
+                                                else
+                                                {
+                                                    <td style="color : black; text-decoration: none" class="align-middle">chưa làm</td>
+                                                }
+                                                i++;
+                                            }
+                                            <td class="align-middle">
+                                                @item.Diemtrungbinh
+                                            </td>
+
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td class="align-middle">
+                                                @item.StudentCode
+                                            </td>
+                                            <td class="align-middle">
+                                                @item.StudentName
+                                            </td>
+                                            @{
+                                                int i = 0;
+                                            }
+                                            @foreach (var item2 in item.ListidQuiz)
+                                            {
+
+                                                @if (item2 == item.Quiz[i].QuizId && item.Quiz[i].ScoreQuizOfStudent >= 50)
+                                                {
+                                                    <td style="color : black; text-decoration: none" class="align-middle">@item.Quiz[i].ScoreQuizOfStudent</td>
+                                                }
+                                                else if (item2 == item.Quiz[i].QuizId && item.Quiz[i].ScoreQuizOfStudent < 50)
+                                                {
+                                                    <td style="color : red; text-decoration: none" class="align-middle">@item.Quiz[i].ScoreQuizOfStudent</td>
+                                                }
+                                                else
+                                                {
+                                                    <td style="color : black; text-decoration: none" class="align-middle">chưa làm</td>
+                                                }
+                                                i++;
+                                            }
+                                            <td class="align-middle">
+                                                @item.Diemtrungbinh
+                                            </td>
+
+                                        </tr>
+                                    }
+                                    x++;
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                        <h5>Không có sinh viên nào !</h5>   
+                }
+
+                <div class="footer text-muted">
+                    <div class="row mt-3">
+
+                        <span>
+                            <Pagingation MetaData="MetaDataQuiz" Spread="2" SelectedPage="SelectedPageQuiz"></Pagingation>
+                        </span>
+
+                    </div>
+                </div>
+            </MudText>
+        </MudTabPanel>
+        <MudTabPanel Text="Kho tài liệu">
+            <MudText>
+                <div class="row">
+                    <div class="col-4 pt-3">
+                        <p style="font-family: Arial, Helvetica, sans-serif;font-size:large;color: #F27125">Kho tài liệu</p>
+                    </div>
+                    <div class="col-5"></div>
+                    <div class="col-1">
+                        @*<a class="btn btn-outline-danger" @onclick="() => Quaylai()"><i class="bi bi-arrow-return-right"></i></a>*@
+                    </div>
+                    <div class="col-2 pl-15">
+                        <a class="btn btn-outline-primary" title="Thêm tài liệu" @onclick="()=> RedirectToAddTaiLieu()">Thêm tài liệu</a>
+                    </div>
+
+                </div>
+
+                @{
+                    int i = 1;
+                }
+                @if (_lstNews == null)
+                {
+                    <LoadingIndicator></LoadingIndicator>
+                }
+                else
+                {
+
+                    @if (_lstNews.Count() == 0)
+                    {
+                        <h3 class="text-muted">Lớp học chưa có link tài nguyên</h3>
+                    }
+                    else
+                    {
+
+                        @foreach (var news in _lstNews.Where(c => c.Image == "Resource").OrderBy(c => c.CratedTime))
+                        {
+                            <div class="rounded border border-primary my-2">
+                                <div class="m-4">
+                                    <p class="my-2" style="font-weight: bold; text-decoration: underline;">Tài nguyên : @i </p>
+                                    <EditForm Model="@news">
+                                        <DataAnnotationsValidator />
+                                        <ValidationSummary />
+                                        <div class="row m-0 p-0">
+                                            <div class="col-lg-10">
+                                                <div class="row">
+                                                    <div class="form-group pt-2 col-md-6">
+                                                        <label for="name" class="col-md-5 col-form-label">Tiêu đề:</label>
+                                                        <div class="col-md-12">
+                                                            <InputText class="form-control" readonly=@_isNotLecturer @bind-Value="news.Title"></InputText>
+                                                            <ValidationMessage For="@(() => news.Title)" />
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group pt-2 col-md-6">
+                                                        <label for="name" class="col-md-5 col-form-label">Link tài nguyên:</label>
+                                                        <div class="col-md-12">
+                                                            <InputText class="form-control" readonly=@_isNotLecturer @bind-Value="news.Content"></InputText>
+                                                            <ValidationMessage For="@(() => news.Content)" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="form-group pt-2 col-md-6">
+                                                        <label for="name" class="col-md-5 col-form-label">Người tạo:</label>
+                                                        <div class="col-md-12">
+                                                            <InputText class="form-control" readonly @bind-Value="classSearch.HomeroomLecturer"></InputText>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group pt-2 col-md-6">
+                                                        <label for="name" class="col-md-5 col-form-label">Ngày tạo:</label>
+                                                        <div class="col-md-12">
+                                                            <InputDate class="form-control" readonly @bind-Value="news.CratedTime"></InputDate>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-2" hidden=@_isNotLecturer>
+                                                @if (news.Status == 0)
+                                                {
+                                                    <button class="btn btn-outline-warning" @onclick="@(() => ShowOrHide(news.Id))">Ẩn</button>
+                                                }
+                                                @if (news.Status == 1)
+                                                {
+                                                    <button class="btn btn-outline-success" @onclick="@(() => ShowOrHide(news.Id))">Hiện</button>
+                                                }
+                                                <button class="btn btn-outline-primary mx-2" @onclick="@(() => Update(news.Id, news))">Chỉnh Sửa</button>
+                                            </div>
+                                        </div>
+                                    </EditForm>
+                                </div>
+                            </div>
+                            i++;
+                        }
+                    }
+                }
+
+            </MudText>
+        </MudTabPanel>
+    </MudTabs>
+    <PopUpConfirm ConfirmationMessage="@ConfirmationTitle"
+              ConfirmationTitle="Xác nhận của bạn ?"
+              @ref="DeleConfirmation"
+              ConfirmationChanged="OnConfirmationDelete">
+
+    </PopUpConfirm>
+}
+
+@code
+{
+    protected PopUpConfirm DeleConfirmation { set; get; }
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (deleteconfirmed)
+        {
+            await Remove();
+        }
+    }
+    private async Task Removes()
+    {
+        //var x = _lststudentUpDtosALL.Where(c => c.IsChecked == true).ToList();
+        ConfirmationTitle = $"Bạn có chắc muốn xóa sinh viên ra khỏi lớp học";
+        DeleConfirmation.show();
+    }
+    [Parameter]
+    public string ConfirmationTitle { get; set; }
+    [Parameter]
+    public string specializedIdNonDecrypt { get; set; }
+    [Parameter]
+    public string lecuIdNonDecrypt { get; set; }
+    [Parameter]
+    public string subjectIdNonDecrypt { get; set; }
+    [Parameter]
+    public string idclassNonDecrypt { get; set; }
+    private Thongtinlop thongtinlop = new Thongtinlop();
+
+    private Thongtinlop listidlesson = new Thongtinlop();
+    public string specializedId = "";
+
+    public string lecuId = "";
+
+    public string subjectId = "";
+
+    public string idclass = "";
+
+    public string idstudent { get; set; }
+
+    public string joicode { get; set; }
+    public string joicodeNonDecrypt { get; set; }
+    [Inject]
+    public ILecturersCPRepo _LecturersCPRepo { get; set; }
+
+    public LecturersCPViewModel lecturersCP { get; set; } = new LecturersCPViewModel();
+
+    public List<StudentStatisticsDtos> CPList { get; set; } = new List<StudentStatisticsDtos>();
+    public List<StudentStatisticsDtos> CPListQuiz { get; set; } = new List<StudentStatisticsDtos>();
+
+    private SubjectListSearch SubjectListSearch = new SubjectListSearch();
+
+    public List<SubjectDto> SubjectUPList { get; set; } = new List<SubjectDto>();
+    public ListIdQuiz _listIdQuizzes = new ListIdQuiz();
+
+    ViewHomeworkStudents viewHomeworkStudents { get; set; }
+    [Inject]
+    public IStudentUPRepo _studentUPRepo { get; set; }
+
+    List<NewFeedOverView> _lstNews;
+
+    [Inject]
+    public IStudentClassUPRepo _reportClassUPRepo { get; set; }
+    private List<SubmitHomeWorkDtos> _ls = new List<SubmitHomeWorkDtos>();
+    [Inject] private IToastService _toastService { get; set; }
+    public List<QuizSummit> Quiz = new List<QuizSummit>();
+    public SubjectClassUP TTLop { get; set; } = new SubjectClassUP();
+    public MetaData MetaData { get; set; } = new MetaData();
+    private List<SubmitHomeWorkDtos> _lsSubmit = new List<SubmitHomeWorkDtos>();
+    private StudentStatisticListSearch _parameters = new StudentStatisticListSearch();
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    [Inject]
+    public IStudentUPRepo _iStudentUPRepo { get; set; }
+    [Inject]
+    public ISubmitHomeWorkApiClient _iSubmitHomeWorkApiClient { get; set; }
+    [Parameter]
+    public EventCallback<StudentStatisticListSearch> OnSearch { set; get; }
+    public List<SpecializedDto> lstSpecAll { get; set; } = new List<SpecializedDto>();
+    [Inject]
+    public ISpecializedCPRepo _iSpecializedClient { get; set; }
+    [Inject]
+    public IStudentQuizUPRepo _studentQuizUPRepo { get; set; }
+    [Inject]
+    public ISubmitHomeWorkApiClient _IsubmitHomeWorkApiClient { get; set; }
+    public List<SubjectClassUP> _lstSubjectClassUPsAll { get; set; } = new List<SubjectClassUP>();
+    [Inject]
+    public IClassSubjectApiClient _iClassSubjectApiClient { get; set; }
+
+    [Inject] public ISubjectUPRepo _subjectUPRepo { get; set; }
+    int counttong;
+    int maxlop;
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    //private StudentStatisticListSearch lessonContentListSearch = new StudentStatisticListSearch();
+    private int encounter;
+    private int counttailieu { get; set; }
+    public string Error { get; set; }
+    bool flag = false;
+    private bool Check = false;
+    public List<StudentUpDto> _lststudentUpDtosALL { get; set; } = new List<StudentUpDto>();
+
+    public List<StudentUpDto> _liststudentClassJoin { get; set; } = new List<StudentUpDto>();
+    public List<StudentClassUP> _studentClassUPDtos { get; set; } = new List<StudentClassUP>();
+    public List<SubjectClassUP> _lstsubjectClassUPs { get; set; } = new List<SubjectClassUP>();
+    public List<ClassUp> _lstClassUps { get; set; } = new List<ClassUp>();
+    public List<StudentUpDto> _lstStudentUpDtosExist { get; set; } = new List<StudentUpDto>();
+    public List<StudentUpDto> _lstStudentUpDtosShow { get; set; } = new List<StudentUpDto>();
+    private StudentUPListSearchVm studentUPListSearchVm = new StudentUPListSearchVm();
+
+    //kho tài liệu
+    private bool _isNotLecturer { get; set; }
+
+    [Inject] private INewFeedRepo _newFeedRepo { get; set; }
+    [Inject]
+    private ITaskRepositories<ClassUPViewModel> _classRepositories { get; set; }
+    CreateClassVM classSearch = new CreateClassVM();
+    protected async override Task OnInitializedAsync()
+    {
+
+        lecuId = _cryptoServices.Decrypt(lecuIdNonDecrypt.Replace("I0H", "/"));
+        subjectId = _cryptoServices.Decrypt(subjectIdNonDecrypt.Replace("I0H", "/"));
+        idclass = _cryptoServices.Decrypt(idclassNonDecrypt.Replace("I0H", "/"));
+        specializedId = _cryptoServices.Decrypt(specializedIdNonDecrypt.Replace("I0H", "/"));
+        listidlesson = await _iStudentUPRepo.Thongtinlop(Guid.Parse(idclass), Guid.Parse(subjectId));
+        counttong = await _iClassSubjectApiClient.Soluongsinhvientronglop(Guid.Parse(idclass), Guid.Parse(subjectId));
+        _lstSubjectClassUPsAll = await _iClassSubjectApiClient.GetAllSubjectClass();
+        joicode = _lstSubjectClassUPsAll.Where(c => c.SubjectId == Guid.Parse(subjectId) && c.ClassId == Guid.Parse(idclass)).Select(c => c.JoinCode).FirstOrDefault();
+        joicodeNonDecrypt = _cryptoServices.Encrypt(joicode).Replace("/", "I0H");
+        maxlop = _lstSubjectClassUPsAll.Where(c => c.SubjectId == Guid.Parse(subjectId) && c.ClassId == Guid.Parse(idclass)).Select(c => c.StudentAmount).FirstOrDefault();
+        var pagingResponse = await _iClassSubjectApiClient.GetAllSubjectClass();
+        TTLop = pagingResponse.Where(c => c.JoinCode == joicode).FirstOrDefault();
+        lecturersCP = await _LecturersCPRepo.GetLecturerListById(Guid.Parse(lecuId));
+        await GetTasks();
+        ///sinh viên
+        _lststudentUpDtosALL = new List<StudentUpDto>();
+        studentUPListSearchVm = new StudentUPListSearchVm();
+        _lstStudentUpDtosShow = new List<StudentUpDto>();
+        _lstsubjectClassUPs = await _iClassSubjectApiClient.GetAllSubjectClass();
+        await GetTasksSinhvien();
+
+
+        ///bài tập
+        lstSpecAll = await _iSpecializedClient.GetAll();
+        _lsSubmit = await _iSubmitHomeWorkApiClient.GetALl();
+        await GetTasksBaitap();
+        await GetTasksQuiz();
+
+        //kho tài liệu
+        await GetKhotailieu();
+    }
+
+    public async Task GetKhotailieu()
+    {
+        classSearch = await _classRepositories.GetClassById(joicode);
+        _lstNews = await _newFeedRepo.GetListNewForClass(classSearch.Id, classSearch.SubjectId);
+        counttailieu = _lstNews.Where(c => c.Image == "Resource").OrderBy(c => c.CratedTime).Count();
+        await CheckUser(classSearch.HomeroomLecturerId, Guid.Parse(lecuId));
+    }
+    private async Task RedirectToBaiHoc()
+    {
+        var url = Path.Combine($"/ListLessonClassUP/{idclass}/{specializedId}/{lecuId}/{subjectId}");
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task RedirectToChitiet(string idclass)
+    {
+        var url = Path.Combine($"/StudentStatisticsChitiet/{idclass}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task Quaylai()
+    {
+        var url = Path.Combine($"/Giaovien/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task ResToSpec()
+    {
+        var url = Path.Combine($"/LectuterSpecializedSubjectls/{lecuIdNonDecrypt}/{specializedIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task GetTasks()
+    {
+        try
+        {
+            for (var i = 0; i < 15; i++)
+            {
+                encounter = i;
+            }
+
+            thongtinlop = await _iStudentUPRepo.Thongtinlop(Guid.Parse(idclass), Guid.Parse(subjectId));
+
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+
+
+    //private async Task SelectedPage(int page)
+    //{
+    //    _parameters.PageNumber = page;
+    //    await GetTasks();
+    //}
+
+
+
+    private async void OnButton(string idclass1, string subjectId, string idlesoon, string idstudent1)
+    {
+        viewHomeworkStudents.show(idclass1, subjectId, idlesoon, idstudent1);
+        //idclass1 = idclass;
+    }
+    private async Task pushTextAre(string idclass1)
+    {
+        idclass1 = idclass;
+    }
+    private async Task OnConfirmationUpdate(bool submitConfirmed)
+    {
+        if (submitConfirmed)
+        {
+            _ls.Clear();
+        }
+        else
+        {
+            _ls.Clear();
+        }
+    }
+    private async Task RedirectToChitiet()
+    {
+
+        var url = Path.Combine($"/StudentStatisticsChitiet/{idclassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task RedirectToDIem()
+    {
+
+        var url = Path.Combine($"/Quizthepoint/{idclassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task RedirectToDetails()
+    {
+        var url = Path.Combine($"/ViewChiTitet/{idclassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task Thongtinsinhvien()
+    {
+        var url = Path.Combine($"/DetailsClassLeccu/{idclassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task RedirectToKho()
+    {
+        var url = Path.Combine($"/news/{joicodeNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}/{specializedIdNonDecrypt}/{idclassNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+    /// <summary>
+    /// Thông tin sinh viên
+    /// </summary>
+    /// <returns></returns>
+
+    public MetaData MetaDataSinhvien { get; set; } = new MetaData();
+    private async Task GetTasksSinhvien()
+    {
+        try
+        {
+            var SubjectUPListpagingResponse1 = await _subjectUPRepo.GetSubjects(Guid.Parse(specializedId), SubjectListSearch);
+            SubjectUPList = SubjectUPListpagingResponse1.Items;
+            lstSpecAll = await _iSpecializedClient.GetAll();
+            _studentClassUPDtos = await _reportClassUPRepo.GetAllStudentUPAsync();
+            var pagingResponse = await _studentUPRepo.GetStudentUPList(studentUPListSearchVm);
+            var items = await _studentUPRepo.GetAllStudentDtosAsync();
+            _lstClassUps = await _iClassSubjectApiClient.GetlstClassUP(Guid.Parse(subjectId));
+
+
+            _listIdQuizzes = await _iClassSubjectApiClient.GetListIDQuiz(Guid.Parse(subjectId));
+
+            var joicode = _lstsubjectClassUPs.Where(c => c.SubjectId == Guid.Parse(subjectId) && c.ClassId == Guid.Parse(idclass)).Select(c => c.JoinCode).FirstOrDefault();
+
+            var lstGuidIdClass = _studentClassUPDtos.Where(c => c.ClassId == Guid.Parse(idclass) && c.JoinCodeAsign == joicode).Select(c => c.StudentId).ToList();
+
+            _lststudentUpDtosALL = items.Where(c => lstGuidIdClass.Contains(c.Id)).ToList();
+            //MetaData = new MetaData()
+            //    {
+            //        TotalCount = _lststudentUpDtosALL.Count(),
+            //        PageSize = studentUPListSearchVm.PageSize,
+            //        CurrentPage = studentUPListSearchVm.PageNumber,
+            //        TotalPages = (int)Math.Ceiling(_lststudentUpDtosALL.Count() / (double)studentUPListSearchVm.PageSize)
+            //    };
+            foreach (var item in _lststudentUpDtosALL.Where(c => c.StudentName == null).ToList())
+            {
+                _lststudentUpDtosALL.Remove(item);
+            }
+            if (string.IsNullOrEmpty(studentUPListSearchVm.Status) == false)
+            {
+                _lststudentUpDtosALL = _lststudentUpDtosALL.Where(x => x.Status == Convert.ToInt32(studentUPListSearchVm.Status)).ToList();
+            }
+            if (studentUPListSearchVm.NameStudent != null)
+            {
+                _lststudentUpDtosALL = _lststudentUpDtosALL.Where(x => x.StudentName.ToLower().Contains(studentUPListSearchVm.NameStudent.ToLower()) || x.StudentCode.ToLower().Contains(studentUPListSearchVm.NameStudent.ToLower())).ToList();
+            }
+
+            var data = _lststudentUpDtosALL.Skip((studentUPListSearchVm.PageNumber - 1) * studentUPListSearchVm.PageSize).Take(studentUPListSearchVm.PageSize).ToList();
+            var lstpage = new PageList<StudentUpDto>(data,
+                _lststudentUpDtosALL.Count(),
+                studentUPListSearchVm.PageNumber,
+                studentUPListSearchVm.PageSize);
+            _lststudentUpDtosALL = lstpage.Items;
+            MetaDataSinhvien = lstpage.MetaData;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+    }
+    private async Task Remove()
+    {
+
+        var joicode = _lstsubjectClassUPs.Where(c => c.SubjectId == Guid.Parse(subjectId) && c.ClassId == Guid.Parse(idclass)).Select(c => c.JoinCode).FirstOrDefault();
+        foreach (var x in _lststudentUpDtosALL.Where(c => c.IsChecked == true).ToList())
+        {
+
+            if (_studentClassUPDtos.Any(c => c.JoinCodeAsign == joicode && c.StudentId == x.Id))
+            {
+                _reportClassUPRepo.DeleteStudentUP(joicode, x.Id);
+                _IsubmitHomeWorkApiClient.DeleteSubmit(Guid.Parse(idclass), Guid.Parse(subjectId), x.Id);
+            }
+            foreach (var quiz in _listIdQuizzes.idquiz)
+            {
+                _studentQuizUPRepo.Delete(x.Id, quiz);
+            }
+
+        }
+        _toastService.ShowSuccess("Xóa thành công " + _lststudentUpDtosALL.Where(c => c.IsChecked == true).ToList().Count() + " sinh viên");
+        await GetTasksSinhvien();
+        await GetTasksBaitap();
+        await GetTasksQuiz();
+        thongtinlop = await _iStudentUPRepo.Thongtinlop(Guid.Parse(idclass), Guid.Parse(subjectId));
+        counttong = await _iClassSubjectApiClient.Soluongsinhvientronglop(Guid.Parse(idclass), Guid.Parse(subjectId));
+        maxlop = _lstSubjectClassUPsAll.Where(c => c.SubjectId == Guid.Parse(subjectId) && c.ClassId == Guid.Parse(idclass)).Select(c => c.StudentAmount).FirstOrDefault();
+        //var url = Path.Combine($"/DetailsClassLeccu/{idClassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        //Navigation.NavigateTo(url);
+    }
+    void CheckAllExpense(object checkValue)
+    {
+        if (Convert.ToBoolean(checkValue) == false)
+        {
+            _lststudentUpDtosALL.ToList().ForEach(e => e.IsChecked = false);
+        }
+        else
+        {
+            _lststudentUpDtosALL.ToList().ForEach(e => e.IsChecked = true);
+        }
+    }
+    void CheckManual(Guid st, bool check)
+    {
+        if (check == true)
+        {
+            foreach (var x in _lststudentUpDtosALL.Where(c => c.Id == st))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in _lststudentUpDtosALL.Where(c => c.Id == st))
+            {
+                x.IsChecked = true;
+            }
+        }
+
+    }
+
+
+    private async Task SelectedPageSinhvien(int page)
+    {
+        studentUPListSearchVm.PageNumber = page;
+        Check = false;
+        await GetTasksSinhvien();
+    }
+    public async Task SearchStudentUP(StudentUPListSearchVm studentUPListSearch)
+    {
+        studentUPListSearchVm = studentUPListSearch;
+        await GetTasksSinhvien();
+    }
+    private async Task AddStudentInClass()
+    {
+        var url = Path.Combine($"/AddStudentInClass/{idclassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+    /// Bài tập về nhà
+    /// <summary>
+    /// Bài tập về nhà
+    /// </summary>
+    /// <returns></returns>
+    ///
+    public MetaData MetaDataBaitap { get; set; } = new MetaData();
+
+    private async Task GetTasksBaitap()
+    {
+        try
+        {
+            flag = true;
+            for (var i = 0; i < 15; i++)
+            {
+                encounter = i;
+            }
+            var pagingResponse = await _iStudentUPRepo.StudentStatisticsDtos(Guid.Parse(idclass), Guid.Parse(subjectId), _parameters);
+            CPList = pagingResponse.Items;
+            MetaDataBaitap = pagingResponse.MetaData;
+            flag = false;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+
+
+    private async Task SelectedPageBaitap(int page)
+    {
+        _parameters.PageNumber = page;
+        await GetTasksBaitap();
+    }
+
+    public async Task SearchCodeBaitap(string code)
+    {
+        _parameters.trangthai = code;
+        await GetTasksBaitap();
+    }
+    public async Task SearchTaskBaitap(StudentStatisticListSearch lessonContentListSearch)
+    {
+        flag = true;
+        if (lessonContentListSearch.Masv == null)
+        {
+            listidlesson = new Thongtinlop();
+            listidlesson = await _iStudentUPRepo.Thongtinlop(Guid.Parse(idclass), Guid.Parse(subjectId));
+        }
+        _parameters = lessonContentListSearch;
+        await GetTasksBaitap();
+    }
+    private async Task Mon()
+    {
+        var url = Path.Combine($"/Giaovien/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+    ///Quiz
+    public MetaData MetaDataQuiz { get; set; } = new MetaData();
+    private async Task SelectedPageQuiz(int page)
+    {
+        _parameters.PageNumber = page;
+        await GetTasksQuiz();
+    }
+    public async Task SearchCodeQuiz(string code)
+    {
+        _parameters.quizid = code;
+        await GetTasksQuiz();
+    }
+    public async Task SearchCodeQuiz(StudentStatisticListSearch lessonContentListSearch)
+    {
+        flag = true;
+        if (lessonContentListSearch.Masv == null)
+        {
+            listidlesson = new Thongtinlop();
+            listidlesson = await _iStudentUPRepo.Thongtinlop(Guid.Parse(idclass), Guid.Parse(subjectId));
+        }
+        _parameters = lessonContentListSearch;
+        await GetTasksQuiz();
+    }
+    public async Task SelectedQuiz(string code)
+    {
+        _parameters.quizid = code;
+        await GetTasksQuiz();
+    }
+    private async Task GetTasksQuiz()
+    {
+        try
+        {
+            flag = true;
+            for (var i = 0; i < 15; i++)
+            {
+                encounter = i;
+            }
+            lstSpecAll = await _iSpecializedClient.GetAll();
+            var pagingResponse = await _iStudentUPRepo.QuizStatisticsDtos(Guid.Parse(idclass), Guid.Parse(subjectId), _parameters);
+            CPListQuiz = pagingResponse.Items;
+            MetaDataQuiz = pagingResponse.MetaData;
+            _lsSubmit = await _iSubmitHomeWorkApiClient.GetALl();
+            flag = false;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+    ///Kho tài liệu
+    ///
+    private async Task CheckUser(Guid idLecturer, Guid idUserInput)
+    {
+        _isNotLecturer = (idLecturer != idUserInput);
+
+        if (_isNotLecturer)
+        {
+            _lstNews = _lstNews.Where(c => c.Status == 0).ToList();
+        }
+    }
+
+    protected async Task ShowOrHide(Guid idNews)
+    {
+        var newsSearch = _lstNews.Where(c => c.Id == idNews).FirstOrDefault();
+
+        if (newsSearch.Status == 0)
+        {
+            newsSearch.Status = 1;
+        }
+        else
+        {
+            newsSearch.Status = 0;
+        }
+
+        await Update(idNews, newsSearch);
+    }
+
+    private async Task Update(Guid idNews, NewFeedOverView newFeedOverView)
+    {
+        var res = await _newFeedRepo.UpdateNewFeed(idNews, new NewFeedVM()
+            {
+                Id = newFeedOverView.Id,
+                Title = newFeedOverView.Title,
+                Content = newFeedOverView.Content,
+                IdLesson = newFeedOverView.IdLesson,
+                Image = newFeedOverView.Image,
+                Status = newFeedOverView.Status,
+                CratedTime = newFeedOverView.CratedTime,
+                EndDate = newFeedOverView.EndDate,
+                Priority = newFeedOverView.Priority,
+                IsReaded = newFeedOverView.IsReaded,
+                IdUser = newFeedOverView.IdUser,
+                IdClass = newFeedOverView.IdClass,
+                IdSubject = newFeedOverView.IdSubject,
+                IdTypeOfNewFeed = newFeedOverView.IdTypeOfNewFeed,
+            });
+        if (res)
+        {
+            _toastService.ShowSuccess($"Cập Nhật link tài nguyên thành công");
+            await this.OnInitializedAsync();
+        }
+        else
+        {
+            _toastService.ShowError($"Cập Nhật link tài nguyên thất bại");
+            await this.OnInitializedAsync();
+        }
+    }
+    private async Task RedirectToAddTaiLieu()
+    {
+        var url = Path.Combine($"/resoucrelinkforstudent/{joicodeNonDecrypt}/{idclassNonDecrypt}/{specializedIdNonDecrypt}/{lecuIdNonDecrypt}/{subjectIdNonDecrypt}");
+        NavigationManager.NavigateTo(url);
+    }
+}

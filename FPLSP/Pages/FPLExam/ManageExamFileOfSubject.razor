@@ -1,0 +1,1037 @@
+﻿@page "/manageexamfileofsubject/{IdSubjectNonDecrpyt}"
+@using AntDesign
+@using BlazorInputFile;
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories.Interfaces;
+@using FPLSP.Repositories.Interfaces.FPLExam;
+@using FPLSP.Server.Domain.Dtos;
+@using System.ComponentModel.DataAnnotations;
+@using FPLSP.Server.Domain.Entities.CoresParts;
+@using FPLSP.Server.Domain.Entities.FPLExam;
+@using FPLSP.Server.Domain.Entities.UsesParts;
+@using FPLSP.Server.Infrastructure.ViewModels.FPLExam;
+@using FPLSP.Server.Infrastructure.ViewModels;
+@using Microsoft.AspNetCore.Identity;
+@using Microsoft.AspNetCore.SignalR.Client;
+@inject ISnackbar Snackbar;
+@inject SweetAlertService Swal;
+@implements IDisposable
+<div class="row m-2">
+    <div class="col-6">
+        <div class="row">
+
+            <div class="col-3">
+                <div class="btn-container">
+                    <button @onclick="RedirectToBack" class="tired">
+                        <span class="text">Quay Lại</span>
+                        <div class="icon-container">
+                            <div class="icon icon--left">
+                                <svg>
+                                    <use xlink:href="#arrow-right"></use>
+                                </svg>
+                            </div>
+                            <div class="icon icon--right">
+                                <svg>
+                                    <use xlink:href="#arrow-right"></use>
+                                </svg>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+            <div class="col-6">
+                <button @onclick="RedirectToCreateExam" class="tired">
+                    <span class="text">Quản lý phát đề thi</span>
+                    <div class="icon-container">
+                        <div class="icon icon--left">
+                            <svg>
+                                <use xlink:href="#arrow-right"></use>
+                            </svg>
+                        </div>
+                        <div class="icon icon--right">
+                            <svg>
+                                <use xlink:href="#arrow-right"></use>
+                            </svg>
+                        </div>
+                    </div>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="col-6"> </div>
+    <Spin Spinning=@IsShowLoading Tip="Loading........">
+
+    </Spin>
+</div>
+
+@if (IsEditing)
+{
+
+    <EditForm Model="@modelupdate" OnValidSubmit="OnValidSubmit">
+        <div class="col-lg-3 mabt">
+            <div class="d-flex justify-content-start" style="height:80%">
+                <div class="carder" style="--cards:4;width:100%;height:270px;">
+                    <div class="childedit">
+                        <div class="row">
+                            <div class="col-lg-3 ps-5 d-flex justify-content-end">
+                                <MudIconButton OnClick="()=>UpdateInstance(modelupdate)" Icon="@Icons.Filled.Check" Size="Size.Large" Color="MudBlazor.Color.Success" aria-label="add to favorite"></MudIconButton>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="name" class="col-md-3 col-form-label">Giảng viên:</label>
+                            <div class="col-md-12 text-danger">
+                                <InputText id="name" class="form-control" @bind-Value="modelupdate.Name" disabled />
+                            </div>
+
+                        </div>
+                        <div>
+                            <label for="name" class="col-md-3 col-form-label">Trạng thái:</label>
+                            <div class="col-md-12 text-danger">
+                                <InputSelect @bind-Value="modelupdate.Status" class="form-control">
+                                    <option value="0">Đang hoạt động</option>
+                                    <option value="1">Ngừng hoạt động</option>
+                                </InputSelect>
+                            </div>
+                            <ValidationMessage For="@(() => modelupdate.Status)" />
+
+                        </div>
+                        <div>
+                            <label for="name" class="col-md-3 col-form-label">Ngày tham gia</label>
+                            <div class="col-md-12 text-danger">
+                                <InputDate id="name" class="form-control" @bind-Value="modelupdate.AddingTime" disabled />
+                                <ValidationMessage For="@(() => modelupdate.AddingTime)" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="childedit"></div>
+                    <div class="childedit"></div>
+                    <div class="childedit"></div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+}
+<div class="row">
+    <div class="col-lg-5">
+      
+
+
+            <section class="">
+                <article class="postcard light blue">
+
+                    <div class="postcard__text t-dark" style="object-fit:cover;height:550px;">
+                   
+                        <h3 class="postcard__title">Môn Học : @_subjectUp.SubjectName - @_subjectUp.SubjectCode</h3>
+                        <div class="postcard__subtitle small">
+                            <time datetime="@_subjectUp.CreatedDay">
+                                <i class="fas fa-calendar-alt mr-2"></i> Ngày Tạo : @_subjectUp.CreatedDay.ToString("dddd-MM-yyyy")
+                            </time>
+                        </div>
+                        <div class="row">
+                            <div class="col-10">
+                            </div>
+                            <div class="col-2">
+                                <MudIconButton Class="mx-2" OnClick="()=>BienCo()" Icon="@Icons.Filled.ModeEditOutline" Size="Size.Medium" Color="MudBlazor.Color.Dark" aria-label="add to favorite"></MudIconButton>
+                            </div>
+                        </div>
+
+                        <div class="postcard__preview-txt">
+                            <div>
+                                @{
+                                    int i = 0;
+                                }
+                                @foreach (var x in listTeachersInSubject)
+                                {
+                                    <div class="row">
+                                        <div class="col-8">
+                                            <h6 class="mud-typography mud-typography-subtitle1">
+                                                @lsgiangvien[i]
+                                            </h6>
+                                        </div>
+                                        <div class="col-2">
+                                            <MudIconButton Class="mx-2" OnClick="()=>EnableEditing(x.IdSubject,x.IdTeacher)" Icon="@Icons.Filled.ModeEditOutline" Size="Size.Medium" Color="MudBlazor.Color.Dark" aria-label="add to favorite"></MudIconButton>
+                                        </div>
+                                        <div class="col-2">
+                                            <MudIconButton Class="ps-1" OnClick="()=>DeleteInstane(x.IdSubject,x.IdTeacher)" Icon="@Icons.Filled.DeleteForever" Size="Size.Medium" Color="MudBlazor.Color.Dark" aria-label="add to favorite"></MudIconButton>
+                                        </div>
+                                    </div>
+                                    i++;
+                                }
+                            </div>
+                            <div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            @if (bienco)
+                            {
+                                <MudAutocomplete T="string" OpenIcon="@Icons.Material.Filled.Search" @bind-Value="UserName" SelectOnClick=true AdornmentColor="MudBlazor.Color.Secondary" CoerceValue="@coerceValue" ResetValueOnEmptyText="true" Class="mt-5" Label="Nhập Email Giảng Viên Muốn Thêm !" SearchFunc="@SearchSupervisor" Immediate="true" Variant="Variant.Outlined" Validation="@(new Func<string, IEnumerable<string>>(Validate))" ShowProgressIndicator="true" ProgressIndicatorColor="SelectedColor" />
+
+
+                            }
+                        </div>
+                        <ul class="postcard__tagbox">
+                        </ul>
+                    </div>
+                </article>
+                <br>
+            </section>
+    
+    </div>
+    <div class="col-lg-7">
+        <section class="">
+            <article class="postcard light blue">
+
+                <div class="postcard__text t-dark">
+                    <h3 class="postcard__title">Danh Sách Đề Thi Môn : @_subjectUp.SubjectName - @_subjectUp.SubjectCode</h3>
+                    <div class="postcard__subtitle small">
+                    </div>
+                    <div class="postcard__bar"></div>
+                    <div class="postcard__preview-txt">
+
+                        @if (IsWaittingForLove)
+                        {
+                            <div class="d-flex justify-content-center" style="align-items:center;text-align:center;">
+                                <MudProgressCircular Color="MudBlazor.Color.Success" Indeterminate="false" />
+                            </div>
+                        }
+                        else
+                        {
+
+                            <MudDropContainer T="KanbanTaskItem" Style="width:100%;" @ref="_dropContainer" Items="_tasks" ItemsSelector="@((item,column) => item.Status == column)" ItemDropped="TaskUpdated" Class="text-center d-flex flex-row">
+                                <ChildContent>
+                                    @foreach (var item in _sections)
+                                    {
+
+                                        if (item.Name == "Danh Sách Đề Thi")
+                                        {
+                                            <MudPaper Elevation="0" Width="410px" MinHeight="250px" Class="pa-4 ma-4 d-flex flex-column mud-background-gray rounded-lg">
+                                                <MudToolBar DisableGutters="true">
+                                                    <MudText Typo="Typo.subtitle1"><b>@item.Name</b></MudText>
+                                                    <MudSpacer />
+
+                                                </MudToolBar>
+                                                <MudDropZone T="KanbanTaskItem" Identifier="@item.Name" Class="mud-height-full" />
+
+                                            </MudPaper>
+                                        }
+                                        else
+                                        {
+                                            <MudPaper Elevation="0" Width="200px" MinHeight="250px" Class="pa-4 ma-4 d-flex flex-column mud-background-gray rounded-lg">
+                                                <MudToolBar DisableGutters="true">
+                                                    <MudText Typo="Typo.subtitle1"><b>@item.Name</b></MudText>
+                                                    <MudSpacer />
+
+                                                </MudToolBar>
+                                                <MudDropZone T="KanbanTaskItem" Identifier="@item.Name" Class="mud-height-full" />
+
+                                            </MudPaper>
+                                        }
+
+                                    }
+
+                                </ChildContent>
+                                <ItemRenderer>
+                                    <MudPaper Elevation="25" Class="pa-4 rounded-lg my-3">@context.Name</MudPaper>
+                                </ItemRenderer>
+                            </MudDropContainer>
+
+
+                        }
+
+
+
+
+
+
+
+                    </div>
+
+
+                </div>
+            </article>
+
+        </section>
+    </div>
+</div>
+
+
+
+
+@code {
+
+    [Inject] public ISubjectTeacherRepo _iSubjectTeacherRepo { get; set; }
+    [Inject] public ILecturersCPRepo _iLecturersCPRepo { get; set; }
+    [Inject] public ISubjectUPRepo _subjectUPRepo { get; set; }
+    [Inject] public IExamFileRepo _examFileRepo { get; set; }
+    [Inject] public NavigationManager navigation { get; set; }
+    [Inject] public UserManager<UserSignIn> _userManager { get; set; }
+    [Inject] public IExaminationRoomDetailRepo _examinationRoomDetailRepo { get; set; }
+    /// <summary>
+    ///
+    /// </summary>
+    public List<SubjectTeacherViewModel> listTeachersInSubject = new List<SubjectTeacherViewModel>();
+    public SubjectTeacherViewModel modelupdate = new SubjectTeacherViewModel();
+    List<string> lsgiangvien = new List<string>();
+    /// <summary>
+    ///
+    /// </summary>
+    private string UserName;    ///
+    public int Value { get; set; }
+    private SubjectDto _subjectUp = new SubjectDto();
+    private MudDropContainer<KanbanTaskItem> _dropContainer;//
+    private List<ExamStorage> _lstExamFile = new List<ExamStorage>();
+    private List<ExamStorage> _lstAllExamFileFinal = new List<ExamStorage>();
+    //private Guid IdSubject = Guid.Parse("2F0411E3-07BD-4E3C-B543-1D0BAA8189FF");
+
+    [Parameter]
+    public string IdSubjectNonDecrpyt { get; set; }
+    public string IdSubject = "";
+
+    private bool IsShowWaitting = false;
+    //mud carosel
+    private bool arrows = true;
+    private bool bullets = true;
+    private bool enableSwipeGesture = true;
+    private bool autocycle = true;
+    private Transition transition = Transition.Slide;
+    //
+    private bool MustReload = false;
+    //
+    private bool CheckEditting = false;
+    //
+    private bool coerceValue = true;
+    private bool IsEditing = false;
+    private bool bienco = false;
+    private string[] GVien;
+    //
+    List<LecturersCP> getallgiangvien = new List<LecturersCP>();
+    bool success;
+    bool IsShowLoading = false;
+    void ShowLoading() => IsShowLoading = true;
+    void HideLoading() => IsShowLoading = false;
+    private bool CanOverView = true;
+    List<KanbanTaskItem> _tasks = new List<KanbanTaskItem>();
+    private bool IsWaittingForLove = true;
+    private static string[] Supervisor;
+    private List<SubjectDto> _lstAllSub = new List<SubjectDto>();
+
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    Uri uri;
+    string maxRole = "";
+    string IdLecture = "";
+    private List<ExaminationRoomDetailViewModel> _lstRoomDetailViews = new List<ExaminationRoomDetailViewModel>();
+    protected async override Task OnInitializedAsync()
+    {
+        ShowLoading();
+        uri = navigation.ToAbsoluteUri(navigation.Uri);
+        if (string.IsNullOrEmpty(uri.Query) == false)
+        {
+            var urifist = uri.Query.Split("?")[1];
+            maxRole = _cryptoServices.Decrypt(urifist.Split("LDN01")[0].Replace("I0H", "/"));
+            IdLecture = _cryptoServices.Decrypt(urifist.Split("LDN01")[1].Replace("I0H", "/"));
+        }
+
+        IdSubject = _cryptoServices.Decrypt(IdSubjectNonDecrpyt.Replace("I0H", "/"));
+        _subjectUp = await _subjectUPRepo.GetSubjectbyId(Guid.Parse(IdSubject));
+        _lstAllSub = await _subjectUPRepo.GetAllSubjectAsync();
+        // await ConnectToServer();
+        await GetLisst();
+
+
+        _lstRoomDetailViews = await _examinationRoomDetailRepo.GetExamFileForSubject(Guid.Parse(IdSubject));
+        if (CanOverView)
+        {
+            _tasks = await GetTaskDroper();
+            IsWaittingForLove = false;
+        }
+        HideLoading();
+    }
+    private async Task RedirectToBack()
+    {
+        var url = Path.Combine($"/overviewsubject/{_cryptoServices.Encrypt(maxRole.ToString()).Replace("/", "I0H")}/{_cryptoServices.Encrypt(IdLecture.ToString()).Replace("/", "I0H")}");
+        navigation.NavigateTo(url);
+    }
+    public async Task GetLisst()
+    {
+        listTeachersInSubject = await _iSubjectTeacherRepo.SearchSubjectTeacher(Guid.Empty, Guid.Parse(IdSubject));
+
+        lsgiangvien = new List<string>();
+        foreach (var x in listTeachersInSubject)
+        {
+            var giangvien = await _iLecturersCPRepo.GetLecturerListById(x.IdTeacher);
+            var namegiangvien = giangvien.Email;
+            lsgiangvien.Add(namegiangvien);
+        }
+
+        getallgiangvien = await _iLecturersCPRepo.GetAllLecturerAsync();
+        Supervisor = getallgiangvien.GroupBy(c => c.Email).Select(c => c.Key).ToArray();
+    }
+    private async Task RedirectToCreateExam()
+    {
+        if (_lstRoomDetailViews.Count != 0)
+        {
+            var url = Path.Combine($"/makeanexaminationroom/{_cryptoServices.Encrypt(IdSubject.ToString()).Replace("/", "I0H")}/{IdLecture}/{1}");
+            navigation.NavigateTo(url);
+        }
+        else
+        {
+            var url = Path.Combine($"/makeanexaminationroom/{_cryptoServices.Encrypt(IdSubject.ToString()).Replace("/", "I0H")}/{IdLecture}/{0}");
+            navigation.NavigateTo(url);
+        }
+
+    }
+
+    private async Task<IEnumerable<string>> SearchSubjcet(string value)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+            return GVien;
+        return GVien.Where(x => x.ToLower().Contains(value.ToLower(), StringComparison.InvariantCultureIgnoreCase));
+    }
+    private async Task OnValidSubmit(EditContext context)
+    {
+        success = true;
+        StateHasChanged();
+    }
+
+    public async Task SimulateProgress()
+    {
+        Value = 0;
+        do
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            Value += 8;
+            StateHasChanged();
+            await Task.Delay(500);
+
+        } while (Value < 100);
+
+
+    }
+    public async Task SimulateProgressFast()
+    {
+        Value = 0;
+        do
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            Value += 22;
+            StateHasChanged();
+            await Task.Delay(500);
+
+        } while (Value < 100);
+
+
+    }
+    bool _disposed;
+    public void Dispose() => _disposed = true;
+
+
+    private IEnumerable<string> Validate(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            yield return "email không hợp lệ";
+            yield break;
+        }
+
+        if (!Supervisor.Contains(value))
+        {
+            yield return "không tìm thấy tài khoản giám thị";
+        }
+    }
+
+    private async void TaskUpdated(MudItemDropInfo<KanbanTaskItem> info)
+    {
+        if (info.DropzoneIdentifier == "Các Đề Thi Đã Xóa")
+        {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = $"Xác Nhận Xóa File",
+                    Text = "Bạn Có Chắc Muốn Xóa File Đề Thi Này Không ?",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Đồng Ý",
+                    CancelButtonText = "Hủy"
+                });
+
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+
+
+
+                var getExamDelete = _lstAllExamFileFinal.FirstOrDefault(c => c.FileName == info.Item.Name).Id;
+                //xóa ảo để hiển thị sang dropzone delete
+
+                var res = await _examFileRepo.QuickChangeExamFile(getExamDelete, 4);
+                // await SimulateProgressFast();
+                if (res)
+                {
+                    await Swal.FireAsync(
+                    "Xóa Thành Công",
+                    "Successfuly",
+                    SweetAlertIcon.Success
+                    );
+
+                    _tasks = await GetTaskDroper();
+                    _dropContainer.Refresh();
+                    info.Item.Status = info.DropzoneIdentifier;
+
+                    //MustReload = true;
+                    //info.Item.Status = info.DropzoneIdentifier;
+
+                }
+                else
+                {
+                    await Swal.FireAsync(
+                  "Xóa Thất Bại",
+                  "Fail",
+                  SweetAlertIcon.Error
+                  );
+
+                    IsWaittingForLove = false;
+                    return;
+                }
+
+            }
+            else if (result.Dismiss == DismissReason.Cancel)
+            {
+
+                //ở đây xử lý khi hủy upload
+                await Swal.FireAsync(
+                  "Hủy",
+                  "Đã Hủy Thêm File",
+                  SweetAlertIcon.Error
+                  );
+
+            }
+
+        }
+        if (info.DropzoneIdentifier == "Danh Sách Đề Thi")
+        {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = $"Xác Hoàn Tác File",
+                    Text = "Bạn Có Chắc Muốn Hòa Tác File Đề Thi Này Không ?",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Đồng Ý",
+                    CancelButtonText = "Hủy"
+                });
+
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+
+
+                // IsWaittingForLove = true;
+                var getExamDelete = _lstAllExamFileFinal.FirstOrDefault(c => c.FileName == info.Item.Name).Id;
+                //xóa ảo để hiển thị sang dropzone delete
+
+                var res = await _examFileRepo.QuickChangeExamFile(getExamDelete, 0);
+                //await SimulateProgressFast();
+                if (res)
+                {
+                    await Swal.FireAsync(
+                    "Hoàn Tác Thành Công",
+                    "Successfuly",
+                    SweetAlertIcon.Success
+                    );
+                    // IsWaittingForLove = false;
+                    _tasks = await GetTaskDroper();
+                    _dropContainer.Refresh();
+
+                    info.Item.Status = info.DropzoneIdentifier;
+
+
+
+                }
+                else
+                {
+                    await Swal.FireAsync(
+                  "Hòan Tác Thất Bại",
+                  "Fail",
+                  SweetAlertIcon.Error
+                  );
+
+                    return;
+                }
+
+            }
+            else if (result.Dismiss == DismissReason.Cancel)
+            {
+
+                //ở đây xử lý khi hủy upload
+                await Swal.FireAsync(
+                  "Hủy",
+                  "Đã Hủy Hòan Tác File",
+                  SweetAlertIcon.Error
+                  );
+
+            }
+        }
+
+
+    }
+
+
+    private List<KanBanSections> _sections = new()
+        {
+            new KanBanSections("Danh Sách Đề Thi", false, String.Empty),
+            new KanBanSections("Các Đề Thi Đã Xóa", false, String.Empty),
+
+        };
+
+    public class KanBanSections
+    {
+        public string Name { get; init; }
+        public bool NewTaskOpen { get; set; }
+        public string NewTaskName { get; set; }
+
+        public KanBanSections(string name, bool newTaskOpen, string newTaskName)
+        {
+            Name = name;
+            NewTaskOpen = newTaskOpen;
+            NewTaskName = newTaskName;
+        }
+    }
+    public class KanbanTaskItem
+    {
+        public string Name { get; init; }
+        public string Status { get; set; }
+
+        public KanbanTaskItem(string name, string status)
+        {
+            Name = name;
+            Status = status;
+        }
+    }
+
+    private async Task<List<KanbanTaskItem>> GetTaskDroper()
+    {
+        _tasks.Clear();
+        _lstAllExamFileFinal = await _examFileRepo.GetAllExamFilesForOnlySubject(Guid.Parse(IdSubject));
+        foreach (var exam in _lstAllExamFileFinal)
+        {
+            if (exam.Status == 0)
+            {
+                KanbanTaskItem kanbanTaskItem = new KanbanTaskItem(
+                  exam.FileName,
+                 "Danh Sách Đề Thi"
+              );
+                _tasks.Add(kanbanTaskItem);
+            }
+            if (exam.Status == 4)
+            {
+                KanbanTaskItem kanbanTaskItem = new KanbanTaskItem(
+                 exam.FileName,
+                "Các Đề Thi Đã Xóa"
+             );
+                _tasks.Add(kanbanTaskItem);
+            }
+
+        }
+
+        return _tasks;
+    }
+    private async Task ConnectToServer()
+    {
+        try
+        {
+            string url = "https://localhost:5001/notificationhub";
+            HubConnection _connection = null;
+            bool isConnected = false;
+            string connectionStatus = "Closed";
+            _connection = new HubConnectionBuilder()
+                .WithUrl(url)
+                .Build();
+
+            await _connection.StartAsync();
+            isConnected = true;
+            connectionStatus = "Connected :-)";
+            Console.WriteLine("SinalR Is Starting");
+            _connection.Closed += async (s) =>
+            {
+                isConnected = false;
+                connectionStatus = "Disconnected";
+                await _connection.StartAsync();
+                isConnected = true;
+            };
+
+            _connection.On<string>("ExamStorages", async (res) =>
+            {
+
+                if (res == "Done")
+                {
+                    _tasks = await GetTaskDroper();
+                    _dropContainer.Refresh();
+
+                    this.InvokeAsync(() => this.StateHasChanged());
+                }
+
+
+            });
+        }
+        catch (Exception ex)
+        {
+
+            //_error.ProcessError(ex);
+        }
+    }
+
+
+    private async Task EnableEditing(Guid IdSubject, Guid IdTeacher)
+    {
+        if (CheckEditting == false)
+        {
+            var giangvien = await _iLecturersCPRepo.GetLecturerListById(IdTeacher);
+            var namegiangvien = giangvien.Email;
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = $"Xác Nhận Chỉnh Sửa {namegiangvien}",
+                    Text = $"Bạn Có Muốn Tiến Hành Chỉnh Sửa {namegiangvien} Hay Không ?",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Đồng Ý",
+                    CancelButtonText = "Hủy"
+                });
+
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+                IsEditing = true;
+                var indexupdate = listTeachersInSubject.FirstOrDefault(c => c.IdTeacher == IdTeacher && c.IdSubject == IdSubject);
+                modelupdate.IdSubject = indexupdate.IdSubject;
+                CheckEditting = true;
+                modelupdate.IdTeacher = indexupdate.IdTeacher;
+                modelupdate.Status = indexupdate.Status;
+                modelupdate.AddingTime = indexupdate.AddingTime;
+                modelupdate.Name = namegiangvien;
+            }
+            else if (result.Dismiss == DismissReason.Cancel)
+            {
+
+                //ở đây xử lý khi hủy upload
+                await Swal.FireAsync(
+                  "Hủy",
+                  "Đã Hủy Đi Đến Chỉnh Sửa",
+                  SweetAlertIcon.Error
+                  );
+            }
+
+        }
+        else
+        {
+            await Swal.FireAsync(
+                "Cảnh Báo",
+                "Không Thể Thực Hiện Chỉnh Sửa Nhiều File Cùng 1 Thời Điểm Vui Lòng Hoàn Tất Cập Nhật Hiện Tại",
+                SweetAlertIcon.Error
+                );
+        }
+    }
+    private async Task BienCo()
+    {
+        if (!bienco)
+        {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = $"Xác Nhận Thêm ",
+                    Text = $"Bạn Có Muốn Tiến Hành Chỉnh Thêm giảng viên  Hay Không ?",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Đồng Ý",
+                    CancelButtonText = "Hủy"
+                });
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+                bienco = true;
+            }
+            else if (result.Dismiss == DismissReason.Cancel)
+            {
+
+                //ở đây xử lý khi hủy upload
+                bienco = false;
+                await Swal.FireAsync(
+                  "Hủy",
+                  "Đã Hủy Đi Đến Thêm Giảng Viên",
+                  SweetAlertIcon.Error
+                  );
+            }
+        }
+        else
+        {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = $"Xác Nhận Dừng Thêm ",
+                    Text = $"Bạn Có Muốn Dừng Tiến Hành Chỉnh Thêm Giảng Viên  Hay Không ?",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Đồng Ý",
+                    CancelButtonText = "Hủy"
+                });
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+                bienco = false;
+            }
+            else if (result.Dismiss == DismissReason.Cancel)
+            {
+
+                //ở đây xử lý khi hủy upload
+                bienco = true;
+                await Swal.FireAsync(
+                  "Hủy",
+                  "Đã Hủy Đi Đến Dừng Thêm Giảng Viên",
+                  SweetAlertIcon.Error
+                  );
+            }
+        }
+
+
+
+
+    }
+    public async Task DeleteInstane(Guid IdSubject, Guid IdTeacher)
+    {
+        var giangvien = await _iLecturersCPRepo.GetLecturerListById(IdTeacher);
+        var namegiangvien = giangvien.Email;
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+
+                Title = $"Xóa Giảng viên {namegiangvien}",
+                Text = "Bạn Có Muốn Xóa Giảng viên ra khỏi môn hay Không ?",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Đồng Ý",
+                CancelButtonText = "Hủy"
+            });
+
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            var res = false;
+            ShowLoading();
+
+            res = await _iSubjectTeacherRepo.DeleteSubjectTeacher(IdTeacher, IdSubject);
+
+            if (res)
+            {
+
+                await Swal.FireAsync(
+                "Xóa Giảng viên Thành Công",
+                "Successfuly",
+                SweetAlertIcon.Success
+                );
+                HideLoading();
+                await GetLisst();
+            }
+            else
+            {
+                Swal.FireAsync(
+             "Xóa Thất Bại",
+             "Fail",
+             SweetAlertIcon.Error
+             );
+                HideLoading();
+            }
+
+        }
+        else if (result.Dismiss == DismissReason.Cancel)
+        {
+
+            //ở đây xử lý khi hủy upload
+            await Swal.FireAsync(
+              "Hủy",
+              "Đã Hủy Xóa ",
+              SweetAlertIcon.Error
+              );
+            HideLoading();
+        }
+    }
+
+    public async Task UpdateInstance(SubjectTeacherViewModel examinationRoomDetailViewModel)
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = $"Cập Nhật Thông Tin",
+                Text = "Bạn Có Muốn Cập Nhật Thông Tin Hay Không ?",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Đồng Ý",
+                CancelButtonText = "Hủy"
+            });
+
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            ShowLoading();
+            StateHasChanged();
+            var res = false;
+            var addres = false;
+            //List<ExamRoomSupervisorViewModel> _lstsupervisorExamRooms = new List<ExamRoomSupervisorViewModel>();
+            //x.TotalTimeOfExam = examinationRoomDetailViewModel.TotalTimeOfExam;
+
+            examinationRoomDetailViewModel.Status = examinationRoomDetailViewModel.Status;
+            examinationRoomDetailViewModel.AddingTime = examinationRoomDetailViewModel.AddingTime;
+
+            //var comparelistsupervisor = _lstDefautSupervisor.Where(c => c.IdExaminationRoom == examinationRoomDetailViewModel.IdExaminationRoom && c.SecretKey == examinationRoomDetailViewModel.SecretKey).Select(c => c.IdLecturter).ToList();
+            bool same = await _iSubjectTeacherRepo.UpdateSubjectTeacher(examinationRoomDetailViewModel);
+
+
+            if (same)
+            {
+
+                await Swal.FireAsync(
+                "Cập Nhật Thông Tin Thành Công",
+                "Successfuly",
+                SweetAlertIcon.Success
+                );
+                CheckEditting = false;
+
+                IsEditing = false;
+                IsShowLoading = false;
+                await GetLisst();
+            }
+            else
+            {
+                await Swal.FireAsync(
+               "Cập Nhật Thất Bại",
+               "Fail",
+               SweetAlertIcon.Error
+               );
+                CheckEditting = false;
+
+                IsEditing = false;
+                HideLoading();
+            }
+
+        }
+        else if (result.Dismiss == DismissReason.Cancel)
+        {
+
+            //ở đây xử lý khi hủy upload
+            await Swal.FireAsync(
+              "Hủy",
+              "Đã Hủy Cập Nhật",
+              SweetAlertIcon.Error
+              );
+            HideLoading();
+            CheckEditting = false;
+        }
+    }
+
+    private async Task RemoveUser(Guid IdTeacher, Guid Idsubject)
+    {
+
+        try
+        {
+            var res = await _iSubjectTeacherRepo.DeleteSubjectTeacher(IdTeacher, Guid.Parse(IdSubject));
+
+        }
+        catch
+        {
+
+        }
+        StateHasChanged();
+        await GetLisst();
+
+    }
+    private async Task<IEnumerable<string>> SearchSupervisor(string value)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+
+        if (getallgiangvien.Any(c => c.Email == value))
+        {
+
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = $"Xác Nhận Thêm Giám Thị",
+                    Text = $"Bạn Có Muốn Thêm Giảng Viên {value} Hay Không ?",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Đồng Ý",
+                    CancelButtonText = "Hủy"
+                });
+
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+                var getId = getallgiangvien.Where(c => c.Email == value).Select(c => c.Id).FirstOrDefault();
+                if (listTeachersInSubject.Any(c => c.IdTeacher == getId && c.IdSubject == Guid.Parse(IdSubject)))
+                {
+                    //ở đây xử lý khi hủy upload
+                    await Swal.FireAsync(
+                      "Trùng",
+                      "Giảng viên đã có tại môn học !",
+                      SweetAlertIcon.Error
+                      );
+                    StateHasChanged();
+                }
+                else
+                {
+
+                    try
+                    {
+                        SubjectTeacherViewModel newdt = new SubjectTeacherViewModel();
+                        newdt.IdSubject = Guid.Parse(IdSubject);
+                        newdt.IdTeacher = getId;
+                        newdt.Status = 0;
+                        newdt.AddingTime = DateTime.Now;
+                        var res = _iSubjectTeacherRepo.AddingSubjectTeacher(newdt);
+                    }
+                    catch
+                    {
+
+                    }
+
+                    await Swal.FireAsync(
+                      "Thành công",
+                      "Thêm giảng viên thành công !",
+                      SweetAlertIcon.Success
+                      );
+                    UserName = "";
+                    await GetLisst();
+                    StateHasChanged();
+                }
+
+            }
+            else if (result.Dismiss == DismissReason.Cancel)
+            {
+
+                //ở đây xử lý khi hủy upload
+                await Swal.FireAsync(
+                  "Hủy",
+                  "Đã Hủy Thêm Giám Thị",
+                  SweetAlertIcon.Error
+                  );
+                UserName = "";
+                StateHasChanged();
+            }
+
+        }
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+            return Supervisor;
+        StateHasChanged();
+        return Supervisor.Where(x => x.ToLower().Contains(value.ToLower(), StringComparison.InvariantCultureIgnoreCase));
+    }
+    public sealed class StateAttribute : ValidationAttribute
+    {
+        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+        {
+            if (!Supervisor.Contains(value))
+            {
+                return new ValidationResult("This is an incorrect value", new[] { validationContext.MemberName });
+            }
+
+            return null;
+        }
+    }
+}

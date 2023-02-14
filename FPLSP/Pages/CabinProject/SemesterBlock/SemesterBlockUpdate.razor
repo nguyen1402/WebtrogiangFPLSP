@@ -1,0 +1,127 @@
+﻿@page "/semesterblock/update/{idBlockDe}/{idSemesterDe}"
+@using Blazored.Toast.Services
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories.Interfaces.CabinProject
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject
+<h3>Cập nhật Block, Kì Học</h3>
+<EditForm Model="semesterBlockVM" class="card card-body bg-light mt-6">
+    <DataAnnotationsValidator />
+    <div class="form-group">
+        <div class="row">
+            <div class="form-group pt-2 col-md-6 ">
+                <label class="form-label">Kì học:</label>
+                <div class="text-danger">
+                    <InputText class="form-control" @bind-Value="semesterBlockVM.NameofSemester"></InputText>
+                    <ValidationMessage For="()=>semesterBlockVM.NameofSemester"></ValidationMessage>
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-6 ">
+                <label class="form-label">Block:</label>
+                <div class="text-danger">
+                    <InputText class="form-control" @bind-Value="semesterBlockVM.NameofBlock"></InputText>
+                    <ValidationMessage For="()=>semesterBlockVM.NameofBlock"></ValidationMessage>
+                </div>
+            </div>
+
+            <div class="form-group pt-2 col-md-6">
+                <label for="Question" class="form-label">Ngày bắt đầu :</label>
+                <div class="text-danger">
+                    <InputDate class="form-control" @bind-Value="semesterBlockVM.StartTime"></InputDate>
+                    <ValidationMessage For="()=>semesterBlockVM.StartTime">"></ValidationMessage>
+                </div>
+            </div>
+            <div class="form-group pt-2 col-md-6">
+                <label for="Question" class="form-label">Ngày kết thúc  :</label>
+                <div class="text-danger">
+                    <InputDate class="form-control" @bind-Value="semesterBlockVM.EndTime"></InputDate>
+                    <ValidationMessage For="()=>semesterBlockVM.EndTime">"></ValidationMessage>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="d-flex justify-content-center mb-2">
+                <div class="p-2">
+                    <button @onclick="()=> Update()" class="btn btn-primary">Cập nhật</button>
+                </div>
+                <div class="p-2">
+                    <button @onclick="()=> GetTasks()" class="btn btn-success">Khôi phục</button>
+                </div>
+                <div class="p-2">
+                    <a href="/semesterblock" class="btn btn-outline-danger">Quay Lại</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</EditForm>
+@code {
+
+    [Parameter] public string idBlockDe { set; get; }
+    [Parameter] public string idSemesterDe { set; get; }
+    public string idBlock { set; get; }
+    public string idSemester  { set; get; }
+    public string NameBlock;
+    public string NameSem; 
+    SemesterBlockVM semesterBlockVM = new SemesterBlockVM();
+    SemesterVM semesterVM = new SemesterVM();
+    BlockVM blockVM = new BlockVM();
+    [Inject] private ISemesterBlockRepo _semesterBlockRepo { get; set; }
+    [Inject] private ISemesterRepo _semesterRepo { get; set; }
+    [Inject] private IBlockRepo _blockRepo { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    [Inject] private NavigationManager NavigationManager { get; set; }
+    [Inject] private CryptoServices _cryptoServices { get; set; }
+    [Inject] private CryptoServices _cryptoServices2 { get; set; }
+    [Inject] private NavigationManager navigationManager { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+
+        await GetTasks();
+
+    }
+    private async Task GetTasks()
+    {
+        idBlockDe = idBlockDe.Replace("danhhn", "/");
+        idSemesterDe = idSemesterDe.Replace("danhhn", "/");
+        idBlock = _cryptoServices.Decrypt(idBlockDe);
+        idSemester = _cryptoServices2.Decrypt(idSemesterDe);
+        semesterBlockVM = await _semesterBlockRepo.GetById(idBlock, idSemester);
+        NameBlock = semesterBlockVM.NameofBlock;
+        NameSem = semesterBlockVM.NameofSemester;
+    }
+
+    private async void Update()
+    {
+        var semester = await _semesterRepo.GetAll();
+        var lstblock = await _blockRepo.GetAll();
+        var semblock = await _semesterBlockRepo.GetAll();
+        var lstsemesterBlock = (from a in semblock
+                                join b in semester
+                                on a.IdSemester equals b.Id
+                                join c in lstblock
+                                on a.IdBlock equals c.Id
+                                select new
+                                {
+                                    b.NameofSemester,
+                                    c.NameOfBlock
+
+                                }).ToList();
+        var count = lstsemesterBlock.Where(x => x.NameofSemester == semesterBlockVM.NameofSemester && x.NameOfBlock == semesterBlockVM.NameofBlock).Count();
+        if (count > 0 && semesterBlockVM.NameofBlock != NameBlock && semesterBlockVM.NameofSemester != NameSem)
+        {
+            _toastService.ShowError($"Kì {semesterBlockVM.NameofSemester} - Block {semesterBlockVM.NameofBlock} đã tồn tại");
+            return;
+        }
+        semesterVM.NameofSemester = semesterBlockVM.NameofSemester; 
+        semesterVM.Id = Guid.Parse(idSemester);
+        blockVM.NameOfBlock = semesterBlockVM.NameofBlock;
+        blockVM.Id = Guid.Parse(idBlock);
+        await _semesterRepo.UpdateSemester(semesterVM);
+        await _blockRepo.UpdateBlock(blockVM);
+        var check = await _semesterBlockRepo.UpdateSemesterBlock(semesterBlockVM);
+        if (check)
+        {
+            _toastService.ShowSuccess("Cập nhật thành công");
+            NavigationManager.NavigateTo("/semesterblock");
+        }
+    }
+}

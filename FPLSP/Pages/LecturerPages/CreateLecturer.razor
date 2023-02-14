@@ -1,0 +1,371 @@
+﻿@page "/createlecturer"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using FPLSP.Server.Infrastructure.ViewModels.LecturerCPVm
+@using FPLSP.Server.Infrastructure.ViewModels.LectuterSpecializedCP
+@using FPLSP.Components
+@attribute [Authorize(Roles = "AdminCS")]
+
+@if (_codeNew == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <h3>Tạo mới giảng viên</h3>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/listlecturer">Giảng viên</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Tạo mới giảng viên</li>
+        </ol>
+    </nav>
+    <EditForm Model="@request" OnValidSubmit="@Create" class="card card-body bg-light mt-5" id="create-form">
+        <DataAnnotationsValidator />
+        <div class="form-group">
+            <div class="row">
+                <div class="col-2 pt-4">
+                    <div class="row">
+                        <img src="@request.ImageUrl" width=195px height=232px style="object-fit:contain">
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="image" class="col-12 col-form-label">Hình Ảnh:</label>
+                            <div class="col-12">
+                                <ImageUpload OnChange="AssignImageUrl" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.ImageUrl)" /></div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+                <div class="col-10 pt-1">
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Mã Giảng Viên:</label>
+                            <div class="col-md-12">
+                                <input id="name" class="form-control" value="@_codeNew" disabled />
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Họ Và Tên:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="@request.LecturersName" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.LecturersName)" /></div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Giới Tính:</label>
+                            <div class="col-md-12">
+                                <InputSelect @bind-Value="request.Gender" class="form-select">
+                                    <option value="false">Nam</option>
+                                    <option value="true">Nữ</option>
+                                </InputSelect>
+                                <div class="text-danger"><ValidationMessage For="@(() => request.Gender)" /></div>
+
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Ngày Sinh:</label>
+                            <div class="col-md-12">
+                                <InputDate id="name" class="form-control" @bind-Value="@request.Dob" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.Dob)" /></div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Số điện thoại:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="@request.PhoneNumber" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.PhoneNumber)" /></div>
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Địa Chỉ:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="@request.Address" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.Address)" /></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">CMT/CCCD:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="@request.IdentityCard" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.IdentityCard)" /></div>
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-3 col-form-label">Ngày cấp:</label>
+                            <div class="col-md-12">
+                                <InputDate id="name" class="form-control" @bind-Value="request.IssuedOn" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.IssuedOn)" /></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Dân tộc:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="request.Ethnic" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.Ethnic)" /></div>
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Quê quán:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="request.HomeTown" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.HomeTown)" /></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Năm Kinh Nghiệm:</label>
+                            <div class="col-md-12">
+                                <InputNumber id="name" class="form-control" @bind-Value="@request.YearsOfExperience" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.YearsOfExperience)" /></div>
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Mô Tả:</label>
+                            <div class="col-md-12">
+                                <InputText id="name" class="form-control" @bind-Value="@request.Description" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.Description)" /></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Trạng thái:</label>
+                            <div class="col-md-12">
+                                <InputSelect @bind-Value="request.Status" class="form-select">
+                                    <option value="1">Không Hoạt động</option>
+                                    <option value="0">Hoạt động</option>
+                                </InputSelect>
+                                <div class="text-danger"><ValidationMessage For="@(() => request.Status)" /></div>
+                            </div>
+                        </div>
+                        <div class="form-group pt-2 col-md-6">
+                            <label for="name" class="col-md-4 col-form-label">Cơ Sở:</label>
+                            <div class="col-md-12">
+                                <InputSelect @bind-Value="request.TrainingFacilitiesId" class="form-control">
+                                    <option>Chọn Cơ Sở</option>
+                                    @foreach (var x in _lstTrainingFacility)
+                                    {
+                                        <option value="@x.Id">@x.TrainingInstitutionName</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group pt-2 col-md-6">
+                                <label for="name" class="col-md-4 col-form-label">Chuyên Ngành:</label>
+                                <div class="col-md-10">
+                                    @foreach (var x in _lstSpecialized)
+                                    {
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" @bind="x.IsChecked"
+                                           @onclick="() => CheckManual(x.Id,x.IsChecked)" />
+                                            @x.SpecializationName
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row pt-4">
+            <div class="col-md-12 text-center">
+                <button type="submit" class="btn btn-primary" form="create-form">Thêm Mới</button>
+                <a class="btn btn-outline-success ms-2" @onclick="() => clearForm()">Làm mới</a>
+                <a class="btn btn-outline-danger ms-2" href="/listlecturer">Quay lại</a>
+            </div>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Inject]
+    public ILecturersCPRepo _LecturersCPRepo { get; set; }
+    [Inject] public NavigationManager Navigation { get; set; }
+
+    private string _codeNew { get; set; }
+    public string _error { get; set; }
+    public string status { get; set; } = "1";
+
+    private LecturersCPRequest request = new LecturersCPRequest(); 
+    private List<TrainingFacilitiesCP> _lstTrainingFacility { get; set; }
+    [Inject]
+    public ITrainingFacilitiesCPRepo _trainingFacilityRepositories { get; set; }
+
+    [Inject]
+    public ISpecializedCPRepo _speacializedRepositories { get; set; }
+    public List<SpecializedDto> _lstSpecialized { get; set; } = new List<SpecializedDto>();
+    [Inject]
+    public IToastService ToastService { get; set; }
+    public LectuterSpecializedCPCreateVM lectuterSpecializedCPCreate { get; set; } = new LectuterSpecializedCPCreateVM();
+    [Inject]
+    public ILectuterSpecializedCPCilents _lectuterSpecializedCPRepo { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var maxCodeLecturer = await _LecturersCPRepo.GetMaxCodeLecturer();
+        _codeNew = "GV" + (Convert.ToInt32(maxCodeLecturer.LecturersCode.Substring(2, maxCodeLecturer.LecturersCode.Length - 2)) + 1).ToString();
+        request.LecturersCode = _codeNew;
+        _lstSpecialized = await _speacializedRepositories.GetAll();
+        _lstSpecialized = _lstSpecialized.Where(c => c.Status != 1).ToList();
+        request.Dob = DateTime.Now;
+        request.IssuedOn = DateTime.Now;
+        _lstTrainingFacility = await _trainingFacilityRepositories.GetTrainingFacilitiesAsync();
+        _lstTrainingFacility = _lstTrainingFacility.Where(c => c.Status != 1).ToList();
+    }
+
+    public bool checkName(string x)
+    {
+        foreach (char c in x)
+        {
+            if (!Char.IsLetter(c) && c.ToString() != " ")
+                return false;
+        }
+        return true;
+    }
+    public bool checkNumber(string x)
+    {
+        foreach (char c in x)
+        {
+            if (!Char.IsDigit(c))
+                return false;
+        }
+        return true;
+    }
+
+
+    private async Task Create()
+    {
+        var chuyenganh = _lstSpecialized.Where(x => x.IsChecked == true);
+        if (!checkName(request.LecturersName))
+        {
+            ToastService.ShowError("Tên không được chứa số và ký tự đặc biệt", "Error");
+        }
+        else if (!checkName(request.Ethnic))
+        {
+            ToastService.ShowError("Dân tộc không được chứa số và ký tự đặc biệt", "Error");
+        }
+        else if ((DateTime.Now.Year - request.Dob.Year) < 18)
+        {
+            ToastService.ShowError("Ngày sinh không hợp lệ", "Error");
+        }
+        else if (DateTime.Compare(request.IssuedOn, DateTime.Now) >= 0 || (request.IssuedOn.Year - request.Dob.Year) < 14)
+        {
+            ToastService.ShowError("Ngày cấp không hợp lệ", "Error");
+        }
+        else if (!(request.IdentityCard.Length == 9 || request.IdentityCard.Length == 12))
+        {
+            ToastService.ShowError("CMT/CCCD phải là 9 hoặc 12 số", "Error");
+        }
+        else if (!checkNumber(request.IdentityCard))
+        {
+            ToastService.ShowError("CMT/CCCD phải là số", "Error");
+        }
+        else if (!request.PhoneNumber.StartsWith("0") || request.PhoneNumber.Length != 10 || !checkNumber(request.PhoneNumber))
+        {
+            ToastService.ShowError("Số điện thoại không đúng định dạng", "Error");
+        }
+        else if (chuyenganh.Count() == 0)
+        {
+            ToastService.ShowError("Giảng viên bắt buộc phải chọn chuyên ngành", "Error");
+        }
+        else
+        {;
+            var le = await _LecturersCPRepo.GetAllLecturerAsync();
+            if (le.FirstOrDefault(x => (x.IdentityCard == request.IdentityCard)) != null)
+            {
+                ToastService.ShowError("CMT/CCCD đã tồn tại", "Error");
+            }
+            else if (le.FirstOrDefault(x => (x.PhoneNumber == request.PhoneNumber)) != null)
+            {
+                ToastService.ShowError("Số điện thoại đã tồn tại", "Error");
+            }
+            else
+            {
+                var result = await _LecturersCPRepo.CreateLecturer(request);
+                if (result)
+                {
+                    var lec = await _LecturersCPRepo.GetAllLecturerAsync();
+                    var lecID = lec.FirstOrDefault(x => x.IdentityCard == request.IdentityCard).Id;
+                    var lstSpecID = _lstSpecialized.Where(x => x.IsChecked == true).Select(x => x.Id).ToList();
+                    if (lstSpecID.Count > 0)
+                    {
+                        LectuterSpecializedCPCreateVM lsVm = new LectuterSpecializedCPCreateVM();
+                        lsVm.IdLectuter = lecID;
+                        lsVm.Status = 1;
+                        foreach (var item in lstSpecID)
+                        {
+                            await _lectuterSpecializedCPRepo.Create(item, lsVm);
+                        }
+                    }
+                    else
+                    {
+                        ToastService.ShowError("Giảng viên bắt buộc phải chọn chuyên ngành", "Error");
+                    }
+
+
+                    Navigation.NavigateTo($"/listlecturer");
+                    ToastService.ShowSuccess("Tạo giảng viên thành công", "Success");
+                }
+                else
+                {
+                    Navigation.NavigateTo($"/createlecturer");
+                    ToastService.ShowError("Tạo giảng viên thất bại", "Error");
+                }
+            }
+        }
+    }
+
+    public void clearForm()
+    {
+        request = new LecturersCPRequest();
+        
+        foreach (var x in _lstSpecialized)
+        {
+            x.IsChecked = false;
+        }
+    }
+    void CheckManual(Guid st, bool check)
+    {
+        if (check == true)
+        {
+            foreach (var x in _lstSpecialized.Where(c => c.Id == st))
+            {
+                x.IsChecked = false;
+            }
+        }
+        if (check == false)
+        {
+            foreach (var x in _lstSpecialized.Where(c => c.Id == st))
+            {
+                x.IsChecked = true;
+            }
+        }
+    }
+    private void AssignImageUrl(string imgUrl)
+    {
+        request.ImageUrl = imgUrl;
+        if (!(imgUrl.ToLower().Contains(".png") || imgUrl.ToLower().Contains(".jpg") || imgUrl.ToLower().Contains(".gif")))
+        {
+            ToastService.ShowError("Ảnh không hợp lệ", "Error");
+        }
+    }
+}

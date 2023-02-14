@@ -1,0 +1,73 @@
+﻿@page "/quizquestionup/add"
+<h3>QuizQuestionAdd</h3>
+
+@using Blazored.Toast
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.QuizQuestionUp
+@using Microsoft.AspNetCore.Components
+
+<PageTitle>FPLSP | Elearning</PageTitle>
+
+<EditForm Model="@_quizQuestionUpVm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="mb-3">
+        <label for="exampleFormControlInput1" class="form-label">QuestionTital :</label>
+        <InputText @bind-Value="@_quizQuestionUpVm.QuestionTital" id="exampleFormControlInput1" placeholder="Please type QuestionTital" class="form-control"></InputText>
+        <ValidationMessage For="@(() => _quizQuestionUpVm.QuestionTital)" />
+    </div>
+    <div class="mb-3">
+        <label for="exampleFormControlInput1" class="form-label">ContentQuestion :</label>
+        <InputText @bind-Value="@_quizQuestionUpVm.ContentQuestion" id="exampleFormControlInput1" placeholder="Please type ContentQuestion" class="form-control"></InputText>
+        <ValidationMessage For="@(() => _quizQuestionUpVm.ContentQuestion)" />
+    </div>
+    <div class="mb-3">
+        <label for="exampleFormControlInput1" class="form-label">QuestionCode :</label>
+        <InputText @bind-Value="@_quizQuestionUpVm.QuestionCode" id="exampleFormControlInput1" placeholder="Please type Answers" class="form-control"></InputText>
+        <ValidationMessage For="@(() => _quizQuestionUpVm.QuestionCode)" />
+    </div> 
+    <div class="mb-3">
+        <label for="exampleFormControlInput1" class="form-label">QuestionName :</label>
+        <InputText @bind-Value="@_quizQuestionUpVm.QuestionName" id="exampleFormControlInput1" placeholder="Please type Answers" class="form-control"></InputText>
+        <ValidationMessage For="@(() => _quizQuestionUpVm.QuestionName)" />
+    </div>
+    <div class="mb-3">
+        <label for="exampleFormControlInput1" class="form-label">QuestionTypeId :</label>
+        <InputText @bind-Value="@QuestionTypeId" id="exampleFormControlInput1" placeholder="Please type QuestionTypeId" class="form-control"></InputText>
+        <ValidationMessage For="@(() => _quizQuestionUpVm.QuestionTypeId)" />
+    </div>
+    <hr />
+    <div class="mt-5 d-flex justify-content-center">
+        <div class="d-flex gap-3 col-4 mx-auto">
+            <button class="btn btn-danger" type="submit">Exit    <i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+            <button class="btn btn-info" type="submit" @onclick="Add">Create   <i class="fa-solid fa-plus"></i></button>
+            <button class="btn btn-warning" type="submit">Clear    <i class="fa-solid fa-trash"></i></button>
+        </div>
+
+
+    </div>
+
+</EditForm>
+@code
+{
+    [Inject] IQuizQuestionUPRepo _quizQuestionUPRepo { get; set; }
+    private QuizQuestionUpVm _quizQuestionUpVm = new QuizQuestionUpVm();
+    [Inject] NavigationManager NavigationManager { get; set; }
+    private string QuestionTypeId { get; set; }
+    protected async Task Add()
+    {
+        try
+        {
+            _quizQuestionUpVm.QuestionTypeId = Guid.Parse(QuestionTypeId);
+            if (await _quizQuestionUPRepo.Add(_quizQuestionUpVm))
+            {
+                NavigationManager.NavigateTo("/quizquestionup");
+            }
+        }
+        catch (Exception)
+        {
+            NavigationManager.NavigateTo("/quizquestionup/add");
+        }
+
+    }
+}

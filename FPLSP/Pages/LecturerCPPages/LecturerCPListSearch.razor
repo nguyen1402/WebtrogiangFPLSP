@@ -1,0 +1,45 @@
+﻿@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using FPLSP.Server.Infrastructure.ViewModels.LecturerCPVm
+
+
+<EditForm Model="@_lecturersCPListSearch" OnSubmit=@SearchForm>
+    <div class="row">
+        <div class="col">
+            <InputText placeholder="Tìm theo mã, tên, email, số điện thoại" class="form-control" @bind-Value="_lecturersCPListSearch.Name"></InputText>
+        </div>
+        <div class="col-4">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+            <a class="btn btn-outline-success ms-2" @onclick="() => clearSearch()">Làm mới</a>
+
+        </div>
+    </div>
+</EditForm>
+
+@code {
+
+    [Parameter]
+    public EventCallback<LecturersCPListSearch> OnSearch { get; set; }
+    private LecturersCPListSearch _lecturersCPListSearch = new LecturersCPListSearch();
+    [Inject]
+    public IRoleCPRepo _RoleCPRepo { get; set; }
+    public List<RoleCP> _lstRole { get; set; } = new List<RoleCP>();
+
+    public string status { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+    }
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(_lecturersCPListSearch);
+    }
+    public async void clearSearch()
+    {
+        _lecturersCPListSearch.Name = "";
+        status = "";
+
+        _lecturersCPListSearch = new LecturersCPListSearch();
+        await OnSearch.InvokeAsync(_lecturersCPListSearch);
+    }
+}

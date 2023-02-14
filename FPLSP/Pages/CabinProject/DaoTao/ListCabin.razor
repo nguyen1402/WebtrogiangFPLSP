@@ -1,0 +1,922 @@
+﻿@page "/listCabin/{idTrainingFacilityNonDecrypt}/{idShiftNonDecrypt}/{dateInput}"
+@attribute [Authorize(Roles = "DirectorOfTraining")]
+
+@using System.Text;
+@using System.Text.RegularExpressions;
+@using System.Diagnostics;
+@using Blazored.Toast.Services;
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces.CabinProject;
+@using FPLSP.Repositories.Interfaces;
+@using FPLSP.Server.Domain.Dtos;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.BookingCabin;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.BookingRequest;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.Cabin;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.GroupCabin;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.ShiftOfCabin;
+@using Microsoft.AspNetCore.SignalR.Client;
+@inject IJSRuntime JSRuntime
+@if (listShift == null || listFullShift == null || listBookingCabin == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <div class="baongoai">
+        <h3 class="text-center">Danh sách cabin</h3><br />
+        <div class="notification-modal-div" style="display: @close; max-height:80vh;">
+            <div class="row mb-3 m-0">
+                <h5 class="col-10" style="margin: auto 0;">Thông tin cabin</h5>
+                <button type="button" class="col-2" aria-label="Close" @onclick="@(() => {close="none";})">
+                    <h5>x</h5>
+                </button>
+            </div>
+            <div style="padding: 0 5px;margin: 0 auto;width: -webkit-fill-available;text-align: left;">
+                <h6>Ca Dạy: @shift</h6>
+                <h6>Cabin: @cabinName</h6>
+                <h6>Chuyên Ngành: @specializedName</h6>
+                <h6>Trạng Thái: @cabinStatus</h6>
+                @if (lecturerName != "N/A" && subjectClass != "N/A")
+                {
+                    <h6>Giảng Viên: @lecturerName</h6>
+                    <h6>Lớp: @subjectClass</h6>
+
+                    @if (checkinImage != null)
+                    {
+                        <div class="row m-0 p-0">
+                            <div class="col-8">
+                                <img src="@(Encoding.ASCII.GetString(checkinImage))" style="width:-webkit-fill-available;height:auto; object-fit:cover;">
+                            </div>
+                            <div class="col-4 m-0 p-0">
+                                <i class="fas fa-check-circle" style="margin: 0 3px; color: greenyellow;"></i>
+                                Đã CheckIn
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row m-0 p-0">
+                            <div class="col-8">
+                                <img src="./css/images/LecturerCP/defaultAVT.png" style="width:-webkit-fill-available;height:auto; object-fit:cover;">
+                            </div>
+                            <div class="col-4 m-0 p-0">
+                                <i class="fas fa-check-circle" style="margin: 0 3px; color: red;"></i>
+                                Chưa CheckIn
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+            @if (cabinStatus == "Đang bảo trì")
+            {
+                <div class="my-2" style="text-align: center;">
+                    <button class="btn btn-primary" @onclick="() => Submit()">OK</button>
+                </div>
+            }
+            else
+            {
+                <div class="row">
+                    <div class="col-4"><hr /></div>
+                    <div hidden="@(IdLecturer != null)" class="col-4">Xếp cabin</div>
+                    <div hidden="@(IdLecturer == null)" class="col-4">Hủy xếp cabin</div>
+                    <div class="col-4"><hr /></div>
+                </div>
+                <div class="m-0 p-0">
+                    <EditForm Model="@_Model" class="card card-body bg-light" id="details-form">
+                        <div hidden="@(IdLecturer != null)">
+                            <label>Chọn giảng viên: </label>
+                            <InputSelect id="time" class=" form-select" ValueExpression="@(()=>IdLecturerForBooking)" Value="@IdLecturerForBooking" ValueChanged="@((string value) => CheckLecturerForBooking(value))">
+                                <option selected value="@(string.Empty)">Chọn giảng viên</option>
+
+                                @foreach (var group in listFullShift.Where(c => c.IdShiftOfCabin == IdShift && c.TeachingDay == _day).GroupBy(c => new { c.IdLecturer, c.LecturerUserName }))
+                                {
+                                    foreach (var item in group.Where(c => c.IdCabin == null && c.IdLecturer != null))
+                                    {
+                                        <option value="@(group.Key.IdLecturer)">@(group.Key.LecturerUserName)</option>
+                                        break;
+                                    }
+                                }
+                            </InputSelect>
+                            <label>Chọn lớp-môn: </label>
+                            <InputSelect id="time" class=" form-select" ValueExpression="@(()=>IdClassSubjectForBooking)" Value="@IdClassSubjectForBooking" ValueChanged="@((string value) => CheckClassSubjectForBooking(value))">
+                                <option selected value="@(IdLecturer)">Chọn lớp-môn</option>
+                                @if (!string.IsNullOrEmpty(IdLecturerForBooking))
+                                {
+                                    @foreach (var group in listFullShift.Where(c => c.IdShiftOfCabin == IdShift && c.TeachingDay == _day).GroupBy(c => new { c.IdLecturer, c.LecturerUserName }))
+                                    {
+
+                                        foreach (var item in group.Where(c => c.IdCabin == null && c.IdLecturer == Guid.Parse(IdLecturerForBooking) && c.IdClass != null && c.IdSubject != null))
+                                        {
+                                            <option value="@($"{item.IdClass}*{item.IdSubject}")">@($"{item.ClassName}-{item.SubjectCode}")</option>
+                                            break;
+                                        }
+                                    }
+                                }
+                            </InputSelect>
+                        </div>
+                        <div hidden="@(IdLecturer == null)">
+                            <label>Lí do hủy cabin vì:</label>
+                            <InputTextArea @bind-Value="CancelReason" placeholder="Nhập lí do hủy cabin"></InputTextArea>
+                        </div>
+                    </EditForm>
+                </div>
+                <div class="my-2 row" style="text-align: center;">
+                    <div class="col-1"></div>
+                    <div class="col-4">
+                        <button class="btn btn-secondary" @onclick="() => Submit()">Bỏ Qua</button>
+                    </div>
+                    <div class="col-2"></div>
+                    <div class="col-4">
+                        @if (IdLecturer != null)
+                        {
+                            <button onclick="@(() =>  CancelCabin())" class="btn btn-danger">Hủy Cabin</button>
+                        }
+                        else
+                        {
+                            <button onclick="@(() => BookCabin())" class="btn btn-success">Xếp Cabin</button>
+                        }
+                    </div>
+                    <div class="col-1"></div>
+                </div>
+            }
+        </div>
+        <div style="@((close == "block") ? "pointer-events: none;opacity: 0.4;" : "")">
+            <EditForm Model="_Model" class="row" style="margin-left: 16px;">
+                <div class="col-8 row">
+                    <div class="col-4">
+                        <label style="font-weight:bolder;">Chọn ngày dạy</label>
+                        <InputSelect class="form-select" ValueExpression="@(()=>_day)" Value="@_day" ValueChanged="@((DateTime? value) => CheckDay(value))">
+                            @foreach (var item in daysOfWeek)
+                            {
+                                if (item.Item2 == _day)
+                                {
+                                    <option selected value="@item.Item2">@item.Item1, @item.Item2.ToString("dd/MM/yyyy")</option>
+                                }
+                                else
+                                {
+                                    <option value="@item.Item2">@item.Item1, @item.Item2.ToString("dd/MM/yyyy")</option>
+                                }
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="col-2">
+                        <label style="font-weight:bolder;">Chọn ca dạy</label>
+                        <InputSelect class="form-select" ValueExpression="@(()=>_idFilterShift)" Value="@_idFilterShift" ValueChanged="@((string? value) => CheckTime(value))">
+                            @if (listShiftDefault.Count() != 0)
+                            {
+                                @foreach (var item in listShiftDefault.OrderBy(c => c.IndexOfShift))
+                                {
+                                    if (!string.IsNullOrEmpty(_idFilterShift))
+                                    {
+                                        if (item.Id == Guid.Parse(_idFilterShift))
+                                        {
+                                            <option selected value="@item.Id">@item.ShiftName</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@item.Id">@item.ShiftName</option>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <option value="@item.Id">@item.ShiftName</option>
+                                    }
+                                }
+                            }
+                            @if (string.IsNullOrEmpty(_idFilterShift))
+                            {
+                                <option selected value="">Tất cả</option>
+                            }
+                            else
+                            {
+                                <option value="">Tất cả</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="col-2">
+                        <label style="font-weight:bolder;">Chọn tòa nhà</label>
+                        <InputSelect class="form-select" ValueExpression="@(()=>_filterBuldingName)" Value="@_filterBuldingName" ValueChanged="@((string? value) => CheckBuilding(value))">
+                            @if (listCabinActiveDefault.GroupBy(c => c.BuildingName).Select(c => c.Key).ToList().Count() != 0)
+                            {
+                                @foreach (var item in listCabinActiveDefault.GroupBy(c => c.BuildingName).Select(c => c.Key).OrderBy(c => c.ToLower()).ToList())
+                                {
+                                    if (!string.IsNullOrEmpty(_filterBuldingName))
+                                    {
+                                        if (item == _filterBuldingName)
+                                        {
+                                            <option selected value="@item">@item</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@item">@item</option>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <option value="@item">@item</option>
+                                    }
+                                }
+                            }
+                            @if (string.IsNullOrEmpty(_filterBuldingName))
+                            {
+                                <option selected value="">Tất cả</option>
+                            }
+                            else
+                            {
+                                <option value="">Tất cả</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="col-4">
+                        <label style="font-weight:bolder;">Chọn nhóm chuyên ngành</label>
+                        <InputSelect class="form-select" ValueExpression="@(()=>_idFilterSpecialized)" Value="@_idFilterSpecialized" ValueChanged="@((string? value) => CheckSpecialized(value))">
+                            @foreach (var idSpec in listGroupCabinDefault.GroupBy(c => c.IdSpec).Select(c => c.Key).ToList())
+                            {
+                                if (!string.IsNullOrEmpty(_idFilterSpecialized))
+                                {
+                                    if (idSpec == Guid.Parse(_idFilterSpecialized))
+                                    {
+                                        <option selected value="@idSpec">@listSpec.FirstOrDefault(c=>c.Id == idSpec).SpecializationName</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@idSpec">@listSpec.FirstOrDefault(c=>c.Id == idSpec).SpecializationName</option>
+                                    }
+                                }
+                                else
+                                {
+                                    <option value="@idSpec">@listSpec.FirstOrDefault(c=>c.Id == idSpec).SpecializationName</option>
+                                }
+                            }
+                            @if (string.IsNullOrEmpty(_idFilterSpecialized))
+                            {
+                                <option selected value="">Khác</option>
+                            }
+                            else
+                            {
+                                <option value="">Khác</option>
+                            }
+                            @if (_idFilterSpecialized == Guid.Empty.ToString())
+                            {
+                                <option selected value="@(Guid.Empty)">Tất cả</option>
+                            }
+                            else
+                            {
+                                <option value="@(Guid.Empty)">Tất cả</option>
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="showcase">
+                        <div class="room">Còn trống</div>
+                        @*<small style="margin:auto;">Còn trống</small>*@
+                        <div class="room selected">Đã chọn</div>
+                        @*<small style="margin:auto;">Đã chọn</small>*@
+                        <div class="room repairing">Đang bảo trì</div>
+                        @*<small style="margin:auto;">Đang bảo trì</small>*@
+                    </div>
+                </div>
+            </EditForm>
+            @if (listCabinActive == null || listShift == null || listGroupCabin == null || listFullShift == null || listSpec == null)
+            {
+                <LoadingIndicator></LoadingIndicator>
+            }
+            else
+            {
+                <div hidden="@classroom" class="row" style="margin-top:10px;">
+                    <div class="row">
+                        @foreach (var shift in listShift.OrderBy(c => c.IndexOfShift).ToList())
+                        {
+                            <h3 style="text-align: center;margin: 10px 0;">
+                                <b>@shift.ShiftName: @shift.StartTime.ToString(@"hh\:mm")-@shift.EndTime.ToString(@"hh\:mm")</b>
+                            </h3>
+
+                            if (listCabinActive.Count() != 0)
+                            {
+                                foreach (var cabin in listCabinActive)
+                                {
+                                    if (listFullShift.FirstOrDefault(c => c.IdShiftOfCabin == shift.Id && c.TeachingDay == _day && c.IdCabin == cabin.Id) != null)
+                                    {
+                                        <div @onclick="@(() => Notify(shift, cabin, listFullShift.FirstOrDefault(c => c.IdShiftOfCabin == shift.Id && c.TeachingDay == _day && c.IdCabin == cabin.Id)))" class="room selected" style="line-height:50px;">
+                                            <b style="font-size:1.3em; ">@cabin.CabinName</b>
+                                            <div style="font-size:1em;line-height:30px; margin-bottom:7px;">
+                                                @(listFullShift.FirstOrDefault(c => c.IdShiftOfCabin == shift.Id && c.TeachingDay == _day && c.IdCabin == cabin.Id).LecturerUserName)
+                                                <br>
+                                                @(listFullShift.FirstOrDefault(c => c.IdShiftOfCabin == shift.Id && c.TeachingDay == _day && c.IdCabin == cabin.Id).ClassName)-@(listFullShift.FirstOrDefault(c => c.IdShiftOfCabin == shift.Id && c.TeachingDay == _day && c.IdCabin == cabin.Id).SubjectCode)
+                                                <br>
+                                                @(!(listGroupCabin.Any(c => c.IdCabin == cabin.Id)) ? "Không thuộc chuyên ngành" : (listGroupCabin.Where(c => c.IdCabin == cabin.Id).ToList().Count() == 1) ? listSpec.FirstOrDefault(c => c.Id == listGroupCabin.FirstOrDefault(c => c.IdCabin == cabin.Id).IdSpec).SpecializationName : (listSpec.FirstOrDefault(c => c.Id == listGroupCabin.FirstOrDefault(c => c.IdCabin == cabin.Id).IdSpec).SpecializationName + ",..."))
+                                            </div>
+                                        </div>
+                                    }
+                                    else if (cabin.Status == 2)
+                                    {
+                                        <div @onclick="@(() => Notify(shift, cabin, null))" class="room repairing" style="line-height:50px;"><b style="font-size:1.3em; ">@cabin.CabinName</b> <div style="font-size:1em;line-height:30px; margin-bottom:7px;">@("Đang bảo trì")<br><br>@(listGroupCabin.FirstOrDefault(c => c.IdCabin == cabin.Id) == null ? "Không thuộc chuyên ngành" : listSpec.FirstOrDefault(c => c.Id == listGroupCabin.FirstOrDefault(c => c.IdCabin == cabin.Id).IdSpec).SpecializationName)</div></div>
+                                    }
+                                    else
+                                    {
+                                        <div @onclick="@(() => Notify(shift, cabin, null))" class="room" style="line-height:50px;"><b style="font-size:1.3em; ">@cabin.CabinName</b> <div style="font-size:1em;line-height:30px; margin-bottom:7px;">@("Còn trống")<br><br>@(listGroupCabin.FirstOrDefault(c => c.IdCabin == cabin.Id) == null ? "Không thuộc chuyên ngành" : listSpec.FirstOrDefault(c => c.Id == listGroupCabin.FirstOrDefault(c => c.IdCabin == cabin.Id).IdSpec).SpecializationName)</div></div>
+                                    }
+
+                                }
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+@code {
+    [Parameter]
+    public string idTrainingFacilityNonDecrypt { get; set; }
+    public string idTrainingFacility { get; set; }
+
+    [Parameter]
+    public string idShiftNonDecrypt { get; set; }
+    public string idShift { get; set; }
+
+    [Parameter]
+    public string dateInput { get; set; } //{day.Day}-{day.Month}-{day.Year}
+    ShiftOfCabinFullVM _Model = new ShiftOfCabinFullVM();
+    [Inject] public CryptoServices _cryptoServices { get; set; }
+    [Inject] IShiftOfCabinApiClient shiftOfCabinApiClient { get; set; }
+    //[Inject] ISemesterRepo semesterRepo { get; set; }
+    //[Inject] IBlockRepo blockRepo { get; set; }
+    [Inject] NavigationManager _navigationManager { get; set; }
+    [Inject] ISemesterBlockRepo semesterBlockRepo { get; set; }
+    [Inject] IGroupCabinRepo groupCabinRepo { get; set; }
+    [Inject] ISpecializedUPRepo specializedUPRepo { get; set; }
+    List<GroupCabinViewModel> listGroupCabinDefault { get; set; }
+    List<GroupCabinViewModel> listGroupCabin { get; set; }
+    [Inject] ICabinRepo cabinRepo { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    DateTime startDateOfBlock;
+    List<(string, DateTime)> daysOfWeek = new List<(string, DateTime)>();
+    List<ShiftOfCabinVM> listShift = new List<ShiftOfCabinVM>();
+    List<ShiftOfCabinVM> listShiftDefault = new List<ShiftOfCabinVM>();
+    List<SpecializedDto> listSpec;
+    List<CabinViewModel> listCabinActiveDefault;
+    List<CabinViewModel> listCabinActive;
+    [Inject] public IBookingCabinApiClient _bookingCabinApiClient { get; set; }
+    [Inject] SweetAlertService Swal { get; set; }
+    [Inject] public IBookingRequestRepo _bookingRequestRepo { get; set; }
+    List<BookingCabinVM> listBookingCabin;
+
+    private string nullString = null;
+
+    private string semesterBlock;
+    private string week;
+    DateTime? _day;
+    string _idFilterShift;
+    string _idFilterSpecialized = Guid.Empty.ToString();
+    string _filterBuldingName = "";
+    bool classroom;
+
+    List<ShiftOfCabinFullVM> listFullShift = new List<ShiftOfCabinFullVM>();
+
+    List<string> listWeekOfBlock = new List<string>();
+    private string close = "none";//dùng đóng mở tab chụp ảnh
+
+    private string lecturerName = "";
+    private string subjectClass = "";
+    private string shift = "";
+    private string cabinName = "";
+    private string specializedName = "";
+    private string cabinStatus = "";
+    private byte[]? checkinImage = null;
+
+    Guid? IdClass = null;
+    Guid? IdSubject = null;
+    Guid? IdLecturer = null;
+    Guid? IdShift = null;
+    Guid? IdCabin = null;
+
+    string IdLecturerForBooking = null;
+    string IdClassSubjectForBooking = null;
+    string CancelReason = null;
+
+    bool hiddenBooking = true;
+    bool hiddenCancel = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            idTrainingFacility = _cryptoServices.Decrypt(idTrainingFacilityNonDecrypt.Replace("cabin", "/"));
+            idShift = _cryptoServices.Decrypt(idShiftNonDecrypt.Replace("cabin", "/"));
+            try
+            {
+                string url = "http://localhost:5001/SignalRCabinHub";
+                HubConnection _connection = null;
+                bool isConnected = false;
+                string connectionStatus = "Closed";
+                _connection = new HubConnectionBuilder()
+                    .WithUrl(url)
+                    .Build();
+
+                await _connection.StartAsync();
+                isConnected = true;
+                connectionStatus = "Connected :-)";
+
+                _connection.Closed += async (s) =>
+                {
+                    isConnected = false;
+                    connectionStatus = "Disconnected";
+                    await _connection.StartAsync();
+                    isConnected = true;
+                };
+
+                _connection.On<string>("SignalRCabins", async (res) =>
+                {
+                    if (res == "Done")
+                    {
+                        await OnInitializedAsync();
+
+                        await this.InvokeAsync(() => this.StateHasChanged());
+                    }
+                });
+
+                _connection.On<string>("SignalRGroupCabins", async (res) =>
+                {
+                    if (res == "Done")
+                    {
+                        await OnInitializedAsync();
+
+                        await this.InvokeAsync(() => this.StateHasChanged());
+                    }
+                });
+
+                _connection.On<string>("SignalRBookingCabins", async (res) =>
+                {
+                    if (res == "Done")
+                    {
+                        await OnInitializedAsync();
+
+                        await this.InvokeAsync(() => this.StateHasChanged());
+                    }
+                });
+
+                _connection.On<string>("SignalRTeachingSchedules", async (res) =>
+                {
+                    if (res == "Done")
+                    {
+                        await OnInitializedAsync();
+
+                        await this.InvokeAsync(() => this.StateHasChanged());
+                    }
+                });
+
+                _connection.On<string>("SignalRSemesterBlocks", async (res) =>
+                {
+                    if (res == "Done")
+                    {
+                        await OnInitializedAsync();
+
+                        await this.InvokeAsync(() => this.StateHasChanged());
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+
+
+            }
+            finally
+            {
+                listBookingCabin = await _bookingCabinApiClient.GetAll();
+                listBookingCabin = listBookingCabin.Where(c => c.Status != 1).ToList();
+
+                _day = new DateTime(Convert.ToInt32(dateInput.Split("-")[2]), Convert.ToInt32(dateInput.Split("-")[1]), Convert.ToInt32(dateInput.Split("-")[0]));
+                _idFilterShift = idShift;
+                LoadDaysOfWeek(new DateTime(Convert.ToInt32(dateInput.Split("-")[2]), Convert.ToInt32(dateInput.Split("-")[1]), Convert.ToInt32(dateInput.Split("-")[0])));
+
+                await LoadData();
+            }
+        }
+        catch
+        {
+            // Lịch học rỗng
+            listFullShift = new List<ShiftOfCabinFullVM>();
+        }
+
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            listCabinActiveDefault = await cabinRepo.GetAllCabinAsync();
+            listCabinActiveDefault = (listCabinActiveDefault == null) ? new() : listCabinActiveDefault.Where(c => c.Status != 1 && c.IdTrainingFacility == Guid.Parse(idTrainingFacility)).ToList();
+            listCabinActive = listCabinActiveDefault;
+
+            listShiftDefault = await shiftOfCabinApiClient.GetAll();
+            listShiftDefault = (listShiftDefault == null) ? new() : listShiftDefault.Where(c => c.Status == 0).ToList();
+            listShift = string.IsNullOrEmpty(_idFilterShift) ? listShiftDefault : listShiftDefault.Where(c => c.Id == Guid.Parse(_idFilterShift)).ToList();
+
+            //idUser = _cryptoServices.Decrypt(idUserNonDecrypt);
+
+            //listSubClass = await subjectClassRepo.GetAllClass();
+            //listSubClass = listSubClass.Where(c => c.HomeroomLecturerId == Guid.Parse(idUser)).ToList();
+            listGroupCabinDefault = await groupCabinRepo.GetAllGroupCabinAsync();
+            listGroupCabinDefault = (listGroupCabinDefault == null) ? new() : listGroupCabinDefault.Where(c => c.Status == 0).ToList();
+            listGroupCabin = listGroupCabinDefault;
+            listSpec = await specializedUPRepo.GetAll();
+
+            listFullShift = await shiftOfCabinApiClient.GetAllInformationOfShiftOfCabin();
+            listFullShift = (listFullShift == null) ? new() : listFullShift.Where(c => c.IdTrainingFacility == Guid.Parse(idTrainingFacility)).ToList();
+
+            //week = $"{daysOfWeek[0].Item2.ToString("dd/MM/yyyy")} - {daysOfWeek[0].Item2.AddDays(6).ToString("dd/MM/yyyy")}";
+        }
+        catch (Exception)
+        {
+            listFullShift = new List<ShiftOfCabinFullVM>();
+        }
+    }
+
+    public async Task Notify(ShiftOfCabinVM shiftInput, CabinViewModel cabin, ShiftOfCabinFullVM? detail)//bật tắt detail
+    {
+        IdClass = detail == null ? null : detail.IdClass;
+        IdSubject = detail == null ? null : detail.IdSubject;
+        IdLecturer = detail == null ? null : detail.IdLecturer;
+        IdShift = shiftInput.Id;
+        IdCabin = cabin.Id;
+
+        shift = shiftInput.ShiftName + ", " + _day.Value.ToString("dd/MM/yyyy");
+        cabinStatus = (cabin.Status == 0) ? "Còn trống" : (cabin.Status == 2) ? "Đang bảo trì" : "N/A";
+        cabinName = cabin.CabinName == null ? "N/A" : cabin.CabinName;
+        specializedName = "";
+        foreach (var idspec in listGroupCabin.Where(c => c.IdCabin == cabin.Id).Select(c => c.IdSpec))
+        {
+            specializedName += listSpec.FirstOrDefault(c => c.Id == idspec).SpecializationName + ", ";
+        }
+
+        specializedName = listGroupCabin.FirstOrDefault(c => c.IdCabin == cabin.Id) == null ? "N/A" : specializedName.Substring(0, specializedName.Length - 2);
+        if (detail != null)
+        {
+            lecturerName = detail.LecturerUserName;
+            subjectClass = detail.ClassName + "-" + detail.SubjectCode;
+            cabinStatus = "Đã chọn";
+
+            var x = listBookingCabin.FirstOrDefault(c => c.IdShift == IdShift
+                          && c.ClassId == IdClass
+                          && c.SubjectId == IdSubject
+                          && c.IdLectuter == IdLecturer
+                          && c.DateCreated == _day);
+
+            if (listBookingCabin.FirstOrDefault(c => c.IdShift == IdShift
+                          && c.ClassId == IdClass
+                          && c.SubjectId == IdSubject
+                          && c.IdLectuter == IdLecturer
+                          && c.DateCreated == _day) != null)
+            {
+                if (listBookingCabin.FirstOrDefault(c => c.IdShift == IdShift
+                                  && c.ClassId == IdClass
+                                  && c.SubjectId == IdSubject
+                                  && c.IdLectuter == IdLecturer
+                                  && c.DateCreated == _day).CheckinImage != null)
+                {
+                    checkinImage = listBookingCabin.FirstOrDefault(c => c.IdShift == IdShift
+                                  && c.ClassId == IdClass
+                                  && c.SubjectId == IdSubject
+                                  && c.IdLectuter == IdLecturer
+                                  && c.DateCreated == _day).CheckinImage;
+
+                }
+            }
+
+
+        }
+        else
+        {
+            lecturerName = "N/A";
+            subjectClass = "N/A";
+            checkinImage = null;
+        }
+
+        close = "block";
+    }
+
+    public async Task Submit()
+    {
+        close = "none";
+
+        lecturerName = "N/A";
+        subjectClass = "N/A";
+        shift = "N/A";
+        specializedName = "N/A";
+        cabinStatus = "N/A";
+        cabinName = "N/A";
+        checkinImage = null;
+
+        CancelReason = null;
+        IdLecturerForBooking = null;
+        IdClassSubjectForBooking = null;
+
+        await LoadData();
+    }
+
+    public void CheckLecturerForBooking(string value)
+    {
+        IdLecturerForBooking = value;
+    }
+
+    public void CheckClassSubjectForBooking(string value)
+    {
+        IdClassSubjectForBooking = value;
+    }
+
+    public async Task BookCabin()
+    {
+        var shift = listShiftDefault.FirstOrDefault(c => c.Id == Guid.Parse(IdShift.ToString()));
+        var StartShift = shift.StartTime;
+        var EndShift = shift.EndTime;
+
+        if (DateTime.Now < new DateTime(_day.Value.Year, _day.Value.Month, _day.Value.Day, EndShift.Hours, EndShift.Minutes, EndShift.Seconds))
+        {
+            if (!string.IsNullOrEmpty(IdLecturerForBooking) && !string.IsNullOrEmpty(IdClassSubjectForBooking))
+            {
+                close = "none";
+                var listBookingCabin = await _bookingCabinApiClient.GetAll();
+
+                var idClassBooking = IdClassSubjectForBooking.Split("*")[0];
+                var idSubjectBooking = IdClassSubjectForBooking.Split("*")[1];
+
+                var objForCreate = listBookingCabin.FirstOrDefault(c => c.SubjectId == Guid.Parse(idSubjectBooking) && c.ClassId == Guid.Parse(idClassBooking) && c.IdShift == IdShift && c.IdLectuter == Guid.Parse(IdLecturerForBooking) && c.IdCabin == IdCabin && c.DateCreated == new DateTime(_day.Value.Year, _day.Value.Month, _day.Value.Day));
+                var resBooking = false;
+                var resRequest = false;
+
+                // Tạo bookingcabin
+                if (objForCreate == null)
+                {
+                    var obj = new BookingCabinCreateVM()
+                        {
+                            Id = Guid.NewGuid(),
+                            SubjectId = Guid.Parse(idSubjectBooking.ToString()),
+                            ClassId = Guid.Parse(idClassBooking.ToString()),
+                            IdCabin = Guid.Parse(IdCabin.ToString()),
+                            IdShift = Guid.Parse(IdShift.ToString()),
+                            IdLectuter = Guid.Parse(IdLecturerForBooking.ToString()),
+                            //CheckinImage = bookingCabinVM.CheckinImage,
+                            CheckinTime = new DateTime(_day.Value.Year, _day.Value.Month, _day.Value.Day, StartShift.Hours, StartShift.Minutes, StartShift.Seconds),
+                            CheckoutTime = new DateTime(_day.Value.Year, _day.Value.Month, _day.Value.Day, EndShift.Hours, EndShift.Minutes, EndShift.Seconds),
+                            //Note = bookingCabinVM.Note,
+                            DateCreated = new DateTime(_day.Value.Year, _day.Value.Month, _day.Value.Day),
+                            Status = 0
+                        };
+                    resBooking = await _bookingCabinApiClient.Add(obj);
+                }
+                else
+                {
+                    resBooking = await _bookingCabinApiClient.Update(objForCreate.Id, Guid.Parse(IdCabin.ToString()), Guid.Parse(idSubjectBooking.ToString()), Guid.Parse(idClassBooking.ToString()), Guid.Parse(IdShift.ToString()),
+                    new BookingCabinUpdateVM()
+                        {
+                            Id = objForCreate.Id,
+                            SubjectId = objForCreate.SubjectId,
+                            ClassId = objForCreate.ClassId,
+                            IdCabin = objForCreate.IdCabin,
+                            IdShift = objForCreate.IdShift,
+                            IdLectuter = objForCreate.IdLectuter,
+                            CheckinImage = null,
+                            CheckinTime = objForCreate.CheckinTime,
+                            CheckoutTime = objForCreate.CheckoutTime,
+                            Note = objForCreate.Note,
+                            IndexOfBookingCabin = objForCreate.IndexOfBookingCabin,
+                            DateCreated = objForCreate.DateCreated,
+                            Status = 0
+                        });
+                }
+
+                // tạo booking request
+                if (resBooking)
+                {
+                    var StartTimeOfBR = new DateTime(_day.Value.Year, _day.Value.Month, _day.Value.Day, StartShift.Hours, StartShift.Minutes, StartShift.Seconds);
+                    var EndTimeOfBR = new DateTime(_day.Value.Year, _day.Value.Month, _day.Value.Day, EndShift.Hours, EndShift.Minutes, EndShift.Seconds);
+
+                    var booking = new BookingRequestCreateViewModel
+                        {
+                            ContentOfRequest = "Đã được chọn giúp cabin",
+                            IdLectuter = Guid.Parse(IdLecturerForBooking.ToString()),
+                            SendingTime = DateTime.Now,
+                            SubjectId = Guid.Parse(idSubjectBooking.ToString()),
+                            ClassId = Guid.Parse(idClassBooking.ToString()),
+                            Status = 4,
+                            ContenOfFeedBack = "Đã được chọn giúp cabin",
+                            StartTime = StartTimeOfBR,
+                            FeedBackTime = DateTime.Now,
+                            EndTime = EndTimeOfBR
+                        };
+
+                    // check BookingRequest.Status=0 của giảng viên bên BookingRequestPage
+                    // tồn tại ? tạo BookingRequest có status = 2 : status = 4
+                    var listBookingRequest = await _bookingRequestRepo.GetAllBookingRequestAsync();
+
+                    if (listBookingRequest.Any(c => c.IdLectuter == Guid.Parse(IdLecturerForBooking.ToString()) &&
+                    c.SubjectId == Guid.Parse(idSubjectBooking.ToString()) &&
+                    c.ClassId == Guid.Parse(idClassBooking.ToString()) &&
+                    c.StartTime == StartTimeOfBR &&
+                    c.EndTime == EndTimeOfBR
+                    ))
+                    {
+                        booking.Status = 2;
+                    }
+
+                    resRequest = await _bookingRequestRepo.CreateBookingRequest(booking);
+                }
+
+                if (resBooking && resRequest)
+                {
+                    await Swal.FireAsync("Xếp Cabin", "Xếp Cabin Cho Lớp Học Thành Công", SweetAlertIcon.Success);
+                }
+                else
+                {
+                    await Swal.FireAsync("Xếp Cabin", "Xếp Cabin Cho Lớp Học Thất Bại", SweetAlertIcon.Error);
+                }
+
+            }
+            else
+            {
+                _toastService.ShowError($"Không được để trống giảng viên / lớp-môn để xếp cabin");
+            }
+        }
+        else
+        {
+            _toastService.ShowError($"Đã quá thời gian xếp/hủy cabin");
+        }
+        await Submit();
+    }
+
+    public async Task CancelCabin()
+    {
+        var shift = listShiftDefault.FirstOrDefault(c => c.Id == Guid.Parse(IdShift.ToString()));
+        var StartShift = shift.StartTime;
+        var EndShift = shift.EndTime;
+        if (DateTime.Now < new DateTime(_day.Value.Year, _day.Value.Month, _day.Value.Day, EndShift.Hours, EndShift.Minutes, EndShift.Seconds))
+        {
+
+            CancelReason = CancelReason == null ? "" : CancelReason;
+            if (CancelReason.Trim().Length == 0)
+            {
+                _toastService.ShowError($"Không được để trống lí do hủy cabin");
+            }
+            else
+            {
+                close = "none";
+                // Xóa bookingcabin
+                var listBookingCabin = await _bookingCabinApiClient.GetAll();
+
+                var obj = listBookingCabin.FirstOrDefault(c => c.Status != 1 && c.SubjectId == IdSubject && c.ClassId == IdClass && c.IdShift == IdShift && c.IdLectuter == IdLecturer && c.IdCabin == IdCabin && c.DateCreated == new DateTime(_day.Value.Year, _day.Value.Month, _day.Value.Day));
+                var resBooking = obj == null ? true : await _bookingCabinApiClient.Delete(obj.Id, Guid.Parse(IdCabin.ToString()), Guid.Parse(IdSubject.ToString()), Guid.Parse(IdClass.ToString()), Guid.Parse(IdShift.ToString()));
+                var resRequest = false;
+
+                // tạo booking request
+                if (resBooking)
+                {
+                    var StartTimeOfBR = new DateTime(_day.Value.Year, _day.Value.Month, _day.Value.Day, StartShift.Hours, StartShift.Minutes, StartShift.Seconds);
+                    var EndTimeOfBR = new DateTime(_day.Value.Year, _day.Value.Month, _day.Value.Day, EndShift.Hours, EndShift.Minutes, EndShift.Seconds);
+
+                    var booking = new BookingRequestCreateViewModel
+                        {
+                            ContentOfRequest = "Đã bị hủy cabin",
+                            IdLectuter = Guid.Parse(IdLecturer.ToString()),
+                            SendingTime = DateTime.Now,
+                            SubjectId = Guid.Parse(IdSubject.ToString()),
+                            ClassId = Guid.Parse(IdClass.ToString()),
+                            Status = 5,
+                            ContenOfFeedBack = "Hủy cabin vì: " + CancelReason,
+                            StartTime = StartTimeOfBR,
+                            FeedBackTime = DateTime.Now,
+                            EndTime = EndTimeOfBR
+                        };
+
+                    var listBookingRequest = await _bookingRequestRepo.GetAllBookingRequestAsync();
+
+                    if (listBookingRequest.Any(c => c.IdLectuter == Guid.Parse(IdLecturer.ToString()) &&
+                        c.SubjectId == Guid.Parse(IdSubject.ToString()) &&
+                    c.ClassId == Guid.Parse(IdClass.ToString()) &&
+                    c.StartTime == StartTimeOfBR &&
+                    c.EndTime == EndTimeOfBR
+                    ))
+                    {
+                        booking.Status = 3;
+                    }
+                    resRequest = await _bookingRequestRepo.CreateBookingRequest(booking);
+                }
+
+                if (resBooking && resRequest)
+                {
+                    await Swal.FireAsync("Hủy Cabin", "Hủy Cabin Cho Lớp Học Thành Công", SweetAlertIcon.Success);
+                }
+                else
+                {
+                    await Swal.FireAsync("Hủy Cabin", "Hủy Cabin Cho Lớp Học Thất Bại", SweetAlertIcon.Error);
+                }
+            }
+        }
+        else
+        {
+            _toastService.ShowError($"Đã quá thời gian xếp/hủy cabin");
+        }
+        await Submit();
+    }
+
+    public async Task CheckTime(string? value)
+    {
+        _idFilterShift = value;
+
+        listShift = listShiftDefault;
+        if (_day != null && !string.IsNullOrEmpty(_idFilterShift))
+        {
+            listShift = listShiftDefault.Where(c => c.Id == Guid.Parse(_idFilterShift)).ToList();
+        }
+    }
+
+    public void CheckDay(DateTime? value)
+    {
+        _day = value;
+        if (_day != null)
+        {
+            classroom = false;
+        }
+    }
+
+    public async Task CheckBuilding(string value)
+    {
+        _filterBuldingName = value;
+        listCabinActive = listCabinActiveDefault;
+        if (_idFilterSpecialized != Guid.Empty.ToString())
+        {
+            if (!string.IsNullOrEmpty(_idFilterSpecialized))
+            {
+                listCabinActive = listCabinActive.Where(c => listGroupCabin.Where(x => x.IdSpec == Guid.Parse(_idFilterSpecialized)).Any(x => x.IdCabin == c.Id)).ToList();
+            }
+            else
+            {
+                listCabinActive = listCabinActive.Where(c => !listGroupCabin.Any(x => x.IdCabin == c.Id)).ToList();
+            }
+        }
+        if (!string.IsNullOrEmpty(_filterBuldingName))
+        {
+            listCabinActive = listCabinActive.Where(c => c.BuildingName == _filterBuldingName).ToList();
+        }
+    }
+
+    public async Task CheckSpecialized(string value)
+    {
+        _idFilterSpecialized = value;
+        listCabinActive = listCabinActiveDefault;
+        if (_idFilterSpecialized != Guid.Empty.ToString())
+        {
+            if (!string.IsNullOrEmpty(_idFilterSpecialized))
+            {
+                listCabinActive = listCabinActive.Where(c => listGroupCabin.Where(x => x.IdSpec == Guid.Parse(_idFilterSpecialized)).Any(x => x.IdCabin == c.Id)).ToList();
+            }
+            else
+            {
+                listCabinActive = listCabinActive.Where(c => !listGroupCabin.Any(x => x.IdCabin == c.Id)).ToList();
+            }
+        }
+        if (!string.IsNullOrEmpty(_filterBuldingName))
+        {
+            listCabinActive = listCabinActive.Where(c => c.BuildingName == _filterBuldingName).ToList();
+        }
+    }
+
+    public async Task CheckLecturer(Guid? value)
+    {
+        IdLecturer = value;
+    }
+
+    public void LoadDaysOfWeek(DateTime date)
+    {
+        date = new DateTime(date.Year, date.Month, date.Day);
+        daysOfWeek = new List<(string, DateTime)>();
+
+        var dayOfWeek = date.DayOfWeek;
+        DateTime monday = new DateTime();
+        if (dayOfWeek == DayOfWeek.Sunday)
+        {
+            //xét chủ nhật là ngày cuối tuần
+            monday = date.AddDays(-6);
+        }
+        else
+        {
+            int offset = dayOfWeek - DayOfWeek.Monday;
+            monday = date.AddDays(-offset);
+        }
+
+        daysOfWeek.Add(new("Thứ 2", monday));
+        for (int i = 1; i < 7; i++)
+        {
+            if (i == 6)
+            {
+                daysOfWeek.Add(new($"Chủ Nhật", monday.AddDays(i)));
+            }
+            else
+            {
+                daysOfWeek.Add(new($"Thứ {i + 2}", monday.AddDays(i)));
+            }
+        }
+    }
+
+}

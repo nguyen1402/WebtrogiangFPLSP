@@ -1,0 +1,43 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels.Lesson
+<EditForm Model="@lessonListSearch" OnSubmit=@SearchForm>
+    <div class="row">
+        <div class="col-4">
+            <InputSelect @bind-Value="lessonListSearch.Status" class="form-select">
+                <option value="">Tất cả</option>
+                <option value="0">Không hoạt động</option>
+                <option value="1">Đang hoạt động</option>
+            </InputSelect>
+        </div>
+        <div class="col-4 ps-0 pe-0">
+            <InputText placeholder="Nhập tên bài học" class="form-control" @bind-Value="lessonListSearch.Name"></InputText>
+        </div>
+        <div class="col-4">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+            <button class="btn btn-outline-success ms-2" @onclick="() => Undo()">Làm mới</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+
+    [Parameter]
+    public EventCallback<LessonListSearch> OnSearch { set; get; }
+
+
+    private LessonListSearch lessonListSearch = new LessonListSearch();
+
+
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(lessonListSearch);
+
+    }
+    private async Task Undo()
+    {
+        lessonListSearch.Name = "";
+        lessonListSearch.Status = 1;
+        lessonListSearch.PageNumber = 1;
+        await OnSearch.InvokeAsync(lessonListSearch);
+
+    }
+}

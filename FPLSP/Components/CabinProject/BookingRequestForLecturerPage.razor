@@ -1,0 +1,260 @@
+﻿@using Blazored.Toast.Services;
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces.CabinProject;
+@using FPLSP.Repositories.Interfaces;
+@using FPLSP.Server.Data.SeedWork;
+@using FPLSP.Server.Domain.Dtos;
+@using FPLSP.Server.Domain.Entities.CoresParts;
+@using FPLSP.Server.Domain.Entities.UserParts;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.BookingCabin;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.BookingRequest;
+@using FPLSP.Server.Infrastructure.ViewModels;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.Cabin;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.GroupCabin;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.ShiftOfCabin;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.TeachingSchedule;
+@using FPLSP.Components.CabinProject;
+@using System.Text;
+@using System.Globalization;
+@using Microsoft.AspNetCore.SignalR.Client;
+
+@if (ShowConfirmation)
+{
+    <div class="modal fade show d-block" id="exampleModal" tabindex="-1" role="dialog">
+        <div class="col-4 notice-envelope">
+            <section style="height:90%;">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">@ConfirmationTitle</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                        @onclick="() => close()">
+                        <span aria-hidden="true">X</span>
+                    </button>
+                </div>
+
+                <div class="notice-envelope1">
+                    <div class="notification-ui_dd-content">
+                        @if (_listBookingRequest == null)
+                        {
+                            <LoadingIndicator></LoadingIndicator>
+                        }
+                        else if ((_listBookingRequest.GroupBy(g => new { g.SubjectId, g.ClassId, g.IdLectuter, g.StartTime, g.EndTime }).ToList()).Count == 0)
+                        {
+                            <h5 style="text-align:center;">Không có thông báo nào</h5>
+                        }
+                        else if ((_listBookingRequest.GroupBy(g => new { g.SubjectId, g.ClassId, g.IdLectuter, g.StartTime, g.EndTime }).ToList()).Count > 0)
+                        {
+                            int index = 0;
+                            var data = _listBookingRequest.Skip((_bookingRequestSearch.PageNumber - 1) * _bookingRequestSearch.PageSize).Take(_bookingRequestSearch.PageSize).ToList();
+                            var lstpage = new PageList<BookingRequestViewModel>(data, _listBookingRequest.Count(), _bookingRequestSearch.PageNumber, _bookingRequestSearch.PageSize);
+
+                            _listBookingRequest = lstpage.Items;
+                            MetaData = lstpage.MetaData;
+
+                            /*.OrderByDescending(c => c.FeedBackTime)*/
+                            @if (_listBookingRequest.Count() == 0)
+                            {
+                                <LoadingIndicator></LoadingIndicator>
+                            }
+                            else
+                            {
+                                foreach (var item in _listBookingRequest.OrderByDescending(c => c.FeedBackTime))
+                                {
+                                    index++;
+                                    var shift = _shiftOfCabinVMs.FirstOrDefault(c => c.StartTime == item.StartTime.TimeOfDay && c.EndTime == item.EndTime.TimeOfDay);
+
+                                    <div type="button" class="notification-list notification-list--unread row" style="width:99%;">
+                                        <p class="indexs">@index</p>
+                                        <div class="notification-list_content col-lg-11">
+                                            <div class="notification-list_detail">
+                                                <p style="font-size: inherit;">
+                                                    <b>
+                                                        @(
+                                                            _LectureVM.Where(c => c.Id == item.IdLectuter && c.Status != 1).Select(c => c.Email).FirstOrDefault().ToString().Split("@")[0]
+                                                            )
+                                                    </b> @item.ContentOfRequest ngày @item.StartTime.ToString("dd") tháng @item.StartTime.ToString("MM")
+                                                </p>
+                                                <p style="font-size: inherit;">
+                                                    <b>@_specializedDtos.FirstOrDefault(x=>x.Id == (_subjectClassUPs.Where(c=>c.ClassId == item.ClassId && c.SubjectId == item.SubjectId && c.Status != 1).FirstOrDefault().SpecializedOfClass)).SpecializedCode: </b>Lớp: @(
+                                    _clasVM.Where(c => c.Id == item.ClassId && c.Status != 1).Select(c => c.ClassroomName).FirstOrDefault()
+                                    ) - Môn: @_subjectDtos.FirstOrDefault(c=>c.Id == item.SubjectId).SubjectCode (@(item.StartTime.ToString("dddd", new CultureInfo("vi-VN")))-@(
+                                    shift.ShiftName
+                                    ))
+                                                </p>
+                                            </div>
+                                        </div>
+                                        @if (item.Status == 0)
+                                        {
+
+                                            <div class="col-lg-1 d-flex justify-content-end pt-3">
+                                                <span style="height:0.4em;padding: 0.4rem!important;" class="translate-middle bg-danger border border-light rounded-circle">
+                                                    <span class="visually-hidden">New alerts</span>
+                                                </span>
+                                            </div>
+                                        }
+                                        @if (item.Status == 2 || item.Status == 4)
+                                        {
+                                            <div class="col-lg-1 d-flex justify-content-end pt-3">
+
+                                                <span style="height:0.4em;padding: 0.4rem!important;background-color: forestgreen;" class="translate-middle border-light rounded-circle">
+                                                    <span class="visually-hidden">Processed alerts</span>
+                                                </span>
+                                            </div>
+                                        }
+                                        @if (item.Status == 3 || item.Status == 5)
+                                        {
+                                            <div class="col-lg-1 d-flex justify-content-end pt-3">
+
+                                                <span style="height:0.4em;padding: 0.4rem!important;" class="translate-middle bg-warning border border-light rounded-circle">
+                                                    <span class="visually-hidden">Cancelled alerts</span>
+                                                </span>
+                                            </div>
+                                        }
+                                        <div class="font-sendingtime pt-3"><div>@item.FeedBackTime.ToString("HH:mm") @item.FeedBackTime.ToString("dd/MM/yyyy")</div></div>
+
+                                    </div>
+                                }
+                            }
+                        }
+                    </div>
+
+                </div>
+
+            </section>
+            <div class="paging">
+                <div class="card-footer text-muted">
+                    <span>
+                        <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+                    </span>
+
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string IdLecturer { get; set; }
+
+    [Inject] private IBookingRequestRepo _iBookingRequestRepo { get; set; }
+    [Inject] private IBookingCabinApiClient _ibookingCabinApiClient { get; set; }
+    [Inject] private ICabinRepo _icabinRepo { get; set; }
+    [Inject] private ISubjectsSpecializedUPRepo _iSubjectsSpecializedUP { get; set; }
+    [Inject] private ILecturersCPRepo _ilecturersCPRepo { get; set; }
+    [Inject] private IBookingCabinApiClient _ibookingCabinApi { get; set; }
+    [Inject] private ITaskRepositories<ClassUPViewModel> _iClassRepo { get; set; }
+    [Inject] private ISpecializedUPRepo _ispecializedUPRepo { get; set; }
+    [Inject] private IClassSubjectApiClient _iclassSubjectApi { get; set; }
+    [Inject] private ISubjectUPRepo _isubjectUPRepo { get; set; }
+    [Inject] private IToastService _itoastService { get; set; }
+    [Inject] private IGroupCabinRepo _igroupCabinRepo { get; set; }
+    [Inject] private IShiftOfCabinApiClient _ishiftOfCabinApiClient { get; set; }
+    [Inject] private ITeachingScheduleApiClient _teachingScheduleApiClient { get; set; }
+    [Inject] private CryptoServices _cryptoServices { get; set; }
+
+
+    private BookingRequestSearchViewModel _bookingRequestSearch = new BookingRequestSearchViewModel();
+    private List<BookingRequestViewModel> _listBookingRequest;
+    private List<LecturersCP> _LectureVM = new List<LecturersCP>();
+    private List<ClassUPViewModel> _clasVM = new List<ClassUPViewModel>();
+    private List<SpecializedDto> _specializedDtos = new List<SpecializedDto>();
+    private List<SubjectClassUP> _subjectClassUPs = new List<SubjectClassUP>();
+    private List<SubjectDto> _subjectDtos = new List<SubjectDto>();
+    private List<GroupCabinViewModel> _groupCabinViewModels = new List<GroupCabinViewModel>();
+    private List<ShiftOfCabinVM> _shiftOfCabinVMs;
+    private List<CabinViewModel> _cabinViewModels = new List<CabinViewModel>();
+    private BookingCabinVM _bookingCabinVM = new BookingCabinVM();
+    private List<BookingCabinVM> _listBookingCabinVM = new List<BookingCabinVM>();
+    private List<TeachingScheduleVM> _teachingScheduleVMs = new List<TeachingScheduleVM>();
+
+    public MetaData MetaData { get; set; } = new MetaData();
+    protected bool ShowConfirmation { get; set; }
+    [Parameter]
+    public string ConfirmationTitle { get; set; } = "Thông Báo";
+
+    public async Task show()
+    {
+        //bookingCabinVM.SubjectId = IdSubject;
+        //bookingCabinVM.ClassId = IdClass;
+        //bookingCabinVM.IdShift = IdShift;
+        //bookingCabinVM.IdLectuter = IdLecturer;
+        ShowConfirmation = true;
+        await GetTasks();
+        StateHasChanged();
+    }
+
+    private async Task GetTasks()
+    {
+        try
+        {
+            string url = "http://localhost:5001/SignalRCabinHub";
+            HubConnection _connection = null;
+            bool isConnected = false;
+            string connectionStatus = "Closed";
+            _connection = new HubConnectionBuilder()
+                .WithUrl(url)
+                .Build();
+
+            await _connection.StartAsync();
+            isConnected = true;
+            connectionStatus = "Connected :-)";
+
+            _connection.Closed += async (s) =>
+            {
+                isConnected = false;
+                connectionStatus = "Disconnected";
+                await _connection.StartAsync();
+                isConnected = true;
+            };
+
+            _connection.On<string>("SignalRBookingRequests", async (res) =>
+            {
+                if (res == "Done")
+                {
+                    await OnInitializedAsync();
+
+                    await this.InvokeAsync(() => this.StateHasChanged());
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+
+
+        }
+        finally
+        {
+            _listBookingRequest = await _iBookingRequestRepo.GetAllBookingRequestAsync();
+            _listBookingRequest = _listBookingRequest == null ? new() : _listBookingRequest.Where(c => c.Status != 0 && c.Status != 1 && c.IdLectuter == Guid.Parse(IdLecturer)).ToList();
+
+            //Lấy các thông tin hiển thị bên cột thông báo
+            _LectureVM = await _ilecturersCPRepo.GetAllLecturerAsync();
+
+            _clasVM = await _iClassRepo.GetAllClass();
+            _subjectClassUPs = await _iclassSubjectApi.GetAllSubjectClass();
+            _specializedDtos = await _ispecializedUPRepo.GetAll();
+            _subjectDtos = await _isubjectUPRepo.GetAllSubjectAsync();
+            _groupCabinViewModels = await _igroupCabinRepo.GetAllGroupCabinAsync();
+            var cabinVM = await _icabinRepo.GetAllCabinAsync();
+            _cabinViewModels = cabinVM;
+            _listBookingCabinVM = await _ibookingCabinApiClient.GetAll();
+            _shiftOfCabinVMs = await _ishiftOfCabinApiClient.GetAll();
+            var teachingschedules = await _teachingScheduleApiClient.GetAll();
+            _teachingScheduleVMs = teachingschedules;
+        }
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _bookingRequestSearch.PageNumber = page;
+        await GetTasks();
+    }
+
+
+    protected async Task close()
+    {
+        ShowConfirmation = false;
+    }
+}
+
+

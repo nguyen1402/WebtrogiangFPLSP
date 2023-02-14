@@ -1,0 +1,202 @@
+﻿@page "/ExamCreate"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Exams
+
+<main class="app-content">
+    <div class="row pt-3">
+        <div class="col-md-12">
+            <div class="tile">
+                <h3 class="tile-title">Tạo mới Đề Thi</h3>
+            </div>
+            <div class="d-flex justify-content-center col-10 ">
+                <EditForm Model="_examCreate" OnValidSubmit="Create" class="card card-body bg-light mt-5">
+                    <DataAnnotationsValidator />
+                    <div class="form-group col-md-12">
+                        <label for="name" class="col-md-6 col-form-label"><i class="fa-solid fa-code"></i> Mã Đề Thi:</label>
+                        <div class="col-md-12">
+                            <InputText id="name" class="form-control" @bind-Value="_examCreate.ExamCode" />
+                            <div class="text-danger">
+                                <ValidationMessage For="@(() => _examCreate.ExamCode)"></ValidationMessage>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-12 mt-2">
+                        <label for="name" class="col-md-6 col-form-label"><i class="fa-sharp fa-solid fa-address-card"></i> Tên Môn Đề Thi:</label>
+                        <div class="col-md-12">
+                            <InputText id="name" class="form-control" @bind-Value="_examCreate.ExamName" />
+                            <div class="text-danger">
+                                <ValidationMessage For="@(() => _examCreate.ExamName)"></ValidationMessage>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-12 mt-2">
+                        <label for="name" class="col-md-6 col-form-label"><i class="fa-solid fa-check"></i> Trạng Thái:</label>
+                        <div class="col-md-12">
+                            <InputSelect class="form-control" @bind-Value="_examCreate.Status">
+                                <option value="1">Mở</option>
+                                <option value="0">Đóng</option>
+                            </InputSelect>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-12 mt-2">
+                        <label for="name" class="col-md-6 col-form-label"><i class="fa-solid fa-book"></i> Môn Học:</label>
+                        <div class="col-md-12">
+                            <InputSelect class="form-select" @bind-Value="_examCreate.SubjectId">
+                                @if (subjectDtos != null)
+                                {
+                                    @foreach (var item in subjectDtos)
+                                    {
+                                        <option value="@item.Id">@item.SubjectName</option>
+                                    }
+                                }
+                            </InputSelect>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="row">
+                                <div class="col-3"></div>
+                                <div class="col-6 mt-2 pt-4" style="text-align: center">
+                                    <button type="submit" class="btn btn-primary me-2">Tạo Mới</button>
+                                    <button type="button" class="btn btn-outline-success me-2" @onclick="() => ClearForm()">Clear Form</button>
+                                    <a href="/ExamList" class="btn btn-danger">Quay Lại</a>
+                                </div>
+                                <div class="col-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+            <div class="col-1">
+            </div>
+        </div>
+
+    </div>
+
+</main>
+@*
+
+
+<EditForm Model="_examCreate" OnValidSubmit="Create" class="d-flex justify-content-center">
+    <ValidationSummary></ValidationSummary>
+    <DataAnnotationsValidator />
+    <div class=" row">
+        <div class="form-group row-md-6">
+            <label for="name" class="col-md-2 col-form-label">Mã Đề Thi:</label>
+            <div class="col-md-10">
+                <InputText id="name" class="form-control" @bind-Value="_examCreate.ExamCode" />
+                <ValidationMessage For="@(() => _examCreate.ExamCode)" />
+            </div>
+        </div>
+        <div class="form-group row-md-6">
+            <label for="name" class="col-md-2 col-form-label">Tên Môn Đề Thi:</label>
+            <div class="col-md-10">
+                <InputText id="name" class="form-control" @bind-Value="_examCreate.ExamName" />
+                <ValidationMessage For="@(() => _examCreate.ExamName)" />
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="form-group row-md-6">
+            <label for="name" class="col-md-2 col-form-label">Trạng Thái:</label>
+            <div class="col-md-10">
+                <InputSelect class="form-control" @bind-Value="_examCreate.Status">
+                    <option value="1">Mở</option>
+                    <option value="0">Đóng</option>
+                </InputSelect>
+            </div>
+        </div>
+
+        <div class="form-group row-md-6">
+            <label for="name" class="col-md-2 col-form-label">Môn Học:</label>
+            <div class="col-md-10">
+                <InputSelect class="form-control" @bind-Value="_examCreate.SubjectId">
+                    @if (subjectDtos != null)
+                    {
+                        @foreach (var item in subjectDtos)
+                        {
+                            <option value="@item.Id">@item.SubjectName</option>
+                        }
+                    }
+                </InputSelect>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <div class="col-md-6 text-center">
+            <button type="submit" class="btn btn-primary">Thêm</button>
+        </div>
+        <div class="col-md-6 text-center">
+            <a href="/ImageList" class="btn btn-danger">Quay Lại</a>
+        </div>
+    </div>
+</EditForm>*@
+@code{
+    [Inject] private IExamCPServicesRepo examApiClient { get; set; }
+
+    [Inject] private ISubjectClient subjectClient { get; set; }
+    [Inject] private NavigationManager _navier { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    private ExamCreateVm _examCreate = new ExamCreateVm();
+    private List<ExamCPDto> ExamDtos = new List<ExamCPDto>();
+    private List<SubjectDto> subjectDtos = new List<SubjectDto>();
+    private ExamListSearchVm ExamListSearchVm = new ExamListSearchVm();
+
+    public MetaData MetaData { get; set; } = new MetaData();
+
+
+    private async Task Create(EditContext editContext)
+    {
+
+        if (CheckCode(_examCreate.ExamCode))
+        {
+            _toastService.ShowError("Lỗi! mã đề bị trùng");
+            _navier.NavigateTo($"/ExamCreate");
+        }
+        else
+        {
+            var result = await examApiClient.CreateExamCP(_examCreate);
+            if (result)
+            {
+                _toastService.ShowSuccess("Thêm Thành Công");
+                _navier.NavigateTo("/ExamList");
+            }
+            else
+            {
+                _toastService.ShowError("Lỗi! Không thể thêm được bài kiểm tra");
+                _navier.NavigateTo("/ExamCreate");
+            }
+        }
+    }
+
+
+    protected async override Task OnInitializedAsync()
+    {
+
+        ExamDtos = await examApiClient.GetAllExamCPListAsync();
+        Get();
+    }
+
+    public async void Get()
+    {
+        subjectDtos = await subjectClient.GetAllSubjectAsync();
+    }
+
+    public async void ClearForm()
+    {
+        _examCreate.ExamCode = null;
+        _examCreate.ExamName = null;
+        _examCreate.Status = 0;
+        await OnInitializedAsync();
+    }
+    private bool CheckCode(string input)
+    {
+        var sdfdsf = ExamDtos.Any(c => Equals(input, c.ExamCode));
+        return sdfdsf;
+    }
+}

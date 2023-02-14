@@ -1,0 +1,115 @@
+﻿@page "/resourceLinkUPUpdate/{Id}"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Infrastructure.ViewModels.ResourceLinkUP
+
+<h3>Cập nhật link tài nguyên UP</h3>
+
+@if (request == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <EditForm Model="request" OnValidSubmit="UpdateSubmit" class="card card-body bg-light mt-5">
+        <DataAnnotationsValidator />
+
+        <div class="form-group">
+            <div class="row">
+                <div class="col-lg-5 pt-3 pl-4">
+                    @if (request.PathId() != null)
+                    {
+                        <iframe class="modal-xl" style="height: 300px;width:480px;padding-top: 10px;" src='https://www.youtube.com/embed/@request.PathId()' frameborder='0' allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe>
+                    }
+                    else
+                    {
+                        <h5>Video sẽ được hiển thị ở đây</h5>
+                    }
+                </div>
+                <div class="col-lg-7">
+                    <div class="form-group pt-2 ">
+                        <label for="name" class="form-label">Tiêu đề:</label>
+                        <div class="text-danger">
+                            <InputText class="form-control" @bind-Value="request.ResourcesTitle"></InputText>
+                            <ValidationMessage For="()=>request.ResourcesTitle"></ValidationMessage>
+                        </div>
+                    </div>
+                    <div class="form-group pt-2">
+                        <label for="name" class="form-label">Đường dẫn:</label>
+                        <div class="text-danger">
+                            <InputText class="form-control" @bind-Value="request.Path"></InputText>
+                            <ValidationMessage For="()=>request.Path"></ValidationMessage>
+                        </div>
+                    </div>
+                    <div class="form-group pt-2">
+                        <label for="name" class="form-label">Mô tả:</label>
+                        <div class="text-danger">
+                            <InputText class="form-control" @bind-Value="request.Descriptions"></InputText>
+                            <ValidationMessage For="()=>request.Descriptions"></ValidationMessage>
+                        </div>
+                    </div>
+                    <div class="form-group pt-2 ">
+                        <label for="name" class="form-label">Trạng thái:</label>
+                        <div class="text-danger">
+                            <InputSelect class="form-select" @bind-Value="request.Status">
+                                <option value="0">Không hoạt động</option>
+                                <option value="1">Hoạt động</option>
+                                <option value="2">Ngưng hoạt động</option>
+                            </InputSelect>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="d-flex justify-content-center pt-10 mb-2">
+                    <div class="p-2">
+                        <button type="submit" class="btn btn-success">Cập nhật</button>
+                    </div>
+                    <div class="p-2">
+                        <a @onclick="()=> Restore()" class="btn btn-outline-primary">Khôi phục</a>
+                    </div>
+                    <div class="p-2">
+                        <a href="/resourceLinkUP" class="btn btn-outline-danger">Quay Lại</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+}
+@code {
+    [Parameter]
+    public string Id { get; set; }
+
+    [Inject] IResourceLinkUPRepo ResourceLinkUPRepo { get; set; }
+    [Inject] IToastService toastService { get; set; }
+    [Inject] NavigationManager NavigationManager { get; set; }
+
+    private ResourceLinkUPViewModel request = new ResourceLinkUPViewModel();
+
+    protected async override Task OnInitializedAsync()
+    {
+        request = await ResourceLinkUPRepo.GetById(Id);
+
+    }
+
+    private async Task UpdateSubmit(EditContext context)
+    {
+        try
+        {
+            var result = await ResourceLinkUPRepo.Update(Guid.Parse(Id), request);
+            if (result)
+            {
+                toastService.ShowSuccess("Cập nhật thành công");
+                NavigationManager.NavigateTo("/resourceLinkUP");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError("Đã có lỗi xảy ra, thử lại sau");
+        }
+    }
+    private async Task Restore()
+    {
+        await OnInitializedAsync();
+    }
+}

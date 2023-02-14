@@ -1,0 +1,192 @@
+﻿@page "/CoeCPCreate"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.ContentOfExamsCP
+@using FPLSP.Server.Infrastructure.ViewModels.ExamLinks
+@using FPLSP.Server.Infrastructure.ViewModels.Exams
+
+
+<h3>Thêm Nội Dung Đề Thi</h3>
+
+<div class="row">
+    <div class="col-1">
+    </div>
+    <div class="d-flex justify-content-center col-10 ">
+    </div>
+    <EditForm Model="_Create" OnValidSubmit="Create" class="card card-body bg-light mt-5">
+        <DataAnnotationsValidator />
+        <div class="form-group row mt-2">
+            <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-code"></i> Mã link Đề Thi:</label>
+            <div class="col-md-10">
+                <InputText id="name" class="form-control" @bind-Value="_Create.CoeCode" />
+                <div class="text-danger"><ValidationMessage For="@(() => _Create.CoeCode)"></ValidationMessage>></div>
+            </div>
+        </div>
+        <div class="form-group row mt-2">
+            <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fas fa-check"></i> Mức Độ:</label>
+            <div class="col-md-10">
+                <InputSelect class="form-select" @bind-Value="_Create.Level">
+                    <option value="5">Mức 5</option>
+                    <option value="4">Mức 4</option>
+                    <option value="3">Mức 3</option>
+                    <option value="2">Mức 2</option>
+                    <option value="1">Mức 1</option>
+                </InputSelect>
+            </div>
+        </div>
+
+        <div class="form-group row mt-2">
+            <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-calendar-days"></i> Ngày Mở:</label>
+            <div class="col-md-10">
+                <InputDate id="name" class="form-control" @bind-Value="_Create.DateStarted" />
+                <div class="text-danger">
+                    <ValidationMessage For="@(() => _Create.DateStarted)" />
+                </div>
+            </div>
+        </div>
+        <div class="form-group row mt-2">
+            <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-calendar-days"></i> Ngày Đóng:</label>
+            <div class="col-md-10">
+                <InputDate id="name" class="form-control" @bind-Value="_Create.EndDate" />
+                <div class="text-danger">
+                    <ValidationMessage For="@(() => _Create.EndDate)" ></ValidationMessage>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row mt-2">
+            <label for="name" class="col-md-2 col-form-label"><i class="fas fa-light fa-file-lines"></i> Nội Dung:</label>
+            <div class="col-md-10">
+                <InputTextArea class="form-control" @bind-Value="_Create.Content" />
+                <div class="text-danger">
+                    <ValidationMessage For="@(() => _Create.Content)"></ValidationMessage>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row mt-2">
+            <label for="name" class="col-md-2 col-form-label"><i class="fas fa-clipboard"></i> Số lượng câu hỏi:</label>
+            <div class="col-md-10">
+                <InputNumber class="form-control" @bind-Value="_Create.TotalOfQuestions" />
+                <div class="text-danger">
+                    <ValidationMessage For="@(() => _Create.TotalOfQuestions)"></ValidationMessage>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row mt-2">
+            <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-check"></i> Trạng Thái:</label>
+            <div class="col-md-10">
+                <InputSelect class="form-select" @bind-Value="_Create.Status">
+                    <option value="1">Mở</option>
+                    <option value="0">Đóng</option>
+                </InputSelect>
+            </div>
+        </div>
+
+        <div class="form-group row mt-2">
+            <label for="name" class="col-md-2 col-form-label"><i class="fa-regular fa-file"></i> Đề Thi:</label>
+            <div class="col-md-10">
+                <InputSelect class="form-control" @bind-Value="_Create.ExamId">
+                    @if (_lstExam != null)
+                    {
+                        @foreach (var item in _lstExam)
+                        {
+                            <option value="@item.Id">@item.ExamName</option>
+                        }
+                    }
+                </InputSelect>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <div class="row">
+                    <div class="col-3"></div>
+                    <div class="col-6 mt-2 pt-4" style="text-align: center">
+                        <button type="submit" class="btn btn-primary me-2">Tạo Mới</button>
+                        <button type="button" class="btn btn-outline-success me-2" @onclick="() => ClearForm()">Clear Form</button>
+                        <a href="/CoeCPList" class="btn btn-danger">Quay Lại</a>
+                    </div>
+                    <div class="col-3"></div>
+                </div>
+            </div>
+        </div>
+
+    </EditForm>
+</div>
+<div class="col-1">
+</div>
+@code{
+    [Inject] private IContentOfExamCPRepo contentOfExamCPRepo { get; set; }
+    [Inject] private IToastService _toastService { get; set; }
+    [Inject] private IExamCPServicesRepo examApiClient { get; set; }
+    [Inject] private NavigationManager _navier { get; set; }
+    private CoeCreateVm _Create = new CoeCreateVm();
+    private List<ContentOfExamCPDto> _lsContentOfExamCpDtos = new List<ContentOfExamCPDto>();
+
+    protected bool IsDisabled { get; set; }
+
+    private ExamLinkListSearchVm _examLinkListSearchVm;
+    private List<ExamCPDto> _lstExam;
+
+
+    private ExamListSearchVm _examListSearchVm;
+
+    public CoeCPCreate()
+    {
+
+        _examListSearchVm = new ExamListSearchVm();
+        _lstExam = new List<ExamCPDto>();
+
+    }
+
+    public MetaData MetaData { get; set; } = new MetaData();
+
+
+    private async Task Create(EditContext editContext)
+    {
+        if (CheckCode(_Create.CoeCode))
+        {
+            _toastService.ShowError(" Mã nội dung bị trùng");
+            _navier.NavigateTo($"/CoeCPCreate");
+        }
+        else
+        {
+            var result = await contentOfExamCPRepo.CreateCoeCP(_Create);
+            if (result)
+            {
+                _toastService.ShowSuccess("Thêm Thành Công");
+                _navier.NavigateTo("/CoeCPList");
+            }
+            else
+            {
+                _toastService.ShowError("Lỗi! Không thể thêm Nội dung bài kiểm tra");
+                _navier.NavigateTo("/CoeCPCreate");
+            }
+        }
+    }
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        _lsContentOfExamCpDtos = await contentOfExamCPRepo.GetCoeCPListAll();
+        await Get();
+    }
+
+    public async Task Get()
+    {
+        var pagingResponseExam = await examApiClient.GetExamCPList(_examListSearchVm);
+        _lstExam = pagingResponseExam.Items;
+
+    }
+    public async void ClearForm()
+    {
+        _Create = new CoeCreateVm();
+        await Get();
+        await OnInitializedAsync();
+    }
+    private bool CheckCode(string code)
+    {
+        var checkExited = _lsContentOfExamCpDtos.Any(c => Equals(code, c.CoeCode));
+        return checkExited;
+    }
+}

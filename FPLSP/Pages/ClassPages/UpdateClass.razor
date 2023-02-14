@@ -1,0 +1,466 @@
+﻿@page "/updateclass/{GetId}"
+@using Blazored.Toast
+@using Blazored.Toast.Services
+@using FPLSP.Data
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.FPLSPDbContext
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using FPLSP.Server.Domain.Entities.UsesParts
+@using FPLSP.Server.Infrastructure.ViewModels
+@using Microsoft.EntityFrameworkCore
+
+<PageTitle>Update Class | Elearning</PageTitle>
+@if(_classUp!=null){
+	<EditForm Model="@_classUp" OnValidSubmit="UpdateClassUp">
+		<DataAnnotationsValidator />
+		<ValidationSummary />
+		<div class="row">
+			<div class=" col-lg-10 offset-1">
+				<div class="row">
+					<div class=" col-lg-6">
+						<div class="mb-3">
+							<label for="exampleFormControlInput1" class="form-label">Class Name :</label>
+								<InputText  @bind-Value="@_classUp.ClassroomName" id="exampleFormControlInput1" placeholder="Classroom Name Auto Fill After You Choose Specialized" class="form-control"></InputText>
+							<ValidationMessage For="@(() => _classUp.ClassroomName)" />
+						</div>
+						<div class="mb-3">
+							<label for="exampleFormControlInput2" class="form-label">Class Code :</label>
+							<InputText disabled=true @bind-Value="@_classUp.ClassroomCode" id="exampleFormControlInput2" class="form-control"></InputText>
+							<ValidationMessage For="@(() => _classUp.ClassroomCode)" />
+						</div> 
+						<div class="mb-3">
+							<label for="exampleFormControlInput3" class="form-label">Place :</label>
+							<InputText @bind-Value="@_classUp.Building" id="exampleFormControlInput3" placeholder="Ex: Toa P" class="form-control"></InputText>
+							<ValidationMessage For="@(() => _classUp.Building)" />
+						</div> 
+						<div class="mb-3">
+							<label for="exampleFormControlInput4" class="form-label">Number Of Students :</label>
+							<InputNumber @bind-Value="@_classUp.StudentAmount" id="exampleFormControlInput4" class="form-control"></InputNumber>
+							<ValidationMessage For="@(() => _classUp.StudentAmount)" />
+						</div>
+						<div class="mb-3">
+							<label>Lectuter :</label>
+							<InputSelect class="form-control" @bind-Value="@_classUp.lecturersCPId">
+								@foreach (var x in _lstLec)
+								{
+										<option value="@x.Id">@x.LecturersName </option>
+								}
+							</InputSelect>
+
+						</div>
+						<div class="mb-3">
+							<label>Specialized :</label>
+							<InputSelect class="form-control"  @bind-Value="@_classUp.specializedUPId">
+								@foreach (var x in _lstSpec)
+								{
+									<option value="@x.Id">@x.SpecializationName</option>
+								}
+							</InputSelect>
+						</div>
+					</div>
+					<div class=" col-lg-6">
+
+						<div class="mb-3">
+
+							<label>Subject :</label>
+							<InputSelect class="form-control" @bind-Value="@_classUp.SubjectId">
+								@foreach (var x in _lstSub)
+								{
+										<option value="@x.Id">@x.SubjectName </option>
+								}
+							</InputSelect>
+
+						</div>
+						<div class="mb-3">
+							<label for="exampleFormControlInput10" class="form-label">JoinCode :</label>
+							<InputText disabled=true @bind-Value="@_classUp.JoinCode" id="exampleFormControlInput10" class="form-control"></InputText>
+							<ValidationMessage For="@(() => _classUp.JoinCode)" />
+						</div>
+						<div class="mb-3">
+							<label for="exampleFormControlInput6" class="form-label">Date Create :</label>
+							<InputDate @bind-Value="@_classUp.DateCreated" id="exampleFormControlInput6" class="form-control"></InputDate>
+							<ValidationMessage For="@(() => _classUp.DateCreated)" />
+						</div>
+						<div class="mb-3">
+							<label for="exampleFormControlInput7" class="form-label">Date Start :</label>
+							<InputDate @bind-Value="@_classUp.DateStarted" id="exampleFormControlInput7" class="form-control"></InputDate>
+							<ValidationMessage For="@(() => _classUp.DateStarted)" />
+						</div>
+						<div class="mb-3">
+							<label for="exampleFormControlInput8" class="form-label">End Date :</label>
+							<InputDate @bind-Value="@_classUp.EndDate" id="exampleFormControlInput8" class="form-control"></InputDate>
+							<ValidationMessage For="@(() => _classUp.EndDate)" />
+						</div>
+
+						<label for="exampleFormControlInput5" class="form-label">Status :</label>
+						<div>
+
+							<InputRadioGroup @bind-Value="@_classUp.Status">
+								@foreach (var x in @_preStatuses)
+								{
+										<div class="form-check form-check-inline px-5">
+											<InputRadio class="form-check-input" id="@x.Id" Value="@x.Id" />
+											<span for="@x.Id">@x.StatusName</span>
+										</div>
+								}
+							</InputRadioGroup>
+							<ValidationMessage For="@(() => _classUp.Status)" />
+						</div>
+
+						</div>
+
+
+
+					</div>
+				</div>
+
+		<hr />
+		<div class="mt-5 d-flex justify-content-center">
+			<div class="d-flex gap-3 col-4 mx-auto">
+
+				<button class="btn btn-danger" type="submit">Exit    <i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+				<button class="btn btn-info" type="submit"disabled="@IsDisabled">Update   <i class="fa-solid fa-plus"></i></button>
+				<button class="btn btn-warning" type="submit">Clear    <i class="fa-solid fa-trash"></i></button>
+			<InputFile enctype="multipart/form-data" OnChange="@((InputFileChangeEventArgs args) => OnFileSelected(args))" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">Upload</InputFile>
+	</div>
+
+		</div>
+		</div>
+	</EditForm>
+	@if (_lstStudents.Count > 0)
+	{
+		<div class="card text-center">
+			<div class="card-header">
+				Danh Sách Mới Sinh Viên Lớp Muốn Thêm  @_classUp.ClassroomName
+			</div>
+			<div class="row">
+				<div class="col-lg-6 offset-3">
+					@if (_lstStudents.Count > 0)
+					{
+						<input type="checkbox" class="form-check-input" checked
+				   @onchange="EventArgs => { CheckAllExpense( EventArgs.Value); }" value="" id="flexCheckDefault1">
+						<label class="form-check-label" for="flexCheckDefault1">
+							Select All
+						</label>
+						<span class="px-3" cl>Số Lượng Sinh Viên Đã Chọn Là :@_lstStudents.Where(c=>c.IsChecked==true).Count()</span>
+					}
+				</div>
+			</div>
+
+
+			<div class="card-body">
+				<div class="row">
+
+					@if (_lstStudents.Count > 0)
+					{
+						@foreach (var x in _lstStudents)
+						{
+							<div class="col-lg-3">
+								<div class="card" style="width: 18rem;">
+									<img src="./css/UserImages/felling cay chan dung.png" onerror="this.src='./css/images/Others/logoFPT.png'" class="card-img-top" alt="...">
+									<div class="card-img-overlay ">
+										<div class="row">
+											<div class="col-lg-10">
+											</div>
+											<div class="col-lg-2">
+												<div class="form-check">
+
+													<input type="checkbox" class="form-check-input" @bind="x.IsChecked"
+										   @onclick="() => CheckManualForMapper(x.Id,x.IsChecked)" />
+
+
+
+												</div>
+
+											</div>
+										</div>
+
+									</div>
+									<div class="card-body">
+										<p class="card-text">Họ Và Tên : @x.StudentName</p>
+										<p class="card-text">Mã Sinh Viên : @x.StudentCode</p>
+										<p class="card-text">Email : @x.Email</p>
+										<p class="card-text">Số Điện Thoại : @x.PhoneNumber</p>
+										<button class="btn btn-primary">Xem Chi Tiết</button>
+
+									</div>
+								</div>
+							</div>
+						}
+					}
+
+
+				</div>
+
+			</div>
+
+		</div>
+	}
+
+
+
+
+	<hr />
+	<div class="card text-center">
+		<div class="card-header">
+			Danh Sách Sinh Viên Lớp  @_classUp.ClassroomName
+		</div>
+		<div class="row">
+			<div class="col-lg-6 offset-3">
+				@if (_lstmapper.Count() > 0)
+				{
+					<input type="checkbox" class="form-check-input" checked
+				   @onchange="EventArgs => { CheckAllExpenseForMapper( EventArgs.Value); }" value="" id="flexCheckDefault">
+					<label class="form-check-label" for="flexCheckDefault">
+						Select All
+					</label>
+					<span class="px-3" cl>Số Lượng Sinh Viên Đã Chọn Là :@_lstmapper.Where(c=>c.IsChecked==true).Count()</span>
+				}
+			</div>
+		</div>
+
+
+		<div class="card-body">
+			<div class="row">
+
+				@if (_lstmapper.Count() > 0)
+				{
+					@foreach (var x in _lstmapper)
+					{
+						@foreach (var z in _lstmainstudent.Where(c=>c.Id==x.Id))
+						{
+							<div class="col-lg-3">
+								<div class="card" style="width: 18rem;">
+									<img src="./css/UserImages/felling cay chan dung.png" onerror="this.src='./css/images/Others/logoFPT.png'" class="card-img-top" alt="...">
+									<div class="card-img-overlay ">
+										<div class="row">
+											<div class="col-lg-10">
+											</div>
+											<div class="col-lg-2">
+												<div class="form-check">
+
+													<input type="checkbox" class="form-check-input" @bind="x.IsChecked"
+										   @onclick="() => CheckManual(Guid.Parse( x.Id.ToString()),x.IsChecked)" />
+
+
+
+												</div>
+
+											</div>
+										</div>
+
+									</div>
+									<div class="card-body">
+										<p class="card-text">Họ Và Tên : @z.StudentName</p>
+										<p class="card-text">Mã Sinh Viên : @z.StudentCode</p>
+										<p class="card-text">Email : @z.Email</p>
+										<p class="card-text">Số Điện Thoại : @z.PhoneNumber</p>
+										<button class="btn btn-primary">Xem Chi Tiết</button>
+
+									</div>
+								</div>
+							</div>
+						}
+					}
+				}
+
+
+			</div>
+
+		</div>
+
+	</div>
+
+
+
+
+}
+@code {
+	        [Parameter]
+        public string GetId { get; set; }
+        [Inject] IToastService _toast { get; set; }
+        [Inject] NavigationManager _navigationManager { get; set; }
+
+        [Inject]
+        public ITaskRepositories<ClassUPViewModel> _taskRepositories { get; set; }
+        private CreateClassVM _classUp;
+        private List<StudentsMapper> _lstmapper;
+        private SubjectUP _SubjectUP;
+        private LecturersCP _lecturersCP;
+        private List<SubjectUP> _lstSub;
+        private List<LecturersCP> _lstLec;
+        private List<SpecializedUP> _lstSpec;
+        private ApplicationDbContext _ApplicationDbContext;
+        //
+        private List<StudentViewModel> _lstStudents;
+        private List<ExcelErrors> _lstErrr = new List<ExcelErrors>();
+        private bool IsDisabled = false;
+        //
+        private List<StudentViewModel> _lstmainstudent;
+        public class PreStatus
+        {
+            public int Id { get; set; }
+            public string StatusName { get; set; }
+        }
+        private List<PreStatus> _preStatuses = new List<PreStatus>();
+        private PreStatus _Statuses = new PreStatus();
+
+
+        public UpdateClass()
+        {
+            _lstmapper = new List<StudentsMapper>();
+            _lstStudents = new List<StudentViewModel>();
+            _lstmainstudent = new List<StudentViewModel>();
+            _preStatuses = new List<PreStatus>()
+            {
+                new PreStatus(){Id=0,StatusName="Đang Hoạt Động"},
+                new PreStatus(){Id=1,StatusName="Dừng Hoạt Động"},
+                new PreStatus(){Id=2,StatusName="Chưa Đủ Sinh Viên"},
+                new PreStatus(){Id=3 ,StatusName="Chưa Có Môn Học"},
+            };
+            _Statuses = new PreStatus();
+            //_classUp = new ClassUPViewModel();
+            _lstSub = new List<SubjectUP>();
+            _SubjectUP = new SubjectUP();
+            _ApplicationDbContext = new ApplicationDbContext();
+        }
+
+        protected override async Task OnInitializedAsync()
+        {
+
+            _classUp = await _taskRepositories.GetClassById(GetId.ToString());
+            _lstmainstudent = await _taskRepositories.GetAllStudent();
+
+            _lstSub = await _ApplicationDbContext.SubjectUPs.ToListAsync();
+
+            _lstLec = await _ApplicationDbContext.Lecturers.ToListAsync();
+
+            _lstSpec = await _ApplicationDbContext.SpecializedUPs.ToListAsync();
+            //
+            foreach (var st in _classUp.ListStudent)
+            {
+                var newstmap = new StudentsMapper()
+                {
+                    Id = st,
+                    IsChecked = true
+                };
+                _lstmapper.Add(newstmap);
+            }
+            foreach (var x in _preStatuses)
+            {
+                _Statuses.Id = x.Id;
+                _Statuses.StatusName = x.StatusName;
+            }
+        }
+
+
+        private async Task UpdateClassUp(EditContext editContext)
+        {
+            _classUp.ListStudent.Clear();
+            foreach (var choose in _lstmapper.Where(c => c.IsChecked))
+            {
+                _classUp.ListStudent.Add(choose.Id);
+            }
+            if (_lstStudents.Count() > 0)
+            {
+                foreach (var import in _lstStudents.Where(c => c.IsChecked))
+                {
+                    if (_classUp.ListStudent.Any(c => c == import.Id) == false)
+                    {
+                        _classUp.ListStudent.Add(import.Id);
+                    }
+                }
+            }
+            var result = await _taskRepositories.UpdateAsync(GetId, _classUp);
+            if (result)
+            {
+                _toast.ShowSuccess($"Update Successfully {_classUp.ClassroomName}");
+                _navigationManager.NavigateTo("/viewclass");
+            }
+            else
+            {
+                _toast.ShowError($"Update Failed {_classUp.ClassroomName}");
+                _navigationManager.NavigateTo($"/updateclass/{GetId}");
+            }
+
+
+        }
+
+        private async void OnFileSelected(InputFileChangeEventArgs e)
+        {
+            _lstStudents.Clear();
+            var selectedFiles = e.File;
+            _lstStudents = await _taskRepositories.LoadingBigData(selectedFiles);
+            _lstErrr = await _taskRepositories.GetListErr();
+            if (_lstErrr.Count() > 0)
+            {
+                IsDisabled = true;
+            }
+            this.StateHasChanged();
+        }
+        private async void Upload()
+        {
+
+        }
+        void CheckAllExpense(object checkValue)
+        {
+            if (Convert.ToBoolean(checkValue) == false)
+            {
+                _lstStudents.ToList().ForEach(e => e.IsChecked = false);
+            }
+            else
+            {
+                _lstStudents.ToList().ForEach(e => e.IsChecked = true);
+            }
+
+
+        }
+        void CheckAllExpenseForMapper(object checkValue)
+        {
+            if (Convert.ToBoolean(checkValue) == false)
+            {
+                _lstmapper.ToList().ForEach(e => e.IsChecked = false);
+            }
+            else
+            {
+                _lstmapper.ToList().ForEach(e => e.IsChecked = true);
+            }
+
+
+        }
+        void CheckManualForMapper(Guid st, bool check)
+        {
+            if (check == true)
+            {
+                foreach (var x in _lstmapper.Where(c => c.Id == st))
+                {
+                    x.IsChecked = false;
+                }
+            }
+            if (check == false)
+            {
+                foreach (var x in _lstmapper.Where(c => c.Id == st))
+                {
+                    x.IsChecked = false;
+                }
+            }
+        }
+        void CheckManual(Guid st, bool check)
+        {
+            if (check == true)
+            {
+                foreach (var x in _lstStudents.Where(c => c.Id == st))
+                {
+                    x.IsChecked = false;
+                }
+            }
+            if (check == false)
+            {
+                foreach (var x in _lstStudents.Where(c => c.Id == st))
+                {
+                    x.IsChecked = false;
+                }
+            }
+        }
+}
+

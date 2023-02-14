@@ -1,0 +1,58 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels.ExamLinks
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+
+<EditForm Model="@examLinkListSearch" OnSubmit="@SearchForm">
+    <div class="row">
+        <div class="col-3">
+            <div class="col">
+                <select class="form-select" @onchange="args =>FilterStatus(args.Value) ">
+                    <option value="">Tất cả</option>
+                    <option value="1">Đang hoạt động</option>
+                    <option value="0">Không hoạt động</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-5">
+            <div class="col">
+                <InputText placeholder="Mã Link Nội Dung" class="form-control" @bind-Value="examLinkListSearch.ExamLinkCode"></InputText>
+            </div>
+        </div>
+        <div class="col-4 text-left">
+            <button type="submit" class="btn btn-primary">Tìm kiếm<i class="fas fa-magnifying-glass"></i></button>
+            <button class="btn btn-outline-primary me-2" stype="border:3px double Green" @onclick="() => Undo()">Làm mới</button>
+        </div>
+    </div>
+
+</EditForm>
+
+@code {
+    [Parameter]
+    public EventCallback<ExamLinkListSearchVm> OnSearch { get; set; }
+
+    private ExamLinkListSearchVm examLinkListSearch = new ExamLinkListSearchVm();
+
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(examLinkListSearch);
+    }
+
+    private async void FilterStatus(object Value)
+    {
+        var a = Value.ToString();
+        var b = a ?? null;
+
+        if (!string.IsNullOrEmpty(b))
+            examLinkListSearch.Status = Int32.Parse(b);
+        else
+            examLinkListSearch.Status = null;
+        await OnSearch.InvokeAsync(examLinkListSearch);
+    }
+    private async void Undo()
+    {
+        examLinkListSearch.ExamLinkCode = null;
+        examLinkListSearch.Path = null;
+        examLinkListSearch.Status = null;
+        await OnSearch.InvokeAsync(examLinkListSearch);
+    }
+}

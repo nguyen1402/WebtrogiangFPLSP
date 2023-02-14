@@ -1,0 +1,147 @@
+﻿@using FPLSP.Data;
+@using FPLSP.Data.FPLExam;
+@using FPLSP.Server.Domain.Entities.CoresParts;
+@using IdentityServerHost.Quickstart.UI
+@model LoginViewModel
+
+
+<div style="margin-bottom: 50px"></div>
+@{
+    var _lstTraning = ViewData["ListModel"] as List<TrainingFacilitiesCP>;
+    var _lstRedirect = ViewData["lstRedirect"] as List<ChoosingRedirect>;
+    var _lstMainRole = ViewData["lstMainRole"] as List<ListChooseRole>;
+   
+}
+
+
+<div class=" my-5  d-flex justify-content-center">
+    <main>
+        <article>
+
+            <div class="row mt-5 d-flex justify-content-center">
+
+                <div class="login-page row d-flex mt-5 justify-content-center bgc col-lg-12">
+                    <div class="row">
+                        <partial name="_ValidationSummary" />
+                        @if (@ViewData["err"] != null)
+                        {
+                            <div class="alert alert-danger">
+                                <strong>Đăng Nhập Không Hợp Lệ</strong>
+                                <div class="danger">@ViewData["err"]</div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="row mt-5">
+                      
+                        <form method="post" class="d-flex justify-content-center">
+                            <div class="card backgrd-another bg-light" style="width: 20rem;height:330px;">
+
+                               <div class="mb-2 mt-2">
+                                    <img src="./Image/Others/FPT_Polytechnic.png" height="52" />
+                               </div>
+
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <select name="getIdSlects" id="ddltype" class="form-select text-center bor">
+                                            <option value=@(Guid.Parse("169A0425-7E5A-4057-9748-32F1CF3C1479")) selected><i class="fas fa-chevron-down"></i>FPT Polytechnic Hà Nội<i class="fas fa-chevron-down"></i></option>
+                                            @foreach (var std in _lstTraning.OrderByDescending(c => c.Id))
+                                            {
+                                                if (std.Id != Guid.Parse("169A0425-7E5A-4057-9748-32F1CF3C1479"))
+                                                {
+                                                    <option value=@std.Id>@std.TrainingInstitutionName</option>
+                                                }
+
+                                            }
+
+                                        </select>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <select name="getIdRole" class="form-select text-center bor">
+                                            <option value=@(Guid.Parse("369A0425-7E5A-4057-9748-32F1CF3C1479")) selected><i class="fas fa-chevron-down"></i>Cán Bộ Đào Tạo<i class="fas fa-chevron-down"></i></option>
+                                            @foreach (var std in _lstMainRole)
+                                            {
+                                                if (std.NameToMain == "Giảng Viên")
+                                                {
+                                                    <option value=@std.Id>@std.NameToMain</option>
+                                                }
+                                                if (std.NameToMain == "Sinh Viên")
+                                                {
+                                                    <option value=@std.Id>@std.NameToMain</option>
+                                                }
+                                            }
+
+                                        </select>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <select name="getIdRedirect" class="form-select text-center bor">
+                                            <option value=@(Guid.Parse("269A0425-7E5A-4057-9748-32F1CF3C1479")) selected><i class="fas fa-chevron-down"></i>Book Cabin FPL HN<i class="fas fa-chevron-down"></i></option>
+                                            @foreach (var std in _lstRedirect)
+                                            {
+                                                if (std.RedirectToView == "FPL Support")
+                                                {
+                                                    <option value=@std.Id>@std.RedirectToView</option>
+                                                }
+                                                if (std.RedirectToView == "FPL Exam")
+                                                {
+                                                    <option value=@std.Id>@std.RedirectToView</option>
+                                                }
+                                            }
+
+                                        </select>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-lg-5">
+                                            <hr class="text-line" />
+                                        </div>
+                                        <div class="col-lg-2">
+                                            <p class=" text-center">Đăng Nhập</p>
+                                        </div>
+                                        <div class="col-lg-5">
+                                            <hr class="text-line" />
+                                        </div>
+                                    </div>
+                               
+                                 
+                                    <div class="row">
+                                        @if (Model.VisibleExternalProviders.Any())
+                                        {
+                                            <div class="">
+                                                <ul class="list-inline m-0">
+                                                    @foreach (var provider in Model.VisibleExternalProviders)
+                                                    {
+
+                                                        //href="login?redirectUri=/viewclass/
+                                                        <li class="list-inline-item">
+
+                                                            <div class="buton">
+                                                                <button class="btn text-light " asp-action="CheckingLogin" asp-controller="Account"> <img src="./Image/Others/google.png" class="pr-3"> &nbsp;   Login With Google Account</button>
+                                                            </div>
+
+
+
+
+                                                        </li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                        }
+                                        <span class="fst-italic mt-2">Copyright By Dot Net FPT Polytechnic All Right Reserved</span>
+                                    </div>
+                                 
+                                </div>
+                              
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+
+
+            </div>
+        </article>
+    </main>
+</div>
+
+
+

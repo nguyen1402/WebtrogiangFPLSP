@@ -1,0 +1,181 @@
+﻿@page "/HomeWorklist/{idclass}/{lecuId}/{subjectId}/{specializedId}/{idlesson}"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Entities.UserParts
+@using FPLSP.Server.Infrastructure.ViewModels.HomeWork
+
+<div class="row pt-3">
+    <div class="col-md-3">
+        <div class="col-md-6">
+            <a class="btn btn-outline-danger" @onclick="() => Quaylai()">Quay lại</a>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <HomeWorkListSeach OnSearch="SearchTask"></HomeWorkListSeach>
+    </div>
+    <div class="col-md-3">
+        <div class="row">
+            <div class="col-md-6">
+                <a class="btn btn-outline-primary" @onclick="()=> RedirectToCreat()">Thêm Bài Tập</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    @if (CPList.Count > 0)
+    {
+        <table class="table">
+            <thead class="text-center">
+                <tr>
+                    <th scope="col">Link Bài Tập</th>
+                </tr>
+            </thead>
+            <tbody class="text-center">
+                @foreach (var sj in CPList)
+                {
+                    <tr>
+                        <td class="align-middle w-100">
+                            @sj.LinkHomeWork
+                        </td>
+                        <td class="text-center">
+                            <a class="btn btn-outline-danger " type="button" title="Xóa" @onclick="() => RedirectToDelete(sj.Id)">
+                                <i class="bi bi-dash-circle-fill"></i>
+                            </a>
+                        </td>
+                        <td class="text-center">
+                            <a class="btn btn-outline-success " type="button" title="Cập nhật" @onclick="() => RedirectToUpdate(sj.Id)">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+    }
+    else
+    {
+        <span>
+            Danh sách bài tập đang rỗng...
+        </span>
+    }
+</div>
+<div class="footer text-muted">
+    <div class="row mt-3">
+
+        <span>
+            <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+        </span>
+
+    </div>
+</div>
+<Comfirmation ConfirmationMessage="Bạn muốn xóa link bài tập?"
+              ConfirmationTitle="Xóa link"
+              ConfirmationChanged="OnConfirmationDelete " @ref="DeleteConfirmation"></Comfirmation>
+@code{
+    [Parameter]
+        public string specializedId { get; set; }
+        [Parameter]
+        public string lecuId { get; set; }
+        [Parameter]
+        public string subjectId { get; set; }
+
+        [Parameter]
+        public string idclass { get; set; }
+
+        [Parameter]
+        public string idlesson { get; set; }
+
+        public Guid _idSubject { get; set; }
+
+        private List<Guid> _listRemove = new List<Guid>();
+
+        [Inject] public IToastService _toastService { get; set; }
+        protected Comfirmation DeleteConfirmation { get; set; }
+        public List<HomeWork> CPList { get; set; } = new List<HomeWork>();
+        public MetaData MetaData { get; set; } = new MetaData();
+
+        private HomeWorkSeachList _parameters = new HomeWorkSeachList();
+        [Inject]
+        public NavigationManager NavigationManager { get; set; }
+        [Inject]
+        public IHomeWorkClient _iHomeWorkClient { get; set; }
+
+
+        public string Error { get; set; }
+
+        protected async override Task OnInitializedAsync()
+        {
+            await GetTasks();
+        }
+        public async Task SearchTask(HomeWorkSeachList lessonContentListSearch)
+        {
+            _parameters = lessonContentListSearch;
+            await GetTasks();
+        }
+        private async Task RedirectToCreat()
+        {
+            var url = Path.Combine($"/Homeworkcreate/{idclass}/{subjectId}/{idlesson}/{lecuId}/{specializedId}");
+            NavigationManager.NavigateTo(url);
+        }
+        private async Task RedirectToUpdate(Guid? idhomework)
+        {
+            var url = Path.Combine($"/Homeworkupdate/{idclass}/{subjectId}/{idlesson}/{lecuId}/{specializedId}/{idhomework}");
+            NavigationManager.NavigateTo(url);
+        }
+
+        private async Task RedirectToDelete(Guid? idhomework)
+        {
+            var url = Path.Combine($"/Homeworkupdate/{idclass}/{subjectId}/{idlesson}/{lecuId}/{specializedId}/{idhomework}");
+            NavigationManager.NavigateTo(url);
+        }
+        private async Task Quaylai()
+        {
+            var url = Path.Combine($"/ListLessonClassUP/{idclass}/{specializedId}/{lecuId}/{subjectId}");
+            NavigationManager.NavigateTo(url);
+        }
+
+        private async Task GetTasks()
+        {
+            try
+            {
+                var pagingResponse = await _iHomeWorkClient.GetCPList(Guid.Parse(idclass), Guid.Parse(subjectId), Guid.Parse(idlesson), _parameters);
+                CPList = pagingResponse.Items;
+                MetaData = pagingResponse.MetaData;
+            }
+            catch (Exception ex)
+            {
+                Error = ex.Message;
+            }
+
+        }
+
+        private async Task SelectedPage(int page)
+        {
+            _parameters.PageNumber = page;
+            await GetTasks();
+        }
+        public async Task RedirectToDelete(Guid id)
+        {
+            _idSubject = id;
+            DeleteConfirmation.show();
+        }
+        public async Task OnConfirmationDelete(bool deleteconfirmed)
+        {
+            if (deleteconfirmed && _listRemove != null)
+            {
+                var result = await _iHomeWorkClient.DeleteCP(_idSubject);
+                if (result == 1)
+                {
+                    _toastService.ShowSuccess("Xóa link thành công !");
+                    await GetTasks();
+                }
+                else
+                {
+                    _toastService.ShowError("Ngưng hoạt động thất bại !");
+                    await GetTasks();
+                }
+            }
+        }
+}

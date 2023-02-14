@@ -1,0 +1,59 @@
+﻿
+@using FPLSP.Server.Infrastructure.ViewModels.Exams
+<EditForm Model="@examListSearchVm" OnSubmit="@SearchForm">
+    <div class="row">
+        <div class="col-2">
+            <div class="col">
+                <select class="form-select" @onchange="args =>FilterStatus(args.Value) ">
+                    <option value="">Tất cả</option>
+                    <option value="1">Mở</option>
+                    <option value="0">Chưa Mở</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="col">
+                <InputText placeholder="Mã Đề Thi" class="form-control" @bind-Value="examListSearchVm.ExamCode"></InputText>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="col">
+                <InputText placeholder="Tên Đề Thi" class="form-control" @bind-Value="examListSearchVm.ExamName"></InputText>
+            </div>
+        </div>
+        <div class="col-4">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+            <button class="btn btn-outline-primary me-2" stype="border:3px double Green" @onclick="() => Undo()">Làm mới</button>
+        </div>
+    </div>
+</EditForm>
+@code {
+    [Parameter]
+    public EventCallback<ExamListSearchVm> OnSearch { get; set; }
+
+    private ExamListSearchVm examListSearchVm = new ExamListSearchVm();
+
+    private async Task SearchForm(EditContext context)
+    {
+        await OnSearch.InvokeAsync(examListSearchVm);
+    }
+    private async void FilterStatus(object Value)
+    {
+        var a = Value.ToString();
+        var b = a ?? null;
+
+        if (!string.IsNullOrEmpty(b))
+            examListSearchVm.Status = Int32.Parse(b);
+        else
+            examListSearchVm.Status = null;
+        await OnSearch.InvokeAsync(examListSearchVm);
+    }
+
+    private async void Undo()
+    {
+        examListSearchVm.ExamName = null;
+        examListSearchVm.ExamCode = null;
+        examListSearchVm.Status = null;
+        await OnSearch.InvokeAsync(examListSearchVm);
+    }
+}

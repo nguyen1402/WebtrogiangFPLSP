@@ -1,0 +1,649 @@
+﻿@page "/DoQuiz/{QuizIdInNonDecrypt}/{GetIdNonDecrypt}/{StudentIdInNonDecrypt}"
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.DoQuizDtos
+@using FPLSP.Server.Domain.Dtos;
+@using FPLSP.Server.Domain.Dtos.StudentUPDtos;
+@using FPLSP.Server.Domain.Enums
+@using EventHandlers = Microsoft.AspNetCore.Components.Web.EventHandlers
+@using FPLSP.Server.Infrastructure.ViewModels.DoQuizsVM
+@using FPLSP.Views.Shared
+@layout MainLayout2
+@if (flag == true)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else if (ListQuestion != null)
+{
+
+    <div class="row pt-3 pb-3">
+        <div class="col-9">
+            <div class="row pt-5">
+                <div class="col-md">
+                    @if (ListQuestion != null && ListQuestion.Count() == 15)
+                    {
+                        <EditForm Model="viewModel">
+                            <DataAnnotationsValidator />
+                            <div class="card">
+                                @if (ListQuestion != null)
+                                {
+                                    QuestionNumber = 0;
+                                    @foreach (var temp in ListQuestion)
+                                    {
+                                        QuestionNumber++;
+                                        @switch (@temp.TypeName)
+                                        {
+                                            case QuestionForms.MatchingItems:
+                                            case QuestionForms.YesNo:
+                                                <div id="den-@QuestionNumber"><br><div id="den-@QuestionNumber"><br><div class="col-xl" style="margin-bottom: 10px; border-bottom: 3px salmon double; color: salmon;"></div><br></div><br></div>
+                                                <div class="card-body">
+                                                    <div class="col-xl" style="margin-bottom: 10px; border-bottom: 3px salmon double; color: salmon;"><h6>Câu Số @QuestionNumber:</h6></div>
+                                                    <div class="col-md" style="padding-left: 10px;margin-bottom: 10px; padding-top: 5px ;border: 1px solid salmon;border-radius: 5px;">
+                                                        <h4 class="card-title">@temp.ContentQuestion</h4>
+                                                        <p class="card-description">@temp.ContentQuestion</p>
+                                                    </div>
+                                                    @foreach (var answer in temp.AnswerDtoCollection)
+                                                    {
+                                                        if (bool.Equals(true, answer.IsCorrect) && bool.Equals(true, answer.StudentChoose))
+                                                        {
+                                                            <div class="col-md" style="padding: 10px;margin-bottom: 10px  ;border: 3px double rgb(1, 133, 19);border-radius: 15px">
+                                                                <div class="row">
+                                                                    <div class="col-1">
+                                                                        <input class="option-input radio" type="radio" name="@temp.Id" checked="@answer.StudentChoose" @onclick="() => AddAnswerToListOneChoice(answer.Id,temp.Id)" />
+                                                                    </div>
+                                                                    <div class="row col-11">
+                                                                        <div class="col-11">
+                                                                            <label>@answer.Answer</label>
+                                                                        </div>
+                                                                        <div class="col-1">
+                                                                            <i class="fa-solid fa-check"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                        if (!(bool.Equals(true, answer.IsCorrect) && bool.Equals(true, answer.StudentChoose)))
+                                                        {
+                                                            <div class="col-md" style="padding: 10px;margin-bottom: 10px; border: 1px double rgb(11, 36, 82);border-radius: 15px">
+                                                                <div class="row">
+                                                                    <div class="col-1">
+
+                                                                        <input class="option-input radio" type="radio" name="@temp.Id" checked="@answer.StudentChoose" @onclick="() => AddAnswerToListOneChoice(answer.Id,temp.Id)" />
+                                                                    </div>
+                                                                    <div class="col-11">
+                                                                        <label>
+                                                                            @answer.Answer
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    }
+                                                </div>
+                                                break;
+                                            case QuestionForms.MultipleChoise:
+                                                <div id="den-@QuestionNumber"><br><div id="den-@QuestionNumber"><br><div class="col-xl" style="margin-bottom: 10px; border-bottom: 3px salmon double; color: salmon;"></div><br></div><br></div>
+                                                <div class="card-body">
+                                                    <div class="col-xl" style="margin-bottom: 10px; border-bottom: 3px salmon double; color: salmon;"><h6>Câu Số @QuestionNumber:</h6></div>
+                                                    <div class="col-md" style="padding-left: 10px;margin-bottom: 10px; padding-top: 5px ;border: 1px solid salmon;border-radius: 5px;">
+                                                        <h4 class="card-title">@temp.ContentQuestion</h4>
+                                                        <p class="card-description">@temp.ContentQuestion</p>
+                                                    </div>
+
+                                                    @foreach (var answer in temp.AnswerDtoCollection)
+                                                    {
+                                                        <div class="col-md" style="padding: 10px;margin-bottom: 10px  ;border: 1px solid rgb(11, 36, 82) ;border-radius: 15px;">
+
+                                                            <div class="row">
+                                                                <div class="col-1">
+                                                                    <input class="option-input checkbox" type="checkbox" name="@temp.Id" checked="@answer.StudentChoose" @onchange="eventArgs => CheckboxClicked(temp.Id,answer.Id,eventArgs.Value)" />
+                                                                </div>
+                                                                <div class="col-11">
+                                                                    <label>
+                                                                        @answer.Answer
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                                break;
+                                            case QuestionForms.SupplyItems:
+                                                <div id="den-@QuestionNumber"><br><div id="den-@QuestionNumber"><br><div class="col-xl" style="margin-bottom: 10px; border-bottom: 3px salmon double; color: salmon;"></div><br></div><br></div>
+                                                <div class="card-body">
+                                                    <div class="col-xl" style="margin-bottom: 10px; border-bottom: 3px salmon double; color: salmon;"><h6>Câu Số @QuestionNumber:</h6></div>
+                                                    <div class="col-md" style="padding-left: 10px;margin-bottom: 10px; padding-top: 5px ;border: 1px solid salmon;border-radius: 5px;" @oninput=" a =>InsertAnswerRText(temp.Id,a)">
+                                                        <h4 class="card-title">@temp.ContentQuestion</h4>
+                                                        <span>
+
+                                                            @foreach (var answer in temp.AnswerDtoCollection)
+                                                            {
+                                                                @if (answer.StudentChoose == true)
+                                                                {
+                                                                    @for (var i = 0; i < temp.ContentQuestion.Split("...").Count(); i++)
+                                                                    {
+                                                                        @temp.ContentQuestion.Split("...")[i]
+                                                                        @if (temp.ContentQuestion.Split("...").Count() > i)
+                                                                        {
+                                                                            @*<input type="text" disabled />*@
+                                                                            <b style="color:#1CAAD6"> @answer.Answer</b>
+                                                                        }
+                                                                    }
+                                                                }
+                                                                else
+                                                                {
+                                                                    @for (var i = 0; i < temp.ContentQuestion.Split("...").Count(); i++)
+                                                                    {
+                                                                        @temp.ContentQuestion.Split("...")[i]
+                                                                        @if (temp.ContentQuestion.Split("...").Count() > i)
+                                                                        {
+                                                                            <input type="text" placeholder="@TestText" style="width:200px" @onchange=" a =>InsertAnswerRText(temp.Id,a)" />
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+
+                                                        </span>
+
+                                                        @*@((MarkupString)temp.ContentQuestion.Replace("...", inputTextBox))*@
+
+                                                        @*MarkupString: Một giá trị chuỗi có thể được hiển thị dưới dạng đánh dấu, chẳng hạn như HTML.
+                                LINE 95: THAY DẤU "..." THÀNH THẺ INPUT ĐỂ NHẬN CÂU TRẢ LỜI ĐƯỢC ĐIỂN TỪ NGƯỜI DÙNG
+                                *@
+                                                    </div>
+                                                </div>
+                                                break;
+                                        }
+                                    }
+                                }
+                                <div class="d-flex justify-content-center mt-3 mb-3">
+                                    @if (Counturn < 5 && counter == 0)
+                                    {
+                                        <button class="btn btn-primary" @onclick="()=> Nopbai()">Nộp bài</button>
+                                    }
+                                    else if (Counturn < 5 && counter > 0)
+                                    {
+                                        <button class="btn btn-dark">@counter giây</button>
+                                    }
+                                    else
+                                    {
+                                        <a class="btn btn-danger">Hết lượt nộp</a>
+                                    }
+                                    @* }
+                            <button class="btn btn-primary" type="submit">Nộp bài</button>*@
+                                </div>
+                            </div>
+
+                        </EditForm>
+                    }
+                    else
+                    {
+                        <div class="card">
+                            <div class="card-body">
+                                <p style="font-family: Arial, Helvetica, sans-serif;font-size:large;">Bộ Quiz chưa hoàn chỉnh chưa thể làm</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        @if (ListQuestion.Count == 15)
+        {
+            <div class="col-3" style="position: fixed;
+                                       top: 13%;
+                                       right: 2%;">
+                <div class="row pb-1">
+                    <div class="card p-2">
+                        <p class="text-center" style="font-family: Arial, Helvetica, sans-serif;font-size:larger;"><b>@QuizName</b></p>
+                        <p style="font-family: Arial, Helvetica, sans-serif;font-size:large;">Họ tên :<b>@_studentUpDto.StudentName - @_studentUpDto.StudentCode</b></p>
+                        <p style="font-family: Arial, Helvetica, sans-serif;font-size:large;">Đúng :<b>(@CorrectAnswerQuantity/@ListQuestion.Count())</b></p>
+                        <p style="font-family: Arial, Helvetica, sans-serif;font-size:large;">Điểm : <b>@Scores</b></p>
+                        <p style="font-family: Arial, Helvetica, sans-serif;font-size:large;">Số lần làm : <b>@Counturn/5</b></p>
+
+                        <div class="row">
+                            <div class="col-5">
+                                @if (Counturn >= 5)
+                                {
+                                    <a class="btn btn-outline-danger" href="/detailclass/@GetId/@StudentIdIn">Trở về</a>
+                                    
+                                }else{
+                                    <a class="btn btn-outline-danger" @onclick="()=> QuayLai()">Trở về</a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row pt-2">
+                    <div class="card">
+                        <div class="row p-2">
+                            <div class="col-1"></div>
+                            <div class="row text-center"><p style="font-family: Arial, Helvetica, sans-serif;font-size:larger;"><b>Câu hỏi</b></p></div>
+                            <div class="row">
+
+                                @{
+                                    int i = 1;
+                                }
+                                @foreach (var temp in ListQuestion)
+                                {
+
+                                    @if (i == 6 || i == 11 || i == 16)
+                                    {
+                                        <div class="col-1"></div>
+                                    }
+                                    @if (lsidquestion.Any(c => c == temp.Id))
+                                    {
+                                        var Socau = (@i).ToString();
+                                        var classText = "#den-" + @i;
+
+                                        <div class="col-2 pl-1 single-product-item">
+
+                                            <AnchorLink class=" btn btn-outline-info" style="
+                                                                            border:1px solid white;
+                                                                            height:50px;
+                                                                            border-radius:50%;
+                                                                            -moz-border-radius:50%;
+                                                                            -webkit-border-radius:50%;
+                                                                            width:50px;background-color :#F27125" href="@classText">
+                                                <p class="pt-2" style="color:white;font-weight: bold;">@Socau</p>
+                                            </AnchorLink>
+                                        </div>
+
+                                    }
+                                    else
+                                    {
+                                        var Socau = (@i).ToString();
+                                        var classText = "#den-" + (@i).ToString();
+                                        <div class="col-2 pl-1 single-product-item">
+
+                                            <AnchorLink class="btn btn-outline-info" style="
+                                                                                    background-color:white;
+                                                                                    border:1px solid black;
+                                                                                    height:50px;
+                                                                                    border-radius:50%;
+                                                                                    -moz-border-radius:50%;
+                                                                                    -webkit-border-radius:50%;
+                                                                                    width:50px;color:black" href="@classText">
+
+                                                <p class="pt-2" style="color:black;font-weight: bold;">@Socau</p>
+                                            </AnchorLink>
+                                        </div>
+                                    }
+                                    i++;
+                                }
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+
+            </div>
+        }
+        else
+        {
+            <div class="col-3" style="position: fixed;
+                                       top: 13%;
+                                       right: 2%;">
+
+                <div class="card">
+                    <div class="card-body">
+                        <a class="btn btn-outline-danger" @onclick="()=> QuayLaiKhongDuBoCauHoi()">Trở về</a>
+                    </div>
+                </div>
+            </div>
+            
+        }
+    </div>
+}
+else
+{
+    <p>Danh sách câu hỏi không có !</p>
+}
+<PopUpConfirm ConfirmationMessage="Nộp bài kiểm tra rồi quay ra ?"
+              ConfirmationTitle="Xác nhận của bạn ?"
+              @ref="DeleConfirmation"
+              ConfirmationChanged="OnConfirmationDelete">
+
+</PopUpConfirm>
+
+<PopUpConfirm ConfirmationMessage="Xác nhận nộp bài ?"
+              ConfirmationTitle="Xác nhận của bạn ?"
+              @ref="DeleConfirmation2"
+              ConfirmationChanged="OnConfirmationDelete2">
+
+</PopUpConfirm>
+@code {
+
+
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+    private List<Guid> lsidquestion { get; set; } = new List<Guid>();
+    protected PopUpConfirm DeleConfirmation { set; get; }
+    protected PopUpConfirm DeleConfirmation2 { set; get; }
+    public async Task OnConfirmationDelete(bool deleteconfirmed)
+    {
+        if (deleteconfirmed)
+        {
+            if (Counturn >= 5)
+            {
+                Navigation.NavigateTo($"/detailclass/{GetId}/{StudentIdIn}");
+            }
+            else
+            {
+                await Submit();
+                Navigation.NavigateTo($"/detailclass/{GetId}/{StudentIdIn}");
+            }
+        }
+        else
+        {
+            Navigation.NavigateTo($"/detailclass/{GetId}/{StudentIdIn}");
+        }
+    }
+    public async Task OnConfirmationDelete2(bool deleteconfirmed)
+    {
+        if (deleteconfirmed)
+        {
+            await Submit();
+            await StartTimer();
+            //Navigation.NavigateTo($"/detailclass/{GetId}/{StudentIdIn}");
+        }
+    }
+    private async Task QuayLai()
+    {
+        DeleConfirmation.show();
+    }
+    private async Task QuayLaiKhongDuBoCauHoi()
+    {
+        Navigation.NavigateTo($"/detailclass/{GetId}/{StudentIdIn}");
+    }
+    private async Task Nopbai()
+    {
+        DeleConfirmation2.show();
+    }
+    private static System.Timers.Timer aTimer;
+    private int counter;
+    public async Task StartTimer()
+    {
+        counter = 60;
+        aTimer = new System.Timers.Timer(1000);
+        aTimer.Elapsed += CountDownTimer;
+        aTimer.Enabled = true;
+    }
+    public void CountDownTimer(Object source, System.Timers.ElapsedEventArgs e)
+    {
+        if (counter > 0)
+        {
+            counter -= 1;
+        }
+        else
+        {
+            aTimer.Enabled = false;
+        }
+        InvokeAsync(StateHasChanged);
+    }
+    /// <summary>
+    /// QuizIdIn Nhận IdQuiz khi chuyển vào làm Quiz
+    /// </summary>
+    public Guid QuizIdIn { get; set; }
+    /// <summary>
+    /// StudentIdIn Nhận Id của sinh viên khi chuyển vào làm Quiz
+    /// </summary>
+    ///
+
+    public Guid StudentIdIn { get; set; }
+    public string GetId { get; set; }
+
+    [Parameter] public string GetIdNonDecrypt { get; set; }
+    [Parameter] public string QuizIdInNonDecrypt { get; set; }
+    [Parameter] public string StudentIdInNonDecrypt { get; set; }
+
+    string QuizName;
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    [Inject] IDoQuizRepository _repository { get; set; }
+
+    [Inject] IQuizUPRepo _repositoryquiz { get; set; }
+
+    [Inject] IStudentQuizUPRepo _repository2 { get; set; }
+
+    [Inject] IStudentUPRepo _repository3 { get; set; }
+    private StudentUpDto _studentUpDto = new StudentUpDto();
+    bool flag = false;
+    public List<StudentQuizUPDtos> ListStudentQuiz { get; set; } = new List<StudentQuizUPDtos>();
+    #region biến cho phần Gets
+    /// <summary>
+    /// QuizIdd: view model truyền về để lấy ListCaau hỏi
+    /// </summary>
+    public GetQuestionCollectionVm QuizIdd { get; set; } = new GetQuestionCollectionVm();
+    /// <summary>
+    /// ListQuestion chưa list câu hỏi của quizz
+    /// </summary>
+    public List<QuestionDto> ListQuestion { get; set; } = new List<QuestionDto>();
+    #endregion
+
+    #region biến cho phần Submit
+    /// <summary>
+    /// viewModel nhận câu trả lời của Sinh viên để gửi về Server khi Submit
+    /// </summary>
+    private DoQuizViewModel viewModel { get; set; } = new DoQuizViewModel();
+    #endregion
+
+    #region biến hỗ trợ UI
+    /// <summary>
+    /// CorrectAnswerQuantity điếm số câu trả lời đúng của sinh viên
+    /// </summary>
+    public double CorrectAnswerQuantity { get; set; } = 0;
+    /// <summary>
+    /// Scores: điểm quiz của sinh viên
+    /// </summary>
+    public double Scores { get; set; }
+    /// Counturn : Số lần sinh viên làm quiz
+    /// </summary>
+    public int Counturn { get; set; }
+
+    public int a { get; set; } = 0;
+
+    public string DapAn { get; set; }
+
+    /// <summary>
+    /// QuestionNumber: hiển thị số thứ tự câu hỏi
+    /// </summary>
+    public int QuestionNumber { get; set; } = 0;
+    #endregion
+
+
+    #region su kien Cho Check Box
+    /// <summary>
+    /// AnSwersIdOfQuestion chứa list câu trả lời của các câu hỏi
+    /// </summary>
+    public List<AnswerQuestionViewModel> AnSwersIdOfQuestion { get; set; } = new List<AnswerQuestionViewModel>();
+    /// <summary>
+    /// thêm hoặc xóa IdAnswer theo  lựa chọn đáp an của sinh viên.
+    /// </summary>
+    /// <param name="quesId">Id Của câu hỏi</param>
+    /// <param name="idAn">Id câu trả lời của câu hỏi trên</param>
+    /// <param name="checkedValue"> bắt sự Event Onchange nếu Answer đó được chọn thì = true và ngược lại = false</param>
+    public void CheckboxClicked(Guid quesId, Guid idAn, object checkedValue)
+    {
+        if ((bool)checkedValue)
+        {
+            if (!AnSwersIdOfQuestion[Index(quesId)].AnswerId.Contains(idAn))
+            {
+                AnSwersIdOfQuestion[Index(quesId)].AnswerId.Add(idAn);
+                Troden(quesId);
+            }
+        }
+        else
+        {
+            if (AnSwersIdOfQuestion[Index(quesId)].AnswerId.Contains(idAn))
+            {
+                AnSwersIdOfQuestion[Index(quesId)].AnswerId.Remove(idAn);
+                lsidquestion.Remove(quesId);
+            }
+        }
+        viewModel.QuestionIdCollection[Index(quesId)].AnswerId = AnSwersIdOfQuestion[Index(quesId)].AnswerId;
+
+    }
+    #endregion
+    public string TestText { get; set; }
+    public List<string> LstestText { get; set; }
+    #region biến và function Event hỗ trợ Input Supply
+    public string answerInput { get; set; } //chứa giá trị thay dồi khi nhập vào input.
+
+    /// <summary>
+    /// inputTextBox: chứa thẻ Input HTML dưới dạng chuối string
+    /// </summary>
+    private string inputTextBox { get; set; } = $"<input type=\"text\"  placeholder=\"..........................\" style=\"width:70px;background-color: salmon;\"/>";
+    /// <summary>
+    /// nhận giá trị người dung nhập vào theo Event OnInput.
+    /// Nếu câu trả lời được nhập vào đúng với Đáp án thì sẽ được thêm vào câu trả lời của sinh viên
+    /// </summary>
+    /// <param name="quesId">Id của câu hỏi</param>
+    /// <param name="Value"> nhận giá trị người dung nhập vào theo Event OnInput</param>
+
+    public async void InsertAnswerRText(Guid quesId, ChangeEventArgs Value)
+    {
+
+        answerInput = Value.Value.ToString();
+        a++;
+        var indexQuesInListGetQues = ListQuestion.FindIndex(c => Guid.Equals(quesId, c.Id));
+
+        var testss = answerInput.ToLower().Replace("  ", " ");
+        var checkAnswerExited = ListQuestion[indexQuesInListGetQues].AnswerDtoCollection.Any(c => string.Equals(testss, c.Answer.ToLower().Replace("  ", " ")));
+        if (checkAnswerExited)
+        {
+            var ansId = ListQuestion[indexQuesInListGetQues].AnswerDtoCollection.FirstOrDefault(c => string.Equals(testss, c.Answer.ToLower().Replace("  ", " "))).Id;
+            if (!viewModel.QuestionIdCollection[Index(quesId)].AnswerId.Any(c => Guid.Equals(ansId, c))) viewModel.QuestionIdCollection[Index(quesId)].AnswerId.Add(ansId);
+
+            //answerInput = "";
+        }
+        if (answerInput != "")
+        {
+
+            Troden(quesId);
+        }
+        else
+        {
+            for (int i = 0; i < a; i++)
+            {
+                lsidquestion.Remove(quesId);
+            }
+            a = 0;
+        }
+    }
+    #endregion
+
+    /// <summary>
+    /// chạy khi load this page
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        GetId = _cryptoServices.Decrypt(GetIdNonDecrypt.Replace("I0H", "/"));
+        StudentIdIn = Guid.Parse(_cryptoServices.Decrypt(StudentIdInNonDecrypt.Replace("I0H", "/")));
+        QuizIdIn = Guid.Parse(_cryptoServices.Decrypt(QuizIdInNonDecrypt.Replace("I0H", "/")));
+
+        flag = true;
+        var quizUP = await _repositoryquiz.GetQuizUp(QuizIdIn.ToString());
+        QuizName = quizUP.QuizName;
+        _studentUpDto = await _repository3.GetStudentUPById(StudentIdIn);
+        ListStudentQuiz = await _repository2.GetAllAsync();
+        Counturn = ListStudentQuiz.Where(c => c.QuizId == QuizIdIn && c.StudentId == StudentIdIn).Select(c => c.CounterTurn).FirstOrDefault();
+        QuizIdd.QuizId = QuizIdIn;
+        QuizIdd.StudentId = StudentIdIn;
+        await GetData(QuizIdd);
+        flag = false;
+    }
+    /// <summary>
+    /// function cho nút Submit
+    /// </summary>
+    /// <returns> điểm  số câu trả lời đúng của Sinh viên </returns>
+    private async Task Submit()
+    {
+        viewModel.StudentId = StudentIdIn;
+        //Scores = await _repository.ListStudentQuiz(QuizIdIn, viewModel);
+        Scores = await _repository.EventButtonSubmitAsync(QuizIdIn, viewModel);
+        await GetData(QuizIdd);
+
+    }
+    /// <summary>
+    /// function cho Event OnClick khi chọn đáp án kiểu câu hỏi chọn 1 đáp án
+    /// Id câu trả lời sẽ được add vào list câu trả lời của câu hỏi đó
+    /// </summary>
+    /// <param name="anId">Íd câu trả lời sinh viên chọn</param>
+    /// <param name="quesId"> Id câu hỏi</param>
+    private void AddAnswerToListOneChoice(Guid anId, Guid quesId)
+    {
+        viewModel.QuestionIdCollection[Index(quesId)].AnswerId = new List<Guid>();
+        viewModel.QuestionIdCollection[Index(quesId)].AnswerId.Add(anId);
+        Troden(quesId);
+    }
+    /// <summary>
+    /// tìm Index của câu hỏi trong viewModel.QuestionIdCollection
+    /// </summary>
+    /// <param name="quesId"> Id Câu hỏi</param>
+    /// <returns></returns>
+    private int Index(Guid quesId)
+    {
+        var dex = viewModel.QuestionIdCollection.FindIndex(c => Equals(quesId, c.QuestionId));
+        return dex;
+    }
+
+    /// <summary>
+    /// Gét Data câu hỏi của this Quiz
+    /// </summary>
+    /// <param name="QuizIdd"> truyền vào Id Student và Id Quiz</param>
+    /// <returns></returns>
+    private async Task GetData(GetQuestionCollectionVm QuizIdd)
+    {
+        flag = true;
+        ListStudentQuiz = await _repository2.GetAllAsync();
+        Counturn = ListStudentQuiz.Where(c => c.QuizId == QuizIdIn && c.StudentId == StudentIdIn).Select(c => c.CounterTurn).FirstOrDefault();
+        CorrectAnswerQuantity = 0;
+        ListQuestion = new List<QuestionDto>();
+        viewModel = new DoQuizViewModel();
+        AnSwersIdOfQuestion = new List<AnswerQuestionViewModel>();
+        var result = await _repository.GetQuestionInQuizAsync(QuizIdd);
+        Scores = result.Score;
+        ListQuestion = result.QuestionCollectionGet;
+        //LstestText = new List<string>();
+        foreach (var ques in ListQuestion)
+        {//máp câu đã trả lời của sinh viên add vào viewmodel
+            var quesAns = new AnswerQuestionViewModel();
+            quesAns.QuestionId = ques.Id;
+            quesAns.AnswerId = ques.AnswerDtoCollection.Where(c => bool.Equals(true, c.StudentChoose)).Select(c => c.Id).ToList();
+            quesAns.Answer = ques.AnswerDtoCollection.Where(c => bool.Equals(true, c.StudentChoose)).Select(c => c.Answer).ToList();
+            AnSwersIdOfQuestion.Add(quesAns);
+            viewModel.QuestionIdCollection.Add(quesAns);
+            //LstestText.Add(TestText);
+            if (ques.AnswerDtoCollection.Where(c => c.StudentChoose).Count() > 0)
+            {
+                for (int i = 0; i < ques.AnswerDtoCollection.Where(c => c.StudentChoose).Count(); i++)
+                {
+                    Troden(ques.Id);
+                }
+            }
+        }
+
+        if (string.IsNullOrEmpty(TestText))
+        {
+            TestText = "Nhập đáp án vào đây";
+        }
+
+        foreach (var ques in ListQuestion)
+        {
+            var listAnsCorrect = ques.AnswerDtoCollection.Where(ques => bool.Equals(true, ques.IsCorrect)).ToList();
+            var listAnsChoose = ques.AnswerDtoCollection.Where(ques => bool.Equals(true, ques.StudentChoose)).ToList();
+            if (listAnsCorrect.SequenceEqual(listAnsChoose))
+            {// đếm số câu trả lời đúng của sinh viên in this quiz.
+                CorrectAnswerQuantity++;
+            }
+        }
+        flag = false;
+    }
+    private async Task Troden(Guid id)
+    {
+        lsidquestion.Add(id);
+    }
+}
+

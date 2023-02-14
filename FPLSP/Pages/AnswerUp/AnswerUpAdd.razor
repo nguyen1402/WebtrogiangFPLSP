@@ -1,0 +1,63 @@
+﻿@page "/answerup/add"
+<h3>QuizQuestionAdd</h3>
+
+@using Blazored.Toast
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos.QuizQuestionUPDto
+@using FPLSP.Server.Infrastructure.ViewModels.AnswerUp
+@using FPLSP.Server.Infrastructure.ViewModels.QuizQuestionUp
+
+<PageTitle>FPLSP | Elearning</PageTitle>
+
+<EditForm Model="@answer">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+     <div class="mb-3">
+        <label>QuestionTital</label>
+        <InputSelect class="form-control" @bind-Value="QuizQuestionUpVm.Id">
+            <option value="">Chọn môn học</option>
+            @if (quizQuestionUpDto != null)
+                {
+                @foreach (var item in quizQuestionUpDto)
+                    {
+                    <option value="@item.Id">@item.QuestionTital</option>
+                }
+                }
+        </InputSelect>
+        <ValidationMessage For="()=>QuizQuestionUpVm.QuestionTital"></ValidationMessage>
+    <div class="mb-3">
+        <label for="exampleFormControlInput1" class="form-label">Answer :</label>
+        <InputText @bind-Value="@answer.Answer" id="exampleFormControlInput1" placeholder="Please type QuestionTital" class="form-control"></InputText>
+        <ValidationMessage For="@(() => answer.Answer)" />
+    </div>
+    <hr />
+    <div class="col">
+        <button class="btn btn-info" @onclick="Add">Thêm</button>
+        <button class="btn btn-outline-danger"><a href="/answerup">Thoát</a></button>
+    </div>
+
+
+    </div>
+
+</EditForm>
+@code {
+    [Inject] IQuizQuestionUPRepo _quizQuestionUPRepo { get; set; }
+    [Inject] IAnswerUPRepo _answerUPRepo { get; set; }
+    [Inject] NavigationManager NavigationManager { get; set; }
+    AnswerUpVm answer = new AnswerUpVm();
+    List<QuizQuestionUpDto> quizQuestionUpDto = new List<QuizQuestionUpDto>();
+    QuizQuestionUpVm QuizQuestionUpVm = new QuizQuestionUpVm();
+    protected override async Task OnInitializedAsync()
+    {
+        quizQuestionUpDto = await _quizQuestionUPRepo.GetAll();
+
+    }
+    protected async Task Add()
+    {
+        answer.QuizQuestionId = QuizQuestionUpVm.Id;
+        if (await _answerUPRepo.AddAnswer(answer))
+        {
+            NavigationManager.NavigateTo("/answerup");
+        }
+    }
+}

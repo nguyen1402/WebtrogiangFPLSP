@@ -1,0 +1,152 @@
+﻿@page "/CoeCPDetails/{id:guid}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Exams
+
+
+<h3>Chi Tiết Nội Dung Đề Thi</h3>
+@if (_Dto != null)
+{
+
+    <div class="row">
+        <div class="col-1">
+        </div>
+        <div class="d-flex justify-content-center col-10 ">
+        </div>
+
+
+        <EditForm Model="_Dto" class="card card-body bg-light mt-5">
+            <DataAnnotationsValidator />
+            <div class="form-group row mt-2">
+                <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-code"></i> Mã link Đề Thi:</label>
+                <div class="col-md-10">
+                    <InputText id="name" class="form-control" @bind-Value="_Dto.CoeCode" />
+                    <ValidationMessage For="@(() => _Dto.CoeCode)" />
+                </div>
+            </div>
+            <div class="form-group row mt-2">
+                <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fas fa-check"></i> Mức Độ:</label>
+                <div class="col-md-10">
+                    <InputSelect class="form-control" @bind-Value="_Dto.Level">
+                        <option value="5">Mức 5</option>
+                        <option value="4">Mức 4</option>
+                        <option value="3">Mức 3</option>
+                        <option value="2">Mức 2</option>
+                        <option value="1">Mức 1</option>
+                    </InputSelect>
+                </div>
+            </div>
+            <div class="form-group row mt-2">
+                <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-calendar-days"></i> Ngày Tạo:</label>
+                <div class="col-md-10">
+                    <InputDate id="name" class="form-control" @bind-Value="_Dto.DateCreated" />
+                    <ValidationMessage For="@(() => _Dto.DateCreated)" />
+                </div>
+            </div>
+            <div class="form-group row mt-2">
+                <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-calendar-days"></i> Ngày Mở:</label>
+                <div class="col-md-10">
+                    <InputDate id="name" class="form-control" @bind-Value="_Dto.DateStarted" />
+                    <ValidationMessage For="@(() => _Dto.DateStarted)" />
+                </div>
+            </div>
+            <div class="form-group row mt-2">
+                <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-calendar-days"></i> Ngày Đóng:</label>
+                <div class="col-md-10">
+                    <InputDate id="name" class="form-control" @bind-Value="_Dto.EndDate" />
+                    <ValidationMessage For="@(() => _Dto.EndDate)" />
+                </div>
+            </div>
+            <div class="form-group row mt-2">
+                <label for="name" class="col-md-2 col-form-label"><i class="fas fa-light fa-file-lines"></i> Nội Dung:</label>
+                <div class="col-md-10">
+                    <InputTextArea class="form-control" @bind-Value="_Dto.Content" />
+                    <ValidationMessage For="@(() => _Dto.Content)" />
+                </div>
+            </div>
+            <div class="form-group row mt-2">
+                <label for="name" class="col-md-2 col-form-label"><i class="fas fa-clipboard"></i> Số lượng câu hỏi:</label>
+                <div class="col-md-10">
+                    <InputNumber class="form-control" @bind-Value="_Dto.TotalOfQuestions" />
+                    <ValidationMessage For="@(() => _Dto.TotalOfQuestions)" />
+                </div>
+            </div>
+            <div class="form-group row mt-2">
+                <label for="name" class="col-md-2 col-form-label"><i class="fa-solid fa-check"></i> Trạng Thái:</label>
+                <div class="col-md-10">
+                    <InputSelect class="form-control" @bind-Value="_Dto.Status">
+                        <option value="1">Mở</option>
+                        <option value="0">Đóng</option>
+                    </InputSelect>
+                </div>
+            </div>
+
+            <div class="form-group row mt-2">
+                <label for="name" class="col-md-2 col-form-label"><i class="fa-regular fa-file"></i> Đề Thi:</label>
+                <div class="col-md-10">
+                    <InputSelect class="form-control" @bind-Value="_Dto.ExamId">
+                        @if (_lstExam != null)
+                        {
+                            @foreach (var item in _lstExam)
+                            {
+                                <option value="@item.Id">@item.ExamName</option>
+                            }
+                        }
+                    </InputSelect>
+                </div>
+            </div>
+            <div class="col-md-12 text-center form-group mt-2">
+                <button><a href="/ExamLinkList" class="btn btn-danger">Quay Lại</a></button>
+            </div>
+
+        </EditForm>
+    </div>
+    <div class="col-1">
+    </div>
+
+}
+@code{
+    private ContentOfExamCPDto _Dto;
+    [Inject] private IContentOfExamCPRepo contentOfExamCPRepo { get; set; }
+
+    [Inject] private IExamCPServicesRepo examApiClient { get; set; }
+    [Inject] private NavigationManager _navier { get; set; }
+
+    private List<ExamCPDto> _lstExam;
+    private ExamListSearchVm _examListSearchVm;
+    public CoeCPDetails()
+    {
+        _examListSearchVm = new ExamListSearchVm();
+        _lstExam = new List<ExamCPDto>();
+    }
+    [Parameter]
+    public Guid Id { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        await Get();
+    }
+    private async Task Get()
+    {
+
+        var pagingResponse = await examApiClient.GetExamCPList(_examListSearchVm);
+        _lstExam = pagingResponse.Items;
+        var examCp = await contentOfExamCPRepo.GetCoeCPById(Id);
+        var examDto = new ContentOfExamCPDto()
+            {
+                EndDate = examCp.EndDate,
+                CoeCode = examCp.CoeCode,
+                DateStarted = examCp.DateStarted,
+                Level = examCp.Level,
+                Status = examCp.Status,
+                Content = examCp.Content,
+                ExamId = examCp.ExamId,
+                TotalOfQuestions = examCp.TotalOfQuestions,
+                QuestionType = examCp.QuestionType,
+                DateCreated = examCp.DateCreated,
+                Id = examCp.Id,
+
+            };
+        _Dto = examDto;
+    }
+}

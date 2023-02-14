@@ -1,0 +1,588 @@
+﻿@page "/detaiexamstorageofsubject/{IdSubjectNonDecrpyt}/{IdUserNonDecrpyt}/{IdLectureNonDecrpyt}"
+@using BlazorInputFile;
+@using FPLSP.Data.Securities
+@using FPLSP.Repositories.Interfaces;
+@using FPLSP.Repositories.Interfaces.FPLExam;
+@using FPLSP.Server.Domain.Dtos;
+@using System.ComponentModel.DataAnnotations;
+@using FPLSP.Server.Domain.Entities.CoresParts;
+@using FPLSP.Server.Domain.Entities.FPLExam;
+@using FPLSP.Server.Domain.Entities.UsesParts;
+@using FPLSP.Server.Infrastructure.ViewModels.FPLExam;
+@using Microsoft.AspNetCore.Identity;
+@using Microsoft.AspNetCore.SignalR.Client;
+@inject ISnackbar Snackbar;
+@inject SweetAlertService Swal;
+@implements IDisposable
+
+<div class="row m-2">
+    <div class="col-6">
+        <div class="row">
+
+            <div class="col-6">
+                <a class="btn btn-danger mb-3" @onclick="RedirectToBack">Quay Lại</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-6"> </div>
+</div>
+<div class="row">
+    <div class="col-lg-5">
+        <section class="">
+            <article class="postcard light blue">
+
+                <div class="postcard__text t-dark" style="object-fit:cover;height:550px;">
+
+                    <h3 class="postcard__title">Môn Học : @_subjectUp.SubjectName - @_subjectUp.SubjectCode</h3>
+                    <div class="postcard__subtitle small">
+                        <time datetime="@_subjectUp.CreatedDay">
+                            <i class="fas fa-calendar-alt mr-2"></i> Ngày Tạo : @_subjectUp.CreatedDay.ToString("dddd-MM-yyyy")
+                        </time>
+                    </div>
+                    <div class="postcard__bar"></div>
+                    <div class="postcard__preview-txt">
+                        <div class="postcard__preview-txt">
+                            <div>
+                                Danh sách giảng viên
+                                @{
+                                    int i = 0;
+                                }
+                                @foreach (var x in listTeachersInSubject)
+                                {
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <h6 class="mud-typography mud-typography-subtitle1">
+                                                @lsgiangvien[i]
+                                            </h6>
+                                        </div>
+                                    </div>
+                                    i++;
+                                }
+                            </div>
+                            <div>
+                            </div>
+                        </div>
+                        <div>
+                            @*    <img class="postcard__img" style="object-fit:cover;" src="@_subjectUp.Image">*@
+                        </div>
+                    </div>
+                    <ul class="postcard__tagbox">
+                    </ul>
+                </div>
+
+
+
+            </article>
+            <br>
+
+        </section>
+    </div>
+    <div class="col-lg-7">
+        <section class="">
+            <article class="postcard light blue">
+
+                <div class="postcard__text t-dark">
+                    <h3 class="postcard__title">Danh Sách Đề Thi Môn : @_subjectUp.SubjectName - @_subjectUp.SubjectCode</h3>
+                    <div class="postcard__subtitle small">
+                    </div>
+                    <div class="postcard__bar"></div>
+                    <div class="postcard__preview-txt">
+                        <div class="row">
+
+                            @if ((fileTypeError || fileSizeError || fileNameError))
+                            {
+
+                                @if (fileTypeError)
+                                {
+                                    <div class="alert alert-info" role="alert">
+                                        Chỉ Chấp Nhận File PDF  | @ErrorFileName
+                                    </div>
+                                }
+                                @if (fileSizeError)
+                                {
+                                    <div class="alert alert-danger" role="alert">
+                                        File Tối Đa Có Kích Cỡ Dưới @MaxFileSizeMB MB. | @ErrorFileName
+                                    </div>
+
+                                }
+                                @if (fileNameError)
+                                {
+                                    <div class="alert alert-warning" role="alert">
+                                        Tên File Đã Tồn Tại Hoặc Tên File Đã Vượt quá 50 Kí Tự | @ErrorFileName
+                                    </div>
+
+                                }
+                            }
+
+                        </div>
+                        <div clas="row">
+                            <label class="text-danger mb-2">
+                                Tải Lên Đề Thi
+                            </label>
+
+                            <div class="dropzone @DragClass">
+                                <MudStack Style="width:100%;height:150px;">
+                                    <BlazorInputFile.InputFile OnChange="OnInputFileChanged"
+                                                               id="fileInput" multiple title=""
+                                                               accept="application/pdf"
+                                                               @ondragenter="@HandleDragEnter"
+                                                               @ondragleave="@ClearDragClass"
+                                                               @ondragend="@HandleDragLeave" />
+
+                                    <span class="text-danger text-center mt-5">Kéo Thả File Tại Đây Hoặc Chọn</span>
+
+
+                                </MudStack>
+                            </div>
+
+                        </div>
+                        <div class="row">
+                            <label class="text-danger mt-3">
+                                Danh Sách File Đã Tải Lên
+                            </label>
+                            <MudPaper Elevation="0" Width="610px" MinHeight="150px" Class="pa-4 ma-4 d-flex flex-column mud-background-gray rounded-lg">
+                                <MudChipSet AllClosable="true" OnClose="RemoveFile">
+                                    <div class="row">
+                                        @foreach (var file in _lstExamFile.Where(c => c.SubjectId == Guid.Parse(IdSubject)).ToList())
+                                        {
+                                            <div class="col-6">
+                                                <MudChip Color=" Color.Surface" Text="@file.FileName" Class="text-wrap mb-2" />
+                                            </div>
+                                        }
+                                    </div>
+                                </MudChipSet>
+                            </MudPaper>
+                        </div>
+
+
+
+
+                    </div>
+
+
+                </div>
+            </article>
+
+        </section>
+    </div>
+</div>
+
+
+
+
+@code {
+    [Inject] public ISubjectUPRepo _subjectUPRepo { get; set; }
+    [Inject] public IExamFileRepo _examFileRepo { get; set; }
+    [Inject] public UserManager<UserSignIn> _userManager { get; set; }
+    [Inject] public ISubjectTeacherRepo _iSubjectTeacherRepo { get; set; }
+    [Inject] public ILecturersCPRepo _iLecturersCPRepo { get; set; }
+    public int Value { get; set; }
+    private SubjectDto _subjectUp = new SubjectDto();
+    private static string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-4 mud-width-full mud-height-full z-10";
+    private string DragClass = DefaultDragClass;
+    private List<IFileListEntry> fileNames = new List<IFileListEntry>();
+    private string dropClass = "";
+    private bool _addSectionOpen;
+    //check filesize
+    private bool fileSizeError = false;
+    private bool fileTypeError = false;
+    private bool fileNameError = false;
+    const double MaxFileSizeMB = 0.2;
+    const double MaxFileSize = MaxFileSizeMB * 1024 * 1024; // 200KB
+                                                            //
+    private List<ExamStorage> _lstExamFile = new List<ExamStorage>();
+    private List<ExamStorage> _lstExamFileForCurrentLec = new List<ExamStorage>();
+    private List<ExamStorage> _lstAllExamFileFinal = new List<ExamStorage>();
+    private List<ExamStorageViewModel> _lstExamFileForAdding = new List<ExamStorageViewModel>();
+    List<string> lsgiangvien = new List<string>();
+    [Inject] public NavigationManager navigation { get; set; }
+    public List<SubjectTeacherViewModel> listTeachersInSubject = new List<SubjectTeacherViewModel>();
+
+
+    //private Guid IdUser = Guid.Parse("5f096300-2259-4e3c-bef4-d7fc028a5825");
+    //private Guid IdSubject = Guid.Parse("DE763F78-7F1F-496C-B389-03F0C34DB4AE");
+    //private Guid IdLecture = Guid.Parse("5a7590e0-9dad-4b2e-ae7b-77a4e0706b37");
+    [Parameter]
+    public string IdSubjectNonDecrpyt { get; set; }
+    public string IdSubject = "";
+    [Parameter]
+    public string IdUserNonDecrpyt { get; set; }
+    public string IdUser = "";
+
+
+    [Parameter]
+    public string IdLectureNonDecrpyt { get; set; }
+    public string IdLecture = "";
+
+    private string ErrorFileName = "";
+    //
+
+    private bool IsShowWaitting = false;
+    //mud carosel
+    private bool arrows = true;
+    private bool bullets = true;
+    private bool enableSwipeGesture = true;
+    private bool autocycle = true;
+    private Transition transition = Transition.Slide;
+    //
+
+    private bool IsLecterturter = false;
+    private List<SubjectUP> _lstSubforlec = new List<SubjectUP>();
+
+    [Inject]
+    public CryptoServices _cryptoServices { get; set; }
+    Uri uri;
+    string maxRole = "";
+
+    protected async override Task OnInitializedAsync()
+    {
+        IdSubject = _cryptoServices.Decrypt(IdSubjectNonDecrpyt.Replace("I0H", "/"));
+        IdUser = _cryptoServices.Decrypt(IdUserNonDecrpyt.Replace("I0H", "/"));
+        IdLecture = _cryptoServices.Decrypt(IdLectureNonDecrpyt.Replace("I0H", "/"));
+        uri = navigation.ToAbsoluteUri(navigation.Uri);
+        if (string.IsNullOrEmpty(uri.Query) == false)
+        {
+            var urifist = uri.Query.Split("?")[1];
+            maxRole = _cryptoServices.Decrypt(urifist.Replace("I0H", "/"));
+        }
+
+        listTeachersInSubject = await _iSubjectTeacherRepo.SearchSubjectTeacher(Guid.Empty, Guid.Parse(IdSubject));
+        lsgiangvien = new List<string>();
+        foreach (var x in listTeachersInSubject)
+        {
+            var giangvien = await _iLecturersCPRepo.GetLecturerListById(x.IdTeacher);
+            var namegiangvien = giangvien.Email;
+            lsgiangvien.Add(namegiangvien);
+        }
+        _subjectUp = await _subjectUPRepo.GetSubjectbyId(Guid.Parse(IdSubject));
+        if (IsLecterturter == false)
+        {
+            _lstExamFile = await _examFileRepo.GetAllExamFilesForLectuterSubject(Guid.Parse(IdUser), Guid.Parse(IdSubject));
+            _lstExamFile = _lstExamFile.Where(c => c.SubjectId == Guid.Parse(IdSubject)).ToList();
+            _lstExamFileForCurrentLec = await _examFileRepo.GetAllExamFilesForLectuer(Guid.Parse(IdUser));
+            _lstExamFileForCurrentLec = _lstExamFileForCurrentLec.Where(c => c.SubjectId == Guid.Parse(IdSubject)).ToList();
+            _lstSubforlec = await _subjectUPRepo.GetAllSubjectbyIdLecture(Guid.Parse(IdLecture));
+        }
+
+    }
+    private async Task RedirectToBack()
+    {
+        var url = Path.Combine($"/overviewsubject/{_cryptoServices.Encrypt(maxRole.ToString()).Replace("/", "I0H")}/{_cryptoServices.Encrypt(IdLecture.ToString()).Replace("/", "I0H")}");
+        navigation.NavigateTo(url);
+    }
+    public async Task RemoveFile(MudChip chip)
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = $"Xác Nhận Xóa File Đề Thi",
+                Text = "Bạn Có Chắc Muốn Thêm File Đề Thi Này Không ?",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Đồng Ý",
+                CancelButtonText = "Hủy"
+            });
+
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            //lấy ra đối tượng cần để xóa
+            var getIdFile = _lstExamFile.Where(c => c.FileName == chip.Text).Select(c => c.Id).FirstOrDefault();
+            IsShowWaitting = true;
+            await SimulateProgress();
+            var res = await _examFileRepo.DeleteExamFile(getIdFile);
+            IsShowWaitting = false;
+            if (res)
+            {
+                await Swal.FireAsync(
+                "Xóa Thành Công",
+                "Successfuly",
+                SweetAlertIcon.Success
+                );
+                await GetListExamFile();
+
+            }
+            else
+            {
+                await Swal.FireAsync(
+              "Xóa Thất Bại Do Đề đã được sử dụng",
+              "Fail",
+              SweetAlertIcon.Error
+              );
+                return;
+            }
+
+        }
+        else if (result.Dismiss == DismissReason.Cancel)
+        {
+
+            //ở đây xử lý khi hủy upload
+            await Swal.FireAsync(
+              "Hủy",
+              "Đã Hủy Xóa File",
+              SweetAlertIcon.Error
+              );
+        }
+
+    }
+    private async Task GetListExamFile()
+    {
+        _lstExamFile = await _examFileRepo.GetAllExamFiles();
+        _lstExamFile = _lstExamFile.Where(c => c.SubjectId == Guid.Parse(IdSubject)).ToList();
+    }
+    private async Task OnInputFileChanged(IFileListEntry[] files)
+    {
+        dropClass = "";
+        fileSizeError = false;
+        fileTypeError = false;
+
+        List<string> acceptedFileTypes = new List<string>() { "application/pdf" };
+        foreach (var file in files)
+        {
+            bool error = false;
+            if (file.Name.ToLower().Count() > 50)
+            {
+                error = true;
+                fileNameError = true;
+                ErrorFileName = file.Name;
+                files.ToList().Clear();
+                return;
+            }
+            if (_lstExamFile.Any(c => c.FileName.ToLower().Contains(file.Name.ToLower())))
+            {
+                error = true;
+                fileNameError = true;
+                ErrorFileName = file.Name;
+                files.ToList().Clear();
+                return;
+
+            }
+            if (file.Size > MaxFileSize)
+            {
+
+                error = true;
+                fileSizeError = true;
+                ErrorFileName = file.Name;
+                files.ToList().Clear();
+                return;
+            }
+
+            if (!acceptedFileTypes.Contains(file.Type))
+            {
+                error = true;
+                fileTypeError = true;
+                ErrorFileName = file.Name;
+                files.ToList().Clear();
+                return;
+            }
+
+        }
+
+        if (files.Count() > 0)
+        {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = $"Xác Nhận Thêm File",
+                    Text = "Bạn Có Chắc Muốn Thêm File Đề Thi Này Không ?",
+                    Icon = SweetAlertIcon.Warning,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Đồng Ý",
+                    CancelButtonText = "Hủy"
+                });
+
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+                foreach (var file in files)
+                {
+                    var attachment = await FileConverter(file);
+                    ExamStorageViewModel examStorageViewModel = new ExamStorageViewModel()
+                        {
+                            Id = Guid.NewGuid(),
+                            CreateTime = DateTime.Now,
+                            FileName = file.Name,
+                            ExamFile = attachment,
+                            IndexOfExamStorageFile = _lstExamFile.Where(c => Guid.Parse(c.IdUserUpLoad) == Guid.Parse(IdUser)).Count() == 0 ? 1 : _lstExamFile.Where(c => Guid.Parse(c.IdUserUpLoad) == Guid.Parse(IdUser)).Max(c => c.IndexOfExamStorageFile) + 1,
+                            Status = 0,
+                            Note = "",
+                            IdUserUpLoad = IdUser.ToString(),
+
+                            DeleteTime = default,
+                            SubjectId = _subjectUp.Id,
+                            UserNameUpload = _userManager.Users.Where(c => c.Id == IdUser.ToString()).Select(c => c.UserName).FirstOrDefault(),
+                            SubjectName = _subjectUp.SubjectName,
+                            SubjectCode = _subjectUp.SubjectCode
+
+                        };
+                    _lstExamFileForAdding.Add(examStorageViewModel);
+
+
+                }
+                IsShowWaitting = true;
+                await SimulateProgress();
+                var res = await _examFileRepo.AddMultipleExamFile(_lstExamFileForAdding);
+
+                IsShowWaitting = false;
+                if (res)
+                {
+                    await Swal.FireAsync(
+                    "Thêm Thành Công",
+                    "Successfuly",
+                    SweetAlertIcon.Success
+                    );
+                    await GetListExamFile();
+                    fileSizeError = false;
+                    fileTypeError = false;
+                    fileNameError = false;
+
+                }
+                else
+                {
+                    await Swal.FireAsync(
+                  "Thêm Thất Bại",
+                  "Fail",
+                  SweetAlertIcon.Error
+                  );
+                    return;
+                }
+
+            }
+            else if (result.Dismiss == DismissReason.Cancel)
+            {
+
+                //ở đây xử lý khi hủy upload
+                await Swal.FireAsync(
+                  "Hủy",
+                  "Đã Hủy Thêm File",
+                  SweetAlertIcon.Error
+                  );
+            }
+
+
+
+
+        }
+
+
+    }
+    private void HandleDragEnter()
+    {
+        dropClass = "dropzone-drag";
+    }
+
+    private void HandleDragLeave()
+    {
+        dropClass = "";
+    }
+    private async Task Clear()
+    {
+        fileNames.Clear();
+        ClearDragClass();
+        await Task.Delay(100);
+    }
+    private void Upload()
+    {
+        //Upload the files here
+        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+        Snackbar.Add("TODO: Upload your files!", Severity.Normal);
+    }
+    public async Task<byte[]> FileConverter(IFileListEntry files)
+    {
+        using (var ms = new System.IO.MemoryStream())
+        {
+            await files.Data.CopyToAsync(ms);
+            return ms.ToArray();
+        }
+    }
+
+
+    private async Task ClearDragClass()
+    {
+        DragClass = DefaultDragClass;
+    }
+
+    public async Task SimulateProgress()
+    {
+        Value = 0;
+        do
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            Value += 8;
+            StateHasChanged();
+            await Task.Delay(500);
+
+        } while (Value < 100);
+
+
+    }
+    public async Task SimulateProgressFast()
+    {
+        Value = 0;
+        do
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            Value += 22;
+            StateHasChanged();
+            await Task.Delay(500);
+
+        } while (Value < 100);
+
+
+    }
+    bool _disposed;
+    public void Dispose() => _disposed = true;
+
+    private async Task ConnectToServer()
+    {
+        try
+        {
+            string url = "http://localhost:5001/notificationhub";
+            HubConnection _connection = null;
+            bool isConnected = false;
+            string connectionStatus = "Closed";
+            _connection = new HubConnectionBuilder()
+                .WithUrl(url)
+                .Build();
+
+            await _connection.StartAsync();
+            isConnected = true;
+            connectionStatus = "Connected :-)";
+            Console.WriteLine("SinalR Is Starting");
+            _connection.Closed += async (s) =>
+            {
+                isConnected = false;
+                connectionStatus = "Disconnected";
+                await _connection.StartAsync();
+                isConnected = true;
+            };
+
+            _connection.On<string>("Noticafications", async (res) =>
+            {
+
+                if (res == "Done")
+                {
+
+
+                    this.InvokeAsync(() => this.StateHasChanged());
+                }
+
+
+            });
+        }
+        catch (Exception ex)
+        {
+
+            //_error.ProcessError(ex);
+        }
+    }
+
+
+
+
+
+}

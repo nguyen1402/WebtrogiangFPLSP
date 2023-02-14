@@ -1,0 +1,50 @@
+﻿@using FPLSP.Server.Infrastructure.ViewModels.ResourceLinkUP
+
+<EditForm Model="@resourceLinkUPSearch" OnSubmit=@SearchForm>
+    <div class="row pl-16">
+        <div class="col-lg-2"></div>
+        <div class="col-lg-2">
+            <InputSelect class="form-select" ValueExpression="@(()=>resourceLinkUPSearch.Status)" Value="@resourceLinkUPSearch.Status" ValueChanged="@((int? value)=>
+            StatusSearch(value))">
+                <option value="">Trạng thái</option>
+                <option value="0">Không hoạt động</option>
+                <option value="1">Hoạt động</option>
+                <option value="2">Ngưng hoạt động</option>
+            </InputSelect>
+        </div>
+        <div class=" col-lg-6">
+            <div class="input-group mb-3">
+                <InputText placeholder="Nhập tiêu đề hoặc mô tả..." class="form-control" @bind-Value="resourceLinkUPSearch.Name"></InputText>
+                <div class="input-group-append pl-1">
+                    <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-2">
+            <a @onclick="@ClearSearch" class="btn btn-outline-success">Làm mới</a>
+        </div>
+    </div>
+</EditForm>
+@code{
+    [Parameter]
+        public EventCallback<ResourceLinkUPListSearch> OnSearch { get; set; }
+
+        private ResourceLinkUPListSearch resourceLinkUPSearch = new ResourceLinkUPListSearch();
+        public string status { get; set; } = "";
+
+        private async Task SearchForm(EditContext context)
+        {
+            await OnSearch.InvokeAsync(resourceLinkUPSearch);
+        }
+        private void StatusSearch(int? a)
+        {
+            resourceLinkUPSearch.Status = a;
+            SearchForm(null);
+        }
+        private void ClearSearch()
+        {
+            resourceLinkUPSearch = new ResourceLinkUPListSearch();
+            SearchForm(null);
+        }
+}

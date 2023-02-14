@@ -1,0 +1,121 @@
+﻿@*@page "/Students/{ClassId:guid}"*@
+@page "/Students/{ClassId}"
+@using FPLSP.Components
+@using Blazored.Toast.Services
+@using FPLSP.Components
+@using FPLSP.Data.StudentsApiClient
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Dtos.StudentUPDtos
+@using Microsoft.AspNetCore.Components
+
+<h3>StudentsApiClient</h3>
+
+@if (studentUpDtos == null)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    StudentCode
+                </th>
+                <th>
+                    StudentName
+                </th>
+                <th>
+                    Gender
+                </th>
+                <th>
+                    Email
+                </th>
+                <th>
+                    Specialized
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in studentUpDtos)
+            {
+                <tr>
+                    <td>@item.StudentCode</td>
+                    <td>@item.StudentName</td>
+                    <td>@item.Gender</td>
+                    <td>@item.Email</td>
+                    <td>
+                        <a @onclick="()=>CreateStuden(item.Id)">Add To Class +@item.Id</a>
+                    </td>
+                </tr>
+
+            }
+        </tbody>
+
+    </table>
+}
+<Comfirmation ConfirmationMessage="Are you sure to Create?"
+              ConfirmationTitle="Create Studen In Class"
+              @ref="CreateConfirmation"
+              ConfirmationChanged="OnConfirmationCreate"></Comfirmation>
+
+@code {
+    [Inject] private IStudentsApiClient studentsApiClient { get; set; }
+    [Inject] private NavigationManager _navier { get; set; }
+    [Inject] private IToastService _toatser { get; set; }
+
+
+    protected Comfirmation CreateConfirmation { get; set; }
+
+    System.Uri uri;
+    string idClass;
+
+    private List<StudentUpDto> studentUpDtos;
+
+    CreateStudentInClassDto createStudentInClassDto = new CreateStudentInClassDto();
+
+    [Parameter]
+
+    public string ClassId { get; set; }
+    public StudentsApiClient()
+    {
+        studentUpDtos = new List<StudentUpDto>();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        uri = _navier.ToAbsoluteUri(_navier.Uri);
+        idClass = uri.Query.Replace("?", string.Empty);
+        await Get();
+    }
+    public async Task Get()
+    {
+        studentUpDtos = await studentsApiClient.GetStudentUpDto();
+    }
+
+
+    public async Task CreateStuden(Guid idSt)
+    {
+        //if (Guid.TryParse(idClass, out Guid result))
+        //{
+        //    createStudentInClassDto.idClass = new Guid(idClass);
+        //}
+        //else
+        //{
+        //    _navier.NavigateTo($"/api/ClassRoom?AddStudents");
+        //}
+
+        createStudentInClassDto.idStudent = idSt;
+        CreateConfirmation.show();
+    }
+    public async Task OnConfirmationCreate(bool deleteconfirmed)
+    {
+        if (deleteconfirmed)
+        {
+            await studentsApiClient.CreateStudentInClass(createStudentInClassDto);
+            await Get();
+            _toatser.ShowSuccess("Add Successfully To Class ");
+            _navier.NavigateTo("/");
+        }
+    }
+}

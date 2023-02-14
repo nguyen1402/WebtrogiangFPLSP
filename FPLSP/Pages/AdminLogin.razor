@@ -1,0 +1,41 @@
+﻿@page "/adminlogin"
+@layout MainLayout
+@using System.Security.Claims
+@using Blazored.LocalStorage
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using Microsoft.AspNetCore.Identity
+@inject ILocalStorageService _localStorageService;
+@inject IAuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IUserIdentityRepo IUser;
+@inject IHttpContextAccessor _http;
+
+
+@*<h3>Admin Login </h3>
+@*<a href="https://localhost:5001/google-login">Oke</a>
+<AuthorizeView>
+	<Authorized>
+      
+		
+	</Authorized>
+</AuthorizeView>
+<p>@authMessage</p>
+
+@if (claims.Count() > 0)
+{
+    <ul>
+        @foreach (var claim in claims)
+        {
+            <li>@claim.Type: @claim.Value</li>
+       
+        }
+    </ul>
+}*@
+
+@*<p>@surnameMessage</p>*@
+
+@code {
+    
+    
+}

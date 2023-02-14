@@ -1,0 +1,174 @@
+﻿@page "/specializedhep/{idBo}"
+
+@using FPLSP.Components
+@using FPLSP.Components.SpecializedCP
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.Specialized
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<div class="row pt-3">
+    <div class="col-md-4">
+        <h2>Chuyên ngành hẹp</h2>
+    </div>
+    <div class="col-md-6">
+        <SpecializedSearch OnSearch="SearchTask"></SpecializedSearch>
+    </div>
+    <div class="col-md-2 float-end">
+        <a class="btn btn-outline-primary" @onclick="() => RedirectToCreate()">+ Chuyên ngành hẹp</a>
+    </div>
+</div>
+@if (CPList == null || CPList.Count == 0)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+else
+{
+    <div class="row">
+        <table class="table">
+            <thead class="text-center">
+                <tr>
+                    <th scope="col">Mã</th>
+                    <th scope="col">Tên</th>
+                    <th scope="col">Trạng thái</th>
+                    <th scope="col">Chức năng</th>
+                </tr>
+            </thead>
+            <tbody class="text-center">
+                @foreach (var sj in CPList)
+                {
+                    <tr>
+
+                        <td class="align-middle">
+                            @sj.SpecializedCode
+                        </td>
+                        <td class="align-middle">
+                            @sj.SpecializationName
+                        </td>
+
+                        @if (@sj.Status == 0)
+                        {
+                            <td class="align-middle">
+                                Chưa đủ sinh viên
+                            </td>
+                        }
+                        else if (@sj.Status == 1)
+                        {
+                            <td class="align-middle">
+                                Chờ đi vào hoạt động
+                            </td>
+                        }
+                        else if (@sj.Status == 2)
+                        {
+                            <td class="align-middle">
+                                Ngưng hoạt động
+                            </td>
+                        }
+                        else
+                        {
+                            <td class="align-middle">
+                                Đang hoạt động
+                            </td>
+                        }
+                        <td class="align-middle">
+                            <div class="dropdown">
+                                <a class="dropdown-toggle" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                                    <li><a class="dropdown-item" @onclick="() => RedirectToDetails(sj.Id)">Chi tiết </a></li>
+                                    <li><a class="dropdown-item" @onclick="() => RedirectToUpdate(sj.Id)">Cập nhật </a></li>
+                                    <li><a class="dropdown-item" @onclick="() => RedirectToDelete(sj.Id)">Xóa </a></li>
+                                    <li><a class="dropdown-item" @onclick="() => RedirectToLectuterSpecialized(sj.Id)">Danh sách giảng viên </a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        }
+    </div>
+<div class="col-md-2 float-end">
+    <a class="btn btn-outline-primary" href="specialized">Về chuyên ngành</a>
+</div>
+<tfoot>
+    <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+</tfoot>
+}
+
+
+@code {
+    [Parameter]
+    public string idBo { get; set; }
+    public List<SpecializedDto> CPList { get; set; } = new List<SpecializedDto>();
+    public MetaData MetaData { get; set; } = new MetaData();
+
+    private SpecializedListSearch _parameters = new SpecializedListSearch();
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    [Inject]
+    public ISpecializedCPRepo _iSpecializedClient { get; set; }
+
+    public string Error { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        await GetTasks();
+    }
+
+    public async Task SearchTask(SpecializedListSearch specializedListSearch)
+    {
+        _parameters = specializedListSearch;
+        await GetTasks();
+    }
+    private void RedirectToDetails(Guid id)
+    {
+
+        var url = Path.Combine("/detailspecializedhep/", idBo.ToString(), id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToCreate()
+    {
+
+        var url = Path.Combine("/createspecializedhep/", idBo.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToUpdate(Guid id)
+    {
+
+        var url = Path.Combine("/updatespecializedhep/", idBo.ToString(), id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task RedirectToDelete(Guid id)
+    {
+        var url = Path.Combine("/deletespecializedhep/", idBo.ToString(), id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private void RedirectToLectuterSpecialized(Guid id)
+    {
+
+        var url = Path.Combine("/lectuterSpecialized/", idBo.ToString(), id.ToString());
+        NavigationManager.NavigateTo(url);
+    }
+    private async Task GetTasks()
+    {
+        try
+        {
+            var pagingResponse = await _iSpecializedClient.Gets(Guid.Parse(idBo), _parameters);
+            CPList = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _parameters.PageNumber = page;
+        await GetTasks();
+    }}

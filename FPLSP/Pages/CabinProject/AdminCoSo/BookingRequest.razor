@@ -1,0 +1,946 @@
+﻿@page "/BookingRequest/{IdTrainingFacilityNonDecrypt}"
+@using Blazored.Toast.Services;
+@using Blazored.Toast;
+@using FPLSP.Data.Securities;
+@using FPLSP.Repositories.Interfaces.CabinProject;
+@using FPLSP.Repositories.Interfaces;
+@using FPLSP.Server.Data.SeedWork;
+@using FPLSP.Server.Domain.Dtos;
+@using FPLSP.Server.Domain.Entities.CoresParts;
+@using FPLSP.Server.Domain.Entities.UserParts;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.BookingCabin;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.BookingRequest;
+@using FPLSP.Server.Infrastructure.ViewModels;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.Cabin;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.GroupCabin;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.ShiftOfCabin;
+@using FPLSP.Server.Infrastructure.ViewModels.CabinProject.TeachingSchedule;
+@using FPLSP.Components.CabinProject;
+@using System.Text;
+@using System.Globalization;
+@using Microsoft.AspNetCore.SignalR.Client;
+@using System.Diagnostics;
+@using System.Net.Mail;
+@using System.Net;
+@using Microsoft.AspNetCore.Hosting;
+@inject IJSRuntime JSRuntime
+
+@attribute [Authorize(Roles = "Staff,DirectorOfTraining")]
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" />
+<div class="baongoai" style="@((_disabletab == "block") ? "pointer-events: none;opacity: 0.4;" : "")">
+    <div class="col-4 notice-envelope">
+        <section>
+            <h2 class="heading-line">Yêu cầu xếp cabin của giảng viên</h2>
+            <BookingRequestSearch _idTrainingFacility="@IdTrainingFacility" OnSearch="SearchTask"></BookingRequestSearch>
+            <div class="notice-envelope1">
+                <div class="notification-ui_dd-content">
+                    @if (_listBookingRequest == null)
+                    {
+                        <LoadingIndicator></LoadingIndicator>
+                    }
+                    else if (_listBookingRequest.Where(c => c.Status != 1 && _listLectureSearchVM.Where(l => l.Status != 1).Select(l => l.Id).Contains(c.IdLectuter) && (_teachingScheduleVMs.Any(x => x.SubjectId == c.SubjectId && x.ClassId == c.ClassId && x.IdLecturter == c.IdLectuter && x.TeachingDay.Add(_shiftOfCabinVMs.FirstOrDefault(s => s.Id == x.IdShift).StartTime) == c.StartTime && x.TeachingDay.Add(_shiftOfCabinVMs.FirstOrDefault(s => s.Id == x.IdShift).EndTime) == c.EndTime))).GroupBy(g => new { g.SubjectId, g.ClassId, g.IdLectuter, g.StartTime, g.EndTime }).ToList().Count == 0)
+                    {
+                        <h5 style="text-align:center;">Không có yêu cầu chọn cabin nào</h5>
+                    }
+                    else if (_listBookingRequest.Where(c => c.Status != 1 && _listLectureSearchVM.Where(l => l.Status != 1).Select(l => l.Id).Contains(c.IdLectuter) && (_teachingScheduleVMs.Any(x => x.SubjectId == c.SubjectId && x.ClassId == c.ClassId && x.IdLecturter == c.IdLectuter && x.TeachingDay.Add(_shiftOfCabinVMs.FirstOrDefault(s => s.Id == x.IdShift).StartTime) == c.StartTime && x.TeachingDay.Add(_shiftOfCabinVMs.FirstOrDefault(s => s.Id == x.IdShift).EndTime) == c.EndTime))).GroupBy(g => new { g.SubjectId, g.ClassId, g.IdLectuter, g.StartTime, g.EndTime }).ToList().Count > 0)
+                    {
+                        var listbookingRequests = new List<BookingRequestViewModel>();
+                        int index = 0;
+                        foreach (var bookigroup in _listBookingRequest.Where(c => c.Status != 1 && _listLectureSearchVM.Where(l => l.Status != 1).Select(l => l.Id).Contains(c.IdLectuter) && (_teachingScheduleVMs.Any(x => x.SubjectId == c.SubjectId && x.ClassId == c.ClassId && x.IdLecturter == c.IdLectuter && x.TeachingDay.Add(_shiftOfCabinVMs.FirstOrDefault(s => s.Id == x.IdShift).StartTime) == c.StartTime && x.TeachingDay.Add(_shiftOfCabinVMs.FirstOrDefault(s => s.Id == x.IdShift).EndTime) == c.EndTime))).GroupBy(g => new { g.SubjectId, g.ClassId, g.IdLectuter, g.StartTime, g.EndTime }).ToList())
+                        {
+                            listbookingRequests.Add(bookigroup.OrderByDescending(c => c.FeedBackTime).FirstOrDefault());
+                        }
+                        if (_bookingRequestSearch.Status != null)
+                        {
+                            if (_bookingRequestSearch.Status == 4)
+                            {
+                                listbookingRequests = listbookingRequests.Where(c => c.Status != 1 && c.EndTime <= DateTime.Now).ToList();
+                            }
+                            else
+                            {
+                                listbookingRequests = listbookingRequests.Where(c => c.Status == _bookingRequestSearch.Status && c.EndTime > DateTime.Now).ToList();
+                            }
+                        }
+
+                        var data = listbookingRequests.Skip((_bookingRequestSearch.PageNumber - 1) * _bookingRequestSearch.PageSize).Take(_bookingRequestSearch.PageSize).ToList();
+                        var lstpage = new PageList<BookingRequestViewModel>(data,
+                        listbookingRequests.Count(),
+                        _bookingRequestSearch.PageNumber,
+                        _bookingRequestSearch.PageSize);
+                        listbookingRequests = lstpage.Items;
+                        MetaData = lstpage.MetaData;
+                        foreach (var item in listbookingRequests.OrderByDescending(c => c.SendingTime))
+                        {
+                            index++;
+                            var shift = _shiftOfCabinVMs.FirstOrDefault(c => c.StartTime == item.StartTime.TimeOfDay && c.EndTime == item.EndTime.TimeOfDay);
+                            if (item.EndTime > DateTime.Now)
+                            {
+                                <div @onclick="()=> ClickNotify(item)" type="button" class="notification-list notification-list--unread row">
+                                    <p class="indexs">@index</p>
+                                    <div class="notification-list_content col-lg-11">
+                                        <div class="notification-list_detail">
+                                            <p style="font-size: inherit;">
+                                                <b>
+                                                    @(
+                                                        _LectureVM.Where(c => c.Id == item.IdLectuter && c.Status != 1).Select(c => c.Email).FirstOrDefault().ToString().Split("@")[0]
+                                                        )
+                                                </b> @item.ContentOfRequest ngày @item.StartTime.ToString("dd") tháng @item.StartTime.ToString("MM")
+                                            </p>
+                                            <p style="font-size: inherit;">
+                                                <b>@_specializedDtos.FirstOrDefault(x=>x.Id == (_subjectClassUPs.Where(c=>c.ClassId == item.ClassId && c.SubjectId == item.SubjectId && c.Status != 1).FirstOrDefault().SpecializedOfClass)).SpecializedCode: </b>Lớp: @(
+                                    _clasVM.Where(c => c.Id == item.ClassId && c.Status != 1).Select(c => c.ClassroomName).FirstOrDefault()
+                                    ) - Môn: @_subjectDtos.FirstOrDefault(c=>c.Id == item.SubjectId).SubjectCode (@(item.StartTime.ToString("dddd", new CultureInfo("vi-VN")))-@(
+                                    shift.ShiftName
+                                    ))
+                                            </p>
+                                        </div>
+                                    </div>
+                                    @if (item.Status == 0)
+                                    {
+
+                                        <div class="col-lg-1 d-flex justify-content-end pt-3">
+                                            <span style="height:0.4em;padding: 0.4rem!important;" class="translate-middle bg-danger border border-light rounded-circle">
+                                                <span class="visually-hidden">New alerts</span>
+                                            </span>
+                                        </div>
+                                    }
+                                    @if (item.Status == 2)
+                                    {
+                                        <div class="col-lg-1 d-flex justify-content-end pt-3">
+
+                                            <span style="height:0.4em;padding: 0.4rem!important;background-color: yellowgreen;" class="translate-middle border-light rounded-circle">
+                                                <span class="visually-hidden">Processed alerts</span>
+                                            </span>
+                                        </div>
+                                    }
+                                    @if (item.Status == 3)
+                                    {
+                                        <div class="col-lg-1 d-flex justify-content-end pt-3">
+
+                                            <span style="height:0.4em;padding: 0.4rem!important;" class="translate-middle bg-warning border border-light rounded-circle">
+                                                <span class="visually-hidden">Cancelled alerts</span>
+                                            </span>
+                                        </div>
+                                    }
+                                    <div class="font-sendingtime pt-3"><div>@item.SendingTime.ToString("HH:mm") @item.SendingTime.ToString("dd/MM/yyyy")</div></div>
+
+                                </div>
+                            }
+                            else
+                            {
+                                <div @onclick="()=> MessError()" type="button" class="notification-list notification-list--unread row hethan">
+                                    <p class="indexs">@index</p>
+                                    <div class="notification-list_content col-lg-11">
+                                        <div class="notification-list_detail">
+                                            <p style="font-size: inherit;">
+                                                <b>
+                                                    @(
+                                                        _LectureVM.Where(c => c.Id == item.IdLectuter && c.Status != 1).Select(c => c.Email).FirstOrDefault().ToString().Split("@")[0]
+                                                        )
+                                                </b> @item.ContentOfRequest ngày @item.StartTime.ToString("dd") tháng @item.StartTime.ToString("MM")
+                                            </p>
+                                            <p style="font-size: inherit;">
+                                                <b>@_specializedDtos.FirstOrDefault(x=>x.Id == (_subjectClassUPs.Where(c=>c.ClassId == item.ClassId && c.SubjectId == item.SubjectId && c.Status != 1).FirstOrDefault().SpecializedOfClass)).SpecializedCode: </b>Lớp: @(
+                                    _clasVM.Where(c => c.Id == item.ClassId && c.Status != 1).Select(c => c.ClassroomName).FirstOrDefault()
+                                    ) - Môn: @_subjectDtos.FirstOrDefault(c=>c.Id == item.SubjectId).SubjectCode (@item.StartTime.ToString("dddd", new CultureInfo("vi-VN"))-@(shift.ShiftName
+                                    ))
+                                            </p>
+                                        </div>
+                                    </div>
+                                    @if (item.Status == 0)
+                                    {
+
+                                        <div class="col-lg-1 d-flex justify-content-end pt-3">
+                                            <span style="height:0.4em;padding: 0.4rem!important;" class="translate-middle bg-danger border border-light rounded-circle">
+                                                <span class="visually-hidden">New alerts</span>
+                                            </span>
+                                        </div>
+                                    }
+                                    @if (item.Status == 2)
+                                    {
+                                        <div class="col-lg-1 d-flex justify-content-end pt-3">
+
+                                            <span style="height:0.4em;padding: 0.4rem!important;background-color: yellowgreen;" class="translate-middle border-light rounded-circle">
+                                                <span class="visually-hidden">Processed alerts</span>
+                                            </span>
+                                        </div>
+                                    }
+                                    @if (item.Status == 3)
+                                    {
+                                        <div class="col-lg-1 d-flex justify-content-end pt-3">
+
+                                            <span style="height:0.4em;padding: 0.4rem!important;" class="translate-middle bg-warning border border-light rounded-circle">
+                                                <span class="visually-hidden">Cancelled alerts</span>
+                                            </span>
+                                        </div>
+                                    }
+                                    <div class="font-sendingtime pt-3"><div>@item.SendingTime.ToString("HH:mm") @item.SendingTime.ToString("dd/MM/yyyy")</div></div>
+
+                                </div>
+                            }
+                        }
+                    }
+                </div>
+
+            </div>
+
+        </section>
+        <div class="toast align-items-center undo-bag" style="display:@_undo; width:fit-content;" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex row" style="margin:0;">
+                <div class="toast-body col-lg-8" style="padding-left: 20px;margin:0;width:fit-content;">
+                    Đã @_xephuy cabin giúp  <b>@_lecturename</b>
+                </div>
+                <button @onclick="Undo" class="undo col-lg-3" style="width:fit-content;">Hoàn tác</button>
+                <button type="button col-lg-1" @onclick="@Close" class="btn-close m-auto close-undo" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+        <div class="paging">
+            <div class="card-footer text-muted">
+                <span>
+                    <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+                </span>
+
+            </div>
+        </div>
+    </div>
+    <EditForm Model="_bookingCabinVM">
+        <div class="baophong col-lg-7 notice-room">
+            <div class=" row">
+                <h3 class="name-cabins">@_titleRoom</h3>
+
+                @if (_shiftOfCabinVMs != null)
+                {
+                    <h5 style="text-align:center;"><i class="fa-regular fa-calendar" style="color: #0d4df0e3;"></i> @_startTime.ToString("dddd", new CultureInfo("vi-VN")), ngày @_startTime.ToString("dd") tháng @_startTime.ToString("MM") <i class="fa-regular fa-calendar" style="color: #0d4df0e3;"></i> </h5>
+                    <h5 style="text-align:center;">@(_shiftName): @_startTime.ToString("HH:mm") - @_endTime.ToString("HH:mm")</h5>
+                }
+
+                @if (_idSubject != Guid.Empty && _idClass != Guid.Empty && _idShift != Guid.Empty && _idLecture != Guid.Empty)
+                {
+                    if (_listBookingCabinVM.Any(c => c.Status == 0 && c.SubjectId == _idSubject && c.ClassId == _idClass && c.IdShift == _idShift && c.IdLectuter == _idLecture && c.DateCreated == new DateTime(_startTime.Year, _startTime.Month, _startTime.Day)))
+                    {
+                        _lecturename = _LectureVM.FirstOrDefault(c => c.Id == _idLecture).Email.ToString().Split("@")[0];
+                        var idcabin = _listBookingCabinVM.FirstOrDefault(c => c.SubjectId == _idSubject && c.Status == 0 && c.ClassId == _idClass && c.IdShift == _idShift && c.IdLectuter == _idLecture && c.DateCreated == new DateTime(_startTime.Year, _startTime.Month, _startTime.Day)).IdCabin;
+                        <h5 style="margin: 10px 0 5px 25px;  text-align:center;">
+                            Cabin được chọn cho <a style="text-decoration: underline;">@_lecturename</a>
+                        </h5>
+
+                        <div class="container">
+                            <div class="card">
+                                <h2 class="title">@_cabinViewModels.FirstOrDefault(c=>c.Id == idcabin).CabinName</h2>
+                                <div class="card-hidden">
+                                    <h2 style="line-height:55px;">@_cabinViewModels.FirstOrDefault(c=>c.Id == idcabin).CabinName</h2>
+                                    <b><b style="text-decoration:underline;">GV</b>:  @_lecturename</b>
+                                    <p><span>Lớp</span>:  @_clasVM.FirstOrDefault(c=>c.Id == _idClass).ClassroomName<br><span>Môn</span>: @_subjectDtos.FirstOrDefault(c=>c.Id == _idSubject).SubjectCode</p>
+                                    <a class="button btn btn-danger my-2" @onclick="()=>ClickCloseCabin(idcabin)">Hủy cabin</a>
+                                </div>
+
+                            </div>
+                            <div class="card-border"></div>
+                        </div>
+                    }
+                    else
+                    {
+                        if (_cabinViewModels.Where(c => c.Status != 1).ToList().Count > 0)
+                        {
+                            @foreach (var item in _specializedDtos.Where(c => _groupCabinViewModels.Where(x => x.Status != 1).Select(x => x.IdSpec).Distinct().Contains(c.Id) && c.Status != 1))
+                            {
+                                if ((_cabinViewModels.Where(c => (_groupCabinViewModels.Where(x => x.IdSpec == item.Id && c.Status != 1).Select(x => x.IdCabin)).Contains(c.Id) && ((_listBookingCabinVM.Any(y => y.IdCabin == c.Id && y.Status == 1) || !_listBookingCabinVM.Any(z => z.IdCabin == c.Id && z.SubjectId == _idSubject && z.ClassId == _idClass && z.IdShift == _idShift))))).ToList().Count > 0)
+                                {
+                                    <hr class="hr-room" />
+                                    <h5 style="text-align: center;">
+                                        @item.SpecializationName
+                                    </h5>
+                                }
+                                if (_cabinViewModels.Where(c => (_groupCabinViewModels.Where(x => x.IdSpec == item.Id && x.Status != 1).Select(x => x.IdCabin)).Contains(c.Id) && c.Status != 1).OrderBy(c => c.CabinName).ToList().Count > 0)
+                                {
+                                    @foreach (var item1 in _cabinViewModels.Where(c => (_groupCabinViewModels.Where(x => x.IdSpec == item.Id && x.Status != 1).Select(x => x.IdCabin)).Contains(c.Id) && c.Status != 1).OrderBy(c => c.CabinName))
+                                    {
+                                        @if (!_listBookingCabinVM.Any(c => c.Status == 0 && c.IdCabin == item1.Id && c.IdShift == _idShift && c.DateCreated == new DateTime(_startTime.Year, _startTime.Month, _startTime.Day)))
+                                        {
+                                            <button @onclick="()=>ClickCabin(item1.Id)" class="roomRequest">
+                                                <span><b style="font-size:1.3em;">@item1.CabinName</b></span>
+                                                <h4 class="my-2 mx-2">
+                                                    <i class="fas fa-chalkboard-teacher mx-2" style="color: #fff;"></i>
+                                                </h4>
+                                            </button>
+                                        }
+                                    }
+                                }
+                            }
+                            if ((_cabinViewModels.Any(x => !_groupCabinViewModels.Where(c => c.Status != 1).Select(m => m.IdCabin).Contains(x.Id) && x.Status != 1)))
+                            {
+                                <hr class="hr-room" />
+                                <h5 style="text-align: center;">
+                                    Chuyên ngành khác
+                                </h5>
+                                @foreach (var item1 in _cabinViewModels.Where(x => !_groupCabinViewModels.Where(c => c.Status != 1).Select(m => m.IdCabin).Contains(x.Id) && x.Status != 1).OrderBy(c => c.CabinName))
+                                {
+                                    @if (!_listBookingCabinVM.Any(c => c.Status == 0 && c.IdCabin == item1.Id && c.IdShift == _idShift && c.DateCreated == new DateTime(_startTime.Year, _startTime.Month, _startTime.Day)))
+                                    {
+                                        <button @onclick="()=>ClickCabin(item1.Id)" class="roomRequest">
+                                            <span><b style="font-size:1.3em;">@item1.CabinName</b></span>
+                                            <h4 class="my-2 mx-2">
+                                                <i class="fas fa-chalkboard-teacher mx-2" style="color: #fff;"></i>
+                                            </h4>
+                                        </button>
+                                    }
+                                }
+
+                            }
+                        }
+                        else
+                        {
+                            <h5 style="text-align:center;">Không có cabin nào còn trống</h5>
+                        }
+
+                    }
+                }
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+<ConfirmBookingRequest ConfirmationMessage="Thông tin chọn cabin:"
+                       ConfirmationTitle="Thông tin chọn cabin"
+                       IdCabin="@_idCabin"
+                       IdClass="@_idClass"
+                       IdLecturer="@_idLecture"
+                       ShiftName="@_shiftName"
+                       Day="@_startTime"
+                       ConfirmationChanged="OnConfirmationSubmit" @ref="Confirmsubmit"></ConfirmBookingRequest>
+
+<ConfirmBookingRequest ConfirmationMessage="Bạn muốn hủy cabin:"
+                       ConfirmationTitle="Thông tin hủy cabin"
+                       IdCabin="@_idCabin"
+                       IdClass="@_idClass"
+                       IdLecturer="@_idLecture"
+                       ShiftName="@_shiftName"
+                       Day="@_startTime"
+                       CheckConfirm="1"
+                       ConfirmationChanged="OnConfirmationClose" @ref="Confirmclose"></ConfirmBookingRequest>
+@code {
+    [Parameter]
+    public string IdTrainingFacilityNonDecrypt { get; set; }
+    [Parameter]
+    public string IdTrainingFacility { get; set; }
+
+    [Inject] private IBookingRequestRepo _iBookingRequestRepo { get; set; }
+    [Inject] private IBookingCabinApiClient _ibookingCabinApiClient { get; set; }
+    [Inject] private ICabinRepo _icabinRepo { get; set; }
+    [Inject] private ISubjectsSpecializedUPRepo _iSubjectsSpecializedUP { get; set; }
+    [Inject] private ILecturersCPRepo _ilecturersCPRepo { get; set; }
+    [Inject] private ITaskRepositories<ClassUPViewModel> _iClassRepo { get; set; }
+    [Inject] private ISpecializedUPRepo _ispecializedUPRepo { get; set; }
+    [Inject] private IClassSubjectApiClient _iclassSubjectApi { get; set; }
+    [Inject] private ISubjectUPRepo _isubjectUPRepo { get; set; }
+    [Inject] private IToastService _itoastService { get; set; }
+    [Inject] private IGroupCabinRepo _igroupCabinRepo { get; set; }
+    [Inject] private IShiftOfCabinApiClient _ishiftOfCabinApiClient { get; set; }
+    [Inject] private ITeachingScheduleApiClient _teachingScheduleApiClient { get; set; }
+    [Inject] private IHostingEnvironment _hostingEnvironment { get; set; }
+
+    [Inject] private CryptoServices _cryptoServices { get; set; }
+    [Inject] SweetAlertService Swal { get; set; }
+
+    private BookingRequestSearchViewModel _bookingRequestSearch = new BookingRequestSearchViewModel();
+    private List<BookingRequestViewModel> _listBookingRequest;
+    private List<LecturersCP> _LectureVM = new List<LecturersCP>();
+    private List<LecturersCP> _listLectureSearchVM = new List<LecturersCP>();
+    private List<ClassUPViewModel> _clasVM = new List<ClassUPViewModel>();
+    private List<SpecializedDto> _specializedDtos = new List<SpecializedDto>();
+    private List<SubjectClassUP> _subjectClassUPs = new List<SubjectClassUP>();
+    private List<SubjectDto> _subjectDtos = new List<SubjectDto>();
+    private List<GroupCabinViewModel> _groupCabinViewModels = new List<GroupCabinViewModel>();
+    private List<ShiftOfCabinVM> _shiftOfCabinVMs;
+    private List<CabinViewModel> _cabinViewModels = new List<CabinViewModel>();
+    private BookingCabinVM _bookingCabinVM = new BookingCabinVM();
+    private List<BookingCabinVM> _listBookingCabinVM = new List<BookingCabinVM>();
+    private List<TeachingScheduleVM> _teachingScheduleVMs = new List<TeachingScheduleVM>();
+
+    private Guid _idSubject;
+    private Guid _idLecture;
+    private Guid _idClass;
+    private Guid _idCabin;
+    private Guid _idBookingRequest;
+    private Guid _idShift;
+
+    private Guid _newIdCabin;
+    private Guid _newIdRequest;
+    private int _statusCabinUndo = 0;
+
+    private DateTime _monday = new();
+    private DateTime _sunday = new();
+
+    private DateTime _startTime = DateTime.Now;
+    private DateTime _endTime = DateTime.Now;
+    private DateTime _sendingTime = DateTime.Now;
+    private string _shiftName = "Ca ";
+    private string? _textsearch = "";
+    private string? _contenFeedBack = "Đã được chọn giúp cabin";
+    private string _titleRoom = "Danh sách cabin còn trống";
+    private string _lecturename = "";
+    private string _undo = "none";
+    private string _xephuy = "";
+    private bool _undoRequest = false;
+
+    private string _disabletab = "none";
+
+    System.Timers.Timer t;
+
+    public MetaData MetaData { get; set; } = new MetaData();
+    protected ConfirmBookingRequest Confirmsubmit { get; set; }
+    protected ConfirmBookingRequest Confirmclose { get; set; }
+
+    private async Task AddCabin()//Chọn cabin từ Request
+    {
+        _disabletab = "block";
+        _newIdCabin = Guid.NewGuid();
+        _newIdRequest = Guid.NewGuid();
+        bool result = false;
+        bool resultadd = false;
+        bool resultcreate = false;
+        if (_listBookingCabinVM.Any(c => c.SubjectId == _idSubject && c.ClassId == _idClass && c.IdShift == _idShift && c.IdLectuter == _idLecture && c.IdCabin == _idCabin && c.DateCreated == new DateTime(_startTime.Year, _startTime.Month, _startTime.Day)))
+        {
+            _statusCabinUndo = 2;
+            var bookingcabin = _listBookingCabinVM.FirstOrDefault(c => c.SubjectId == _idSubject && c.ClassId == _idClass && c.IdShift == _idShift && c.IdLectuter == _idLecture && c.IdCabin == _idCabin && c.DateCreated == new DateTime(_startTime.Year, _startTime.Month, _startTime.Day));
+            var bookingcabinUpdate = new BookingCabinUpdateVM
+                {
+                    SubjectId = bookingcabin.SubjectId,
+                    ClassId = bookingcabin.ClassId,
+                    IdCabin = bookingcabin.IdCabin,
+                    IdShift = bookingcabin.IdShift,
+                    DateCreated = new DateTime(_startTime.Year, _startTime.Month, _startTime.Day),
+                    CheckinTime = _startTime,
+                    CheckoutTime = _endTime,
+                    Note = bookingcabin.Note,
+                    Status = 0,
+                    IdLectuter = bookingcabin.IdLectuter
+                };
+            result = await _ibookingCabinApiClient.Update(bookingcabin.Id, _idCabin, _idSubject, _idClass, _idShift, bookingcabinUpdate);
+        }
+        else
+        {
+            if (_statusCabinUndo == 0)
+            {
+                _statusCabinUndo = 1;
+            }
+            var bookingCabin = new BookingCabinCreateVM
+                {
+                    Id = _newIdCabin,
+                    IdLectuter = _idLecture,
+                    SubjectId = _idSubject,
+                    ClassId = _idClass,
+                    CheckinTime = _startTime,
+                    CheckoutTime = _endTime,
+                    DateCreated = new DateTime(_startTime.Year, _startTime.Month, _startTime.Day),
+                    IdShift = _idShift,
+                    IdCabin = _idCabin,//Id của cabin sau khi chọn
+                    Note = "Được chọn giúp",
+                    Status = 0
+                };
+            resultadd = await _ibookingCabinApiClient.Add(bookingCabin);
+
+        }
+        if (result || resultadd)
+        {
+            if (await CreateBookingRequest(2))
+            {
+                _itoastService.ShowSuccess("Chọn cabin thành công");
+                _titleRoom = "Thông tin cabin đã chọn";
+                _xephuy = "xếp";
+                _undo = "block";
+                await TimeLoadUndo();
+            }
+            else
+            {
+                _itoastService.ShowError("Chọn cabin thất bại");
+            }
+        }
+
+        await GetTasks();
+    }
+
+    private async Task<bool> CreateBookingRequest(int status)
+    {
+        var booking = new BookingRequestCreateViewModel
+            {
+                Id = _newIdRequest,
+                ContentOfRequest = "Đã được chọn giúp cabin",
+                SendingTime = _sendingTime,
+                IdLectuter = _idLecture,
+                SubjectId = _idSubject,
+                ClassId = _idClass,
+                ContenOfFeedBack = _contenFeedBack,
+                Status = status,
+                StartTime = _startTime,
+                FeedBackTime = DateTime.Now,
+                EndTime = _endTime
+            };
+        if (status == 3)
+        {
+            booking.ContenOfFeedBack = "Hủy cabin vì: " + _contenFeedBack;
+        }
+
+        var result = await _iBookingRequestRepo.CreateBookingRequest(booking);// SignalR
+        return result;
+    }
+
+    private async Task SendEmail()
+    {
+        try
+        {
+            //Gửi Email
+            string to, from, pass, email;
+            to = _LectureVM.FirstOrDefault(c => c.Id == _idLecture).Email;
+
+            from = "truongnvph26436@fpt.edu.vn";
+            string rootpath = System.IO.Path.Combine(_hostingEnvironment.ContentRootPath, @"wwwroot\ViewSendEmail\ViewSendEmail.html");
+            email = ReadEmailTemplate(rootpath);
+            email = email.Replace("#userName#", _LectureVM.FirstOrDefault(c => c.Id == _idLecture).Email.ToString().Split("@")[0]);
+            email = email.Replace("#feedBackConTent#", _contenFeedBack);
+            email = email.Replace("#classNameSubjectCode#", _clasVM.FirstOrDefault(c => c.Id == _idClass).ClassroomName + "-" + _subjectDtos.FirstOrDefault(c => c.Id == _idSubject).SubjectCode);
+            email = email.Replace("#subjectName#", _subjectDtos.FirstOrDefault(c => c.Id == _idSubject).SubjectName);
+            email = email.Replace("#shiftTimeStart#", _startTime.ToString("HH:mm"));
+            email = email.Replace("#day#", _startTime.ToString("dddd", new CultureInfo("vi-VN")));
+            email = email.Replace("#shiftTimeEnd#", _endTime.ToString("HH:mm"));
+            email = email.Replace("#teachingDay#", _startTime.ToString("dd/MM/yyyy"));
+            email = email.Replace("#cabin#", _cabinViewModels.FirstOrDefault(c => c.Id == _idCabin).CabinName);
+
+            AlternateView alternateView = AlternateView.CreateAlternateViewFromString(email, null, "text/html");
+
+            pass = "yclnvhixhvxuygna";
+
+            MailMessage mailMessage = new MailMessage();
+
+            mailMessage.To.Add(to);
+            mailMessage.From = new MailAddress(from);
+            mailMessage.Subject = "THÔNG BÁO: XẾP GIÚP CABIN";
+            mailMessage.Body = email;
+            mailMessage.IsBodyHtml = false;
+            mailMessage.AlternateViews.Add(alternateView);
+
+            SmtpClient smtp = new SmtpClient("smtp.gmail.com");
+
+            smtp.UseDefaultCredentials = false;
+            smtp.EnableSsl = true;
+            smtp.Port = 587;
+            smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
+            smtp.Credentials = new NetworkCredential(from, pass);
+
+            smtp.Send(mailMessage);
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    //Đọc định dạng html -> template email
+    private string ReadEmailTemplate(string template)
+    {
+        string result = "";
+        StreamReader reader = new(template);
+        result = reader.ReadToEnd();
+        reader.Close();
+        return result;
+    }
+
+    //Tắt Undo sau 5 giây
+    private async Task TimeLoadUndo()
+    {
+        t = new(10000);
+        t.Elapsed += async (sender, EventArgs) => await CloseUndo();
+        t.Start();
+    }
+
+    private async Task CloseUndo()
+    {
+        _undo = "none";
+        t.Stop();
+        await this.InvokeAsync(() => this.StateHasChanged());
+        if (!_undoRequest)
+        {
+            await SendEmail();
+        }
+    }
+
+    private async Task Close()
+    {
+        _undo = "none";
+        if (!_undoRequest)
+        {
+            await SendEmail();
+        }
+    }
+
+    private async Task Undo()
+    {
+        _undoRequest = true;
+        _undo = "none";
+        if (_statusCabinUndo == 1)
+        {
+            var resultadd = await _ibookingCabinApiClient.UndoDelete(_newIdCabin);
+            if (resultadd)
+            {
+                var resultRequest = await _iBookingRequestRepo.DeleteBookingRequest(_newIdRequest);
+                if (resultRequest)
+                {
+                    _itoastService.ShowSuccess("Hoàn tác thành công");
+                }
+                else
+                {
+                    _itoastService.ShowSuccess("Hoàn tác thât bại");
+                }
+            }
+            else
+            {
+                _itoastService.ShowSuccess("Hoàn tác thât bại");
+            }
+        }
+        else if (_statusCabinUndo == 2)
+        {
+            var bookingcabin = _listBookingCabinVM.FirstOrDefault(c => c.Status == 0 && c.IdCabin == _idCabin && c.SubjectId == _idSubject && c.ClassId == _idClass && c.IdShift == _idShift && c.IdLectuter == _idLecture && c.DateCreated == new DateTime(_startTime.Year, _startTime.Month, _startTime.Day));
+            var bookingcabinUpdate = new BookingCabinUpdateVM
+                {
+                    SubjectId = bookingcabin.SubjectId,
+                    ClassId = bookingcabin.ClassId,
+                    IdCabin = bookingcabin.IdCabin,
+                    IdShift = bookingcabin.IdShift,
+                    DateCreated = new DateTime(_startTime.Year, _startTime.Month, _startTime.Day),
+                    CheckinTime = _startTime,
+                    CheckoutTime = _endTime,
+                    Note = bookingcabin.Note,
+                    Status = 1,
+                    IdLectuter = bookingcabin.IdLectuter
+                };
+            var result = await _ibookingCabinApiClient.Update(bookingcabin.Id, bookingcabin.IdCabin, _idSubject, _idClass, _idShift, bookingcabinUpdate);
+            if (result)
+            {
+                var resultRequest = await _iBookingRequestRepo.DeleteBookingRequest(_newIdRequest);
+                if (resultRequest)
+                {
+                    _itoastService.ShowSuccess("Hoàn tác thành công");
+                }
+                else
+                {
+                    _itoastService.ShowSuccess("Hoàn tác thât bại");
+                }
+            }
+            else
+            {
+                _itoastService.ShowSuccess("Hoàn tác thât bại");
+            }
+        }
+        else if (_statusCabinUndo == 3)
+        {
+            var bookingcabin = _listBookingCabinVM.FirstOrDefault(c => c.Status == 1 && c.IdCabin == _idCabin && c.SubjectId == _idSubject && c.ClassId == _idClass && c.IdShift == _idShift && c.IdLectuter == _idLecture && c.DateCreated == new DateTime(_startTime.Year, _startTime.Month, _startTime.Day));
+            var bookingcabinUpdate = new BookingCabinUpdateVM
+                {
+                    SubjectId = bookingcabin.SubjectId,
+                    ClassId = bookingcabin.ClassId,
+                    IdCabin = bookingcabin.IdCabin,
+                    IdShift = bookingcabin.IdShift,
+                    DateCreated = new DateTime(_startTime.Year, _startTime.Month, _startTime.Day),
+                    CheckinTime = _startTime,
+                    CheckoutTime = _endTime,
+                    Note = bookingcabin.Note,
+                    Status = 0,
+                    IdLectuter = bookingcabin.IdLectuter
+                };
+            var result = await _ibookingCabinApiClient.Update(bookingcabin.Id, bookingcabin.IdCabin, _idSubject, _idClass, _idShift, bookingcabinUpdate);
+            if (result)
+            {
+                var resultRequest = await _iBookingRequestRepo.DeleteBookingRequest(_newIdRequest);
+                if (resultRequest)
+                {
+                    _itoastService.ShowSuccess("Hoàn tác thành công");
+                }
+                else
+                {
+                    _itoastService.ShowSuccess("Hoàn tác thât bại");
+                }
+            }
+            else
+            {
+                _itoastService.ShowSuccess("Hoàn tác thât bại");
+            }
+        }
+
+    }
+
+    public async Task SearchTask(BookingRequestSearchViewModel bookingRequestSearch)
+    {
+        _bookingRequestSearch = bookingRequestSearch;
+        if (bookingRequestSearch.stringSearch != null)
+        {
+            _textsearch = bookingRequestSearch.stringSearch;
+        }
+        await GetTasks();
+    }
+
+
+    private async Task MessError()
+    {
+        await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Thông báo",
+                Text = $"Yêu cầu xếp cabin đã hết hạn",
+                Icon = SweetAlertIcon.Warning,
+                ConfirmButtonText = "Xác Nhận",
+            });
+    }
+
+    private async Task ClickNotify(BookingRequestViewModel bookingRequestVM)
+    {
+        _idSubject = bookingRequestVM.SubjectId;
+        _idClass = bookingRequestVM.ClassId;
+        _idLecture = bookingRequestVM.IdLectuter;
+        _idBookingRequest = bookingRequestVM.Id;
+        _startTime = bookingRequestVM.StartTime;
+        _endTime = bookingRequestVM.EndTime;
+        _sendingTime = bookingRequestVM.SendingTime;
+        if (bookingRequestVM.Status == 2)
+        {
+            _titleRoom = "Thông tin cabin đã chọn";
+        }
+        else
+        {
+            _titleRoom = "Danh sách cabin còn trống";
+        }
+        if (_shiftOfCabinVMs != null)
+        {
+            try
+            {
+                _shiftName = _shiftOfCabinVMs.FirstOrDefault(c => c.StartTime == _startTime.TimeOfDay && c.EndTime == _endTime.TimeOfDay).ShiftName;
+                _idShift = _shiftOfCabinVMs.FirstOrDefault(c => c.StartTime == _startTime.TimeOfDay && c.EndTime == _endTime.TimeOfDay).Id;
+            }
+            catch (Exception)
+            {
+
+                _itoastService.ShowError("Đã xảy ra lỗi vui lòng kiểm tra Ca học");
+            }
+        }
+    }
+
+
+    private async Task ClickCabin(Guid idCabin)
+    {
+        _idCabin = idCabin;
+
+        Confirmsubmit.Day = _startTime;
+        Confirmsubmit.IdCabin = _idCabin;
+        Confirmsubmit.IdClass = _idClass;
+        Confirmsubmit.IdLecturer = _idLecture;
+        Confirmsubmit.IdSubject = _idSubject;
+        Confirmsubmit.ShiftName = _shiftName;
+        Confirmsubmit.show();
+    }
+
+    private async Task ClickCloseCabin(Guid idCabin)
+    {
+        _idCabin = idCabin;
+        Confirmclose.Day = _startTime;
+        Confirmclose.IdCabin = _idCabin;
+        Confirmclose.IdClass = _idClass;
+        Confirmclose.IdLecturer = _idLecture;
+        Confirmclose.IdSubject = _idSubject;
+        Confirmclose.ShiftName = _shiftName;
+        Confirmclose.show();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        IdTrainingFacility = _cryptoServices.Decrypt(IdTrainingFacilityNonDecrypt.Replace("cabin", "/"));
+        //
+        try
+        {
+            //Check thay đổi của BookingRequest
+            string url = "http://localhost:5001/SignalRCabinHub";
+            HubConnection _connection = null;
+            bool isConnected = false;
+            string connectionStatus = "Closed";
+            _connection = new HubConnectionBuilder()
+                .WithUrl(url)
+                .Build();
+
+            await _connection.StartAsync();
+            isConnected = true;
+            connectionStatus = "Connected :-)";
+
+            _connection.Closed += async (s) =>
+            {
+                isConnected = false;
+                connectionStatus = "Disconnected";
+                await _connection.StartAsync();
+                isConnected = true;
+            };
+
+            _connection.On<string>("SignalRBookingRequests", async (res) =>
+            {
+                if (res == "Done")
+                {
+                    await GetTasks();
+
+                    await this.InvokeAsync(() => this.StateHasChanged());
+                }
+
+
+            });
+
+            _connection.On<string>("SignalRBookingCabins", async (res) =>
+            {
+                if (res == "Done")
+                {
+                    await GetTasks();
+
+                    await this.InvokeAsync(() => this.StateHasChanged());
+                }
+            });
+            _connection.On<string>("SignalRCabins", async (res) =>
+            {
+                if (res == "Done")
+                {
+                    await GetTasks();
+
+                    await this.InvokeAsync(() => this.StateHasChanged());
+                }
+            });
+            _connection.On<string>("SignalRGroupCabins", async (res) =>
+            {
+                if (res == "Done")
+                {
+                    await GetTasks();
+
+                    await this.InvokeAsync(() => this.StateHasChanged());
+                }
+            });
+
+        }
+        catch (Exception ex)
+        {
+
+
+        }
+        finally
+        {
+            await GetTasks();
+        }
+
+    }
+
+    private async Task GetTasks()
+    {
+        _disabletab = "none";
+        await LoadDaysOfWeek(DateTime.Now);
+        _listBookingRequest = await _iBookingRequestRepo.GetAllBookingRequestAsync();
+        _listBookingRequest = _listBookingRequest.Where(c => (new DateTime(c.StartTime.Year, c.StartTime.Month, c.StartTime.Day)) >= _monday && (new DateTime(c.StartTime.Year, c.StartTime.Month, c.StartTime.Day)) <= _sunday && c.Status != 4 && c.Status != 5).ToList();
+        //Lấy các thông tin hiển thị bên cột thông báo
+        _LectureVM = await _ilecturersCPRepo.GetAllLecturerAsync();
+        if (_textsearch != "")
+        {
+            _listLectureSearchVM = _LectureVM.Where(c => c.Email.ToString().Split("@")[0].Contains(_textsearch)).ToList();
+        }
+        else
+        {
+            _listLectureSearchVM = _LectureVM;
+        }
+        _clasVM = await _iClassRepo.GetAllClass();
+        _subjectClassUPs = await _iclassSubjectApi.GetAllSubjectClass();
+        _specializedDtos = await _ispecializedUPRepo.GetAll();
+        _subjectDtos = await _isubjectUPRepo.GetAllSubjectAsync();
+        _groupCabinViewModels = await _igroupCabinRepo.GetAllGroupCabinAsync();
+        var cabinVM = await _icabinRepo.GetAllCabinAsync();
+        _cabinViewModels = cabinVM.Where(c => c.IdTrainingFacility == Guid.Parse(IdTrainingFacility)).ToList();
+        _listBookingCabinVM = await _ibookingCabinApiClient.GetAll();
+        _shiftOfCabinVMs = await _ishiftOfCabinApiClient.GetAll();
+        var teachingschedules = await _teachingScheduleApiClient.GetAll();
+        _teachingScheduleVMs = teachingschedules.Where(c => c.IdTrainingFacility == Guid.Parse(IdTrainingFacility) && c.Status != 1).ToList();
+
+    }
+
+    #region Load DaysOfWeek
+    public async Task LoadDaysOfWeek(DateTime date)
+    {
+        date = new DateTime(date.Year, date.Month, date.Day);
+
+        var dayOfWeek = date.DayOfWeek;
+        if (dayOfWeek == DayOfWeek.Sunday)
+        {
+            //xét chủ nhật là đầu tuần
+            //return date.AddDays(1);
+
+            //xét chủ nhật là ngày cuối tuần
+            _monday = date.AddDays(-6);
+        }
+        else
+        {
+            int offset = dayOfWeek - DayOfWeek.Monday;
+            _monday = date.AddDays(-offset);
+        }
+        _sunday = _monday.AddDays(6);
+    }
+
+    #endregion
+
+    private async Task CloseCabin()
+    {
+        _disabletab = "block";
+        _newIdRequest = Guid.NewGuid();
+        _statusCabinUndo = 3;
+        var bookingcabin = _listBookingCabinVM.FirstOrDefault(c => c.SubjectId == _idSubject && c.ClassId == _idClass && c.IdShift == _idShift && c.IdLectuter == _idLecture && c.IdCabin == _idCabin && c.DateCreated == new DateTime(_startTime.Year, _startTime.Month, _startTime.Day));
+        var bookingcabinUpdate = new BookingCabinUpdateVM
+            {
+                SubjectId = bookingcabin.SubjectId,
+                ClassId = bookingcabin.ClassId,
+                IdCabin = bookingcabin.IdCabin,
+                IdShift = bookingcabin.IdShift,
+                DateCreated = new DateTime(_startTime.Year, _startTime.Month, _startTime.Day),
+                CheckinTime = _startTime,
+                CheckoutTime = _endTime,
+                IndexOfBookingCabin = bookingcabin.IndexOfBookingCabin,
+                Note = bookingcabin.Note,
+                Status = 1,
+                IdLectuter = bookingcabin.IdLectuter
+            };
+        var result = await _ibookingCabinApiClient.Update(bookingcabin.Id, _idCabin, _idSubject, _idClass, _idShift, bookingcabinUpdate);
+        if (result)
+        {
+
+            if (await CreateBookingRequest(3))
+            {
+                _titleRoom = "Danh sách cabin còn trống";
+                _itoastService.ShowSuccess("Hủy cabin thành công");
+                _xephuy = "hủy";
+                _undo = "block";
+                await TimeLoadUndo();
+            }
+            else
+            {
+                _itoastService.ShowError("Hủy cabin thất bại");
+            }
+        }
+        await GetTasks();
+    }
+
+    public async Task OnConfirmationSubmit(string deleteconfirmed)//xác nhận thoát tab chụp ảnh
+    {
+        if (deleteconfirmed != null)
+        {
+            await AddCabin();
+        }
+    }
+
+    public async Task OnConfirmationClose(string deleteconfirmed)//xác nhận thoát tab chụp ảnh
+    {
+        if (deleteconfirmed != null)
+        {
+            _contenFeedBack = deleteconfirmed;
+            await CloseCabin();
+        }
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _bookingRequestSearch.PageNumber = page;
+        await GetTasks();
+    }
+}

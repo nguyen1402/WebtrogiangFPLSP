@@ -1,0 +1,64 @@
+﻿@page "/deleteresourcelink/{id}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<div class="row pt-3">
+    <h3>Xóa Link</h3>
+
+@if (model != null)
+{
+    <EditForm Model="model" OnValidSubmit="Delete" class="card card-body bg-light mt-5">
+        <DataAnnotationsValidator />
+        <div class="form-group row">
+            <label for="name" class="row">
+                <p>
+                    <b style="color : red">You chắc chắn want delete to ?</b> link <b>@model.Path</b>
+                     ???
+                </p>
+            </label>
+
+        </div>
+        <div class="row pt-2">
+            <div class="col-md-6 text-center">
+                <button type="submit" class="btn btn-danger">Xóa Ngay</button>
+            </div>
+            <div class="col-md-6 text-center">
+                <a href="/subjects" class="btn btn-primary">Quay Lại</a>
+            </div>
+        </div>
+    </EditForm>
+}
+</div>
+@code {
+    private ResourceLinkDto model = new ResourceLinkDto();
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    [Inject]
+    public IResourceLinkRepo _iResourcelinkClient { get; set; }
+    public bool ShowAuthError { get; set; }
+    [Parameter]
+    public string Error { get; set; }
+    [Parameter]
+    public string Id { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        //model = await _iResourcelinkClient.GetbyId(Guid.Parse(Id));
+    }
+    private async Task Delete()
+    {
+        ShowAuthError = false;
+        var result = await _iResourcelinkClient.Delete(Guid.Parse(Id));
+
+        if (result != 1)
+        {
+            Error = "Lỗi";
+            ShowAuthError = true;
+            Navigation.NavigateTo("/deleteresourcelink");
+        }
+        else
+        {
+            Navigation.NavigateTo("/resourcelink");
+        }
+    }
+}

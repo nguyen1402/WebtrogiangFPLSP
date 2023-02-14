@@ -1,0 +1,638 @@
+@page "/viewclass"
+@layout MainLayout2
+@using Blazored.LocalStorage
+@using Blazored.Toast.Services
+@using FPLSP.Components;
+@using FPLSP.Data
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Data.SeedWork
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Domain.Entities.CoresParts
+@using FPLSP.Server.Domain.Entities.UserParts
+@using FPLSP.Server.Domain.Entities.UsesParts
+@using FPLSP.Server.Infrastructure.ViewModels
+@using FPLSP.Server.Infrastructure.ViewModels.BookMark
+@using FPLSP.Server.Infrastructure.ViewModels.LessonUP
+@using FPLSP.Server.Infrastructure.ViewModels.NewFeed
+@using FPLSP.Server.Infrastructure.ViewModels.StudentClassUPVm
+@using FPLSP.Server.Infrastructure.ViewModels.SubmitHomeWorkVM
+@using IdentityModel.Client
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Text.RegularExpressions
+@inject ILocalStorageService _localStorageService;
+@inject IHttpContextAccessor _http;
+@inject IJSRuntime jsRuntime;
+@inject NavigationManager NavigationManager;
+@inject SweetAlertService Swal;
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@attribute [Authorize(Roles = "Student")]
+
+@if (_lstClass.Count() < _counter)
+{
+    <LoadingIndicator></LoadingIndicator>
+}
+<div class="pad">
+   
+    @if (encounter != 14)
+    {
+        <LoadingIndicator></LoadingIndicator>
+    }
+    <div class="mt-3">
+        <div class="card ">
+            <div class="card-header fs-6  panel-transparent">
+                <h3 class="text-center">
+                    Số Lớp Học Hiện Tại : @_count
+                </h3>
+                <div class="row">
+                    <div class="col-lg-6 offset-3  mt-3   d-flex justify-content-center">
+                        <form class="bg-light">
+                            <EditForm style="width:500px;" Model="_searchDTO" OnSubmit="SearchBar">
+                                <div class="row">
+                                    <div class="col-lg-6 mb-3">
+                                        <InputText style="border-radius:20px" @bind-Value="_searchDTO.JoinCode" class="form-control  form-control-sm fst-italic" type="text" name="search" placeholder="Nhập mã tham gia lớp học để vào lớp"></InputText>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <button type="submit" style="width:220px;border-radius:20px" class="clfn btn btn-sm btn-danger">Tìm kiếm <i class="fa fa-searchengin"></i></button>
+                                    </div>
+                                </div>
+
+                            </EditForm>
+                        </form>
+                    </div>
+                    <div class="card-title fst-italic text-center ">
+                        Bảng Tin Lớp Học
+                    </div>
+                    <hr />
+                    <div class="row">
+                        <div class="col-lg-6  border-end">
+                            <div class="h4 pb-2 mb-4 text-danger border-bottom border-danger text-danger fst-italic fw-bold">
+                                Thông Tin Học Tập <i class="fa-solid fa-tags"></i>
+                            </div>
+                            @foreach (var nf in _lstNewFeed.Where(c => c.Image == "HomeWork").GroupBy(c => new { c.IdClass, c.IdSubject }))
+                            {
+
+                                <h6 class="fw-bold">Lớp @_lstNewFeed.Where(c=>c.Image=="HomeWork").ToList().Find(c=>c.IdClass==nf.Key.IdClass && c.IdSubject==nf.Key.IdSubject).ClassName-@_lstNewFeed.Find(c=>c.IdClass==nf.Key.IdClass && c.IdSubject==nf.Key.IdSubject).SubjectName</h6>
+
+
+
+                                @foreach (var z in nf.OrderByDescending(c => c.Priority).Skip(0).Take(5))
+                                {
+                                    <div class="border-bottom border-dashed border-danger mb-1 text-primary">
+                                        <a  class="dropdown-item text-primary">
+                                            @if (z.EndDate != Convert.ToDateTime("01/01/0001 12:00:00 AM"))
+                                            {
+                                                <span class="break">
+                                                    <div class="row">
+                                                        <div class="col-lg-11">
+                                                            Tiêu Đề: @z.Title | <i class="fa-regular fa-clock"></i> Thời Hạn: @z.CratedTime - @z.EndDate
+                                                        </div>
+                                                        <div class="col-lg-1">
+                                                            <span class="t highlight">New</span>
+                                                        </div>
+                                                    </div>
+
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="break">
+                                                    <div class="row">
+                                                        <div class="col-lg-11">
+                                                            Tiêu Đề: @z.Title | <i class="fa-regular fa-clock"></i> Thời Hạn: Vô Hạn
+                                                        </div>
+                                                        <div class="col-lg-1">
+                                                            <span class=" highlight">New</span>
+                                                        </div>
+                                                    </div>
+                                                </span>
+                                            }
+                                        </a>
+                                    </div>
+                                }
+                            }
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="h4 pb-2 mb-4 text-danger border-bottom border-danger text-danger fst-italic fw-bold">
+                                Thông Tin Link Tài Nguyên <i class="fa-solid fa-link"></i>
+                            </div>
+                            @foreach (var nf in _lstNewFeed.Where(c => c.Image == "Resource").GroupBy(c => new { c.IdClass, c.IdSubject }))
+                            {
+                                <h6 class="fw-bold">Lớp @_lstNewFeed.Where(c=>c.Image=="Resource").ToList().Find(c=>c.IdClass==nf.Key.IdClass && c.IdSubject==nf.Key.IdSubject).ClassName-@_lstNewFeed.Find(c=>c.IdClass==nf.Key.IdClass && c.IdSubject==nf.Key.IdSubject).SubjectName</h6>
+
+                                @foreach (var z in nf.OrderByDescending(c => c.Priority).Skip(0).Take(5))
+                                {
+                                    <div class="border-bottom border-dashed border-danger mb-1 text-primary">
+                                        <a @onclick="()=>Targeter(z.Content)" class="dropdown-item text-primary">
+
+                                            <span class="break">
+                                                <div class="row">
+                                                    <div class="col-lg-11">
+                                                        Tiêu Đề: @z.Title |&nbsp <i class="fa-regular fa-bookmark"></i>: @_lstless.Where(c=>c.Id==z.IdLesson).Select(c=>c.LessonName).FirstOrDefault();
+                                                    </div>
+                                                    <div class="col-lg-1">
+                                                        <span class=" highlight">New</span>
+                                                    </div>
+                                                </div>
+
+                                            </span>
+
+
+                                        </a>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                    @* <div class="row">
+                    <div class="col-lg-12">
+                    <ol class="list-group list-group-numbered">
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                    <div class="ms-2 me-auto">
+                    <div class="fw-bold">Lớp @_lstNewFeed.Find(c=>c.IdClass==nf.Key.IdClass && c.IdSubject==nf.Key.IdSubject).ClassName-@_lstNewFeed.Find(c=>c.IdClass==nf.Key.IdClass && c.IdSubject==nf.Key.IdSubject).SubjectName</div>
+                    @foreach (var z in nf.OrderByDescending(c => c.CratedTime))
+                    {
+
+                    <hr />
+
+                    }
+                    </div>
+                    <span class="badge bg-danger rounded-pill">@nf.Count()</span>
+                    </li>
+                    </ol>
+                    </div>
+                    </div>*@
+                </div>
+            </div>
+            @if (_bookMarkClasses != null && _bookMarkClasses.Count() > 0)
+            {
+                <h4 class="text-center">Danh Sách Các Lớp Học Yêu Thích</h4>
+                <div class="card-body">
+                    <div class="row">
+                        @foreach (var x in _bookMarkClasses.Where(c => c.IsBookMark == true))
+                        {
+                            @foreach (var item in _lstClass.Where(c => c.Id == x.IdClass && c.SubjectId == x.IdSubject))
+                            {
+                                <div class="col-lg-3 mb-5 single-product-item">
+                                    <div class="card border-2 border-info" style="height :380px">
+                                        <div class="row m-0">
+                                            <div class="card-body" style="display: flex;
+  flex-direction: column;">
+                                                <div class="row m-0">
+                                                    <div class="row m-0">
+                                                        <div class="col-lg-9">
+                                                        </div>
+                                                        <div class="col-lg-3 text-danger">
+                                                            <MudIconButton OnClick="()=>DeleteFormBookMark(x.Id)" Icon="@Icons.Filled.BookmarkAdded" Size="Size.Large" Color="Color.Warning" aria-label="add to favorite"></MudIconButton>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="">
+                                                    <img src="./css/images/Others/logoFPT.png" onerror="this.src='./css/images/Others/logoFPT.png'" class="card-img" style="width: 150px; height: 60px; object-fit: cover;">
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <span class=" card-title fs-6 text-wrap ">Tên Lớp :  @item.ClassroomName</span>
+                                                    <hr>
+                                                  
+                                                    <p class="card-text">Môn học : @item.SubjectName</p>
+                                                    <p class="card-text">Giảng viên : @item.HomeroomLecturer</p>
+                                                    <p class="card-text ">Join Code : @item.JoinCode</p>
+                                                    <p class="card-text">Sĩ số <span class="badge rounded-pill bg-info">@item.ActualNumberOfStudent /@item.StudentAmount</span></p>
+                                                    <hr>
+                                                </div>
+
+                                            </div>
+                                            <a href="/detailclass/@item.JoinCode/@student.Id" style=" margin-top: -33px;" class="btn btn-warning">Xem Chi Tiết</a>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+                <hr />
+            }
+            <h4 class="text-center">Danh Sách Lớp Học Hiện Tại</h4>
+            <div class="card-body  panel-transparent">
+                <div class="row">
+                    @foreach (var item in _lstClass)
+                    {
+                        <div class="col-lg-3 mb-5 single-product-item">
+                            <div class="card border-2 border-info" style="height :380px">
+                                <div class="row m-0">
+                                    <div class="card-body" style="display: flex;
+  flex-direction: column;">
+                                        <div class="row m-0">
+                                            <div class="row m-0">
+                                                <div class="col-lg-9">
+                                                </div>
+                                                <div class="col-lg-3 text-danger">
+                                                    <MudIconButton OnClick="()=>AddToBookMark(item.Id, item.JoinCode)" Icon="@Icons.Filled.BookmarkAdd" Size="Size.Large" Color="Color.Warning" aria-label="add to favorite"></MudIconButton>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="">
+                                            <img src="./css/images/Others/logoFPT.png" onerror="this.src='./css/images/Others/logoFPT.png'" class="card-img" style="width: 150px; height: 60px; object-fit: cover;">
+                                        </div>
+                                        <div class="row mt-3">
+                                            <span class=" card-title fs-6 text-wrap ">Tên Lớp :  @item.ClassroomName</span>
+                                            <hr>
+                                           
+                                            <p class="card-text">Môn học : @item.SubjectName</p>
+                                            <p class="card-text">Giảng viên : @item.HomeroomLecturer</p>
+                                            <p class="card-text ">Join Code : @item.JoinCode</p>
+                                            <p class="card-text">Sĩ số <span class="badge rounded-pill bg-info">@item.ActualNumberOfStudent /@item.StudentAmount</span></p>
+                                            <hr>
+                                        </div>
+
+                                    </div>
+                                    <a href="/detailclass/@item.JoinCode/@student.Id" style=" margin-top: -33px;" class="btn btn-warning">Xem Chi Tiết</a>
+                                </div>
+
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="card-footer text-muted">
+                <div class="row mt-3">
+                    @* <span>
+                    <Pagingation MetaData="MetaData" Spread="2" SelectedPage="SelectedPage"></Pagingation>
+                    </span>*@
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string userEmail { get; set; }
+
+    private string url = null;
+
+    private List<NewFeedOverView> _lstNewFeed = new List<NewFeedOverView>();
+    private List<BookMarkClass> _bookMarkClasses = new List<BookMarkClass>();
+    public StudentUP student = new StudentUP();
+    public LecturersCP lecturer = new LecturersCP();
+    [Inject]
+    public ITaskRepositories<ClassUPViewModel> _taskRepositories { get; set; }
+    private List<ClassUPViewModel> _lstClass = new List<ClassUPViewModel>();
+    private PagingParameters _pagingParameters = new PagingParameters();
+    [Inject]
+    public NavigationManager navigationManager { get; set; }
+    private ClassUPViewModel _classUPViewModel = new ClassUPViewModel();
+    private ClassSearchDTO _searchDTO = new ClassSearchDTO();
+    private int _counter;
+    private int _count;
+    private int encounter;
+    [CascadingParameter]
+    private FPLSP.Shared.Error _error { get; set; } = new FPLSP.Shared.Error();
+    public MetaData MetaData { get; set; } = new MetaData();
+    private SubmitHomeWorkCreateVM createSubmit = new SubmitHomeWorkCreateVM();
+    [Inject]
+    public ISubmitHomeWorkApiClient _SubmitHomeWorkApiClient { get; set; }
+    [Inject]
+    public ISubmitHomeworkForStudentRepo _submitHomeworkForStudentRepo { get; set; }
+    [Inject]
+    public IStudentUPRepo _studentUPRepo { get; set; }
+    [Inject]
+    public ILecturersCPRepo _lecturersCPRepo { get; set; }
+    [Inject]
+    public IStudentClassUPRepo _studentClassUPRepo { get; set; }
+    [Inject]
+    public IClassSubjectApiClient _classSubjectApiClient { get; set; }
+    //
+    private List<SubjectUP> _lstSub = new List<SubjectUP>();
+    private List<SpecializedDto> _lstSpec = new List<SpecializedDto>();
+    private List<LecturersCPViewModel> _lstLec = new List<LecturersCPViewModel>();
+    private List<StudentClassUP> _lstStuClass = new List<StudentClassUP>();
+    //
+    [Inject] IToastService _toast { get; set; }
+    [Inject]
+    public IBookMarkClassRepo _bookMarker { get; set; }
+    [Inject]
+    public UserManager<UserSignIn> _userManager { get; set; }
+    [Inject]
+    public INewFeedRepo _newFeedRepo { get; set; }
+    [Inject]
+    public ILessonUPRepo _less { get; set; }
+    private List<LessonUPViewModel> _lstless = new List<LessonUPViewModel>();
+    string patern = "^([a-z]{3,13}[0-9]{5}@fpt-edu-vn)$";
+    [CascadingParameter]
+    public HeaderBar headerBar { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            userEmail = user.Claims.ToList()[4].Value.ToString();
+            var listStudent = await _studentUPRepo.GetAllStudentUPAsync();
+            student = listStudent.Where(x => x.Email == userEmail).FirstOrDefault();
+            // headerBar.Update += () => InvokeAsync(() => this.StateHasChanged());
+
+        }
+        else
+        {
+            userEmail = "ViewerUser";
+            StateHasChanged();
+        }
+
+
+
+
+        // _count = await _taskRepositories.CountAsync();
+        _lstSub = await _taskRepositories.GetAllSub();
+        _lstLec = await _taskRepositories.GetAllLec();
+        _lstSpec = await _taskRepositories.GetAllSpec();
+        _lstStuClass = await _studentClassUPRepo.GetAllStudentUPAsync();
+        _lstless = await _less.GetAll();
+        await ConnectToServer();
+        await GetStudentByEmail();
+        await GetFavoriteClass();
+        await GetClassList(_searchDTO);
+        await GetNewFeed();
+
+    }
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+
+
+    }
+    private async Task Targeter(string? Taget)
+    {
+
+        await jsRuntime.InvokeVoidAsync("Targeter", Taget);
+
+    }
+
+
+
+
+    private async Task ConnectToServer()
+    {
+        try
+        {
+            string url = "http://localhost:5001/notificationhub";
+            HubConnection _connection = null;
+            bool isConnected = false;
+            string connectionStatus = "Closed";
+            _connection = new HubConnectionBuilder()
+                .WithUrl(url)
+                .Build();
+
+            await _connection.StartAsync();
+            isConnected = true;
+            connectionStatus = "Connected :-)";
+            Console.WriteLine("SinalR Is Starting");
+            _connection.Closed += async (s) =>
+            {
+                isConnected = false;
+                connectionStatus = "Disconnected";
+                await _connection.StartAsync();
+                isConnected = true;
+            };
+
+            _connection.On<string>("Noticafications", async (res) =>
+            {
+                if (res == "Done")
+                {
+                    await GetNewFeed();
+
+                    this.InvokeAsync(() => this.StateHasChanged());
+                }
+
+
+            });
+        }
+        catch (Exception ex)
+        {
+
+            _error.ProcessError(ex);
+        }
+    }
+
+
+
+    private async Task GetClassList(ClassSearchDTO classSearchDTO)
+    {
+
+        if (student != null)
+        {
+            _lstClass = await _taskRepositories.GetAllClass(student.Id);
+            _count = _lstClass.Count;
+        }
+
+        for (var i = 0; i < 15; i++)
+        {
+            encounter = i;
+        }
+    }
+    private async Task GetNewFeed()
+    {
+        if (student == null)
+        {
+            return;
+        }
+        _lstNewFeed = await _newFeedRepo.GetListNewForUser(Guid.Parse(student.Id.ToString()));
+
+        // _lstNewFeedforclass = await _newFeedRepo.GetListNewForClass(_classUp.Id,Guid.Parse( _classUp.SubjectId.ToString()));
+    }
+    private async Task GetFavoriteClass()
+    {
+        if (student == null)
+        {
+            return;
+        }
+        _bookMarkClasses = await _bookMarker.GetListBookMarkForUser(student.Id);
+    }
+    private async Task GetStudentByEmail()
+    {
+        var listStudent = await _studentUPRepo.GetAllStudentUPAsync();
+        student = listStudent.Where(x => x.Email==userEmail).FirstOrDefault();
+        if (student == null)
+        {
+            return;
+        }
+    }
+
+    private async Task GetLecturerByEmail()
+    {
+        var listLecturer = await _lecturersCPRepo.GetAllLecturerAsync();
+
+        lecturer = listLecturer.FirstOrDefault(x => x.Email==userEmail);
+    }
+
+    private async Task<IEnumerable<ClassUPViewModel>> AutoSearch(string ClassName)
+    {
+        return await Task.FromResult(_lstClass.Where(c => c.ClassroomName.ToLower().Contains(ClassName.ToLower())).ToList());
+    }
+    private async Task SelectedPage(int page)
+    {
+        _searchDTO.PageNumber = page;
+        await GetClassList(_searchDTO);
+    }
+    private async Task SearchBar(EditContext editContext)
+    {
+
+       
+
+
+
+        var classSearched = await _taskRepositories.GetClassById(_searchDTO.JoinCode);
+        if (String.IsNullOrEmpty(classSearched.JoinCode) == false && classSearched.Id != Guid.Empty)
+        {
+            var listClassOfSubject = await _classSubjectApiClient.GetlstClassUP(Guid.Parse(classSearched.SubjectId.ToString()));
+
+            bool isDuplicated = false;
+            if (listClassOfSubject != null)
+            {
+
+
+                foreach (var ClassUP in listClassOfSubject)
+                {
+                    if (_lstStuClass.Any(c => c.ClassId == ClassUP.Id && c.StudentId == student.Id))
+                    {
+                        await Swal.FireAsync("Tham Gia Lớp Học", "Không thể tham gia nhiều hơn một lớp với một môn học", SweetAlertIcon.Warning);
+                        isDuplicated = true;
+                        break;
+                    }
+                }
+
+                if (!isDuplicated)
+                {
+                    await _studentClassUPRepo.CreateStudentInClassByJoinCode(classSearched.Id, student.Id, _searchDTO.JoinCode);
+
+                    List<Guid?> lstGuidIdStudent = new List<Guid?>();
+                    lstGuidIdStudent.Add(student.Id);
+
+                    if (lstGuidIdStudent.Count() > 0)
+                    {
+                        var AllSubMit = await _submitHomeworkForStudentRepo.Student_GetAllAsync();
+                        var SubmitIdLesson = AllSubMit.Where(c => c.IdSubject == classSearched.SubjectId && c.IdClass == classSearched.Id).ToList();
+
+                        var GroupIDLesson = SubmitIdLesson.GroupBy(g => g.Titile).Select(c => new SubmitHomeWork()
+                            {
+                                Id = c.Where(w => w.Titile == c.Key).Select(c => c.Id).FirstOrDefault(),
+                                IdClass = c.Where(w => w.Titile == c.Key).Select(c => c.IdClass).FirstOrDefault(),
+                                IdLesson = c.Where(w => w.Titile == c.Key).Select(c => c.IdLesson).FirstOrDefault(),
+                                IdStudent = c.Where(w => w.Titile == c.Key).Select(c => c.IdStudent).FirstOrDefault(),
+                                IdSubject = c.Where(w => w.Titile == c.Key).Select(c => c.IdSubject).FirstOrDefault(),
+                                EndTime = c.Where(w => w.Titile == c.Key).Select(c => c.EndTime).FirstOrDefault(),
+                                Status = c.Where(w => w.Titile == c.Key).Select(c => c.Status).FirstOrDefault(),
+                                Titile = c.Where(w => w.Titile == c.Key).Select(c => c.Titile).FirstOrDefault(),
+                                StartedDate = c.Where(w => w.Titile == c.Key).Select(c => c.StartedDate).FirstOrDefault(),
+                                SubmitLink = c.Where(w => w.Titile == c.Key).Select(c => c.SubmitLink).FirstOrDefault(),
+                                SubmitTime = c.Where(w => w.Titile == c.Key).Select(c => c.SubmitTime).FirstOrDefault(),
+                            }).ToList();
+                        foreach (var item in GroupIDLesson)
+                        {
+                            createSubmit = new SubmitHomeWorkCreateVM()
+                                {
+                                    EndTime = item.EndTime,
+                                    IdLesson = item.IdLesson,
+                                    IdSubject = item.IdSubject,
+                                    LsIdStudent = lstGuidIdStudent,
+                                    StartedDate = item.StartedDate,
+                                    SubmitTime = null,
+                                    IdClass = item.IdClass,
+                                    Titile = item.Titile
+                                };
+                            if (AllSubMit.Any(c => c.IdClass == createSubmit.IdClass && c.IdLesson == createSubmit.IdLesson && c.IdSubject == createSubmit.IdSubject && lstGuidIdStudent.Any(a => a == c.IdStudent)))
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                await _SubmitHomeWorkApiClient.Add(createSubmit);
+                            }
+                        }
+                    }
+
+                    await Swal.FireAsync("Tham Gia Lớp Học", "Tham Gia Thành Công Lớp Học", SweetAlertIcon.Success);
+                }
+            }
+        }
+        else
+        {
+            await Swal.FireAsync("Tham Gia Lớp Học", "Lớp Học Không Tồn Tại", SweetAlertIcon.Error);
+            return;
+        }
+
+        await OnInitializedAsync();
+    }
+
+
+    private async Task AddToBookMark(Guid IdClass, string JoinCode)
+    {
+        var subjectid = _lstClass.Where(c => c.JoinCode == JoinCode).Select(c => c.SubjectId).FirstOrDefault();
+
+        if (IdClass != null && JoinCode != null)
+        {
+            var booker = new BookMarkClassVM()
+                {
+                    Id = Guid.NewGuid(),
+                    Status = 0,
+                    Priority = _bookMarkClasses.Count == 0 ? 0 : _bookMarkClasses.Max(c => c.Priority) + 1,
+                    IsBookMark = true,
+                    IdUser = student.Id.ToString(),
+                    IdClass = IdClass,
+                    IdSubject = _lstClass.Where(c => c.JoinCode == JoinCode).Select(c => c.SubjectId).FirstOrDefault()
+                };
+            var res = await _bookMarker.AddToBookMark(booker);
+            if (res)
+            {
+                await Swal.FireAsync(" Danh Sách Yêu Thích", "Thêm Thành Công Lớp Vào Danh Sách Yêu Thích", SweetAlertIcon.Success);
+
+            }
+            else
+            {
+                await Swal.FireAsync(" Danh Sách Yêu Thích", "Thêm Thất Bại", SweetAlertIcon.Error);
+            }
+            await GetClassList(_searchDTO);
+            await GetFavoriteClass();
+        }
+
+
+    }
+    private async Task navigate()
+    {
+        navigationManager.NavigateTo("oke");
+    }
+    private async Task DeleteFormBookMark(Guid IdBookMark)
+    {
+        if (IdBookMark != null)
+        {
+            var res = await _bookMarker.RemoveBookMark(IdBookMark);
+            if (res)
+            {
+                await Swal.FireAsync("Xóa Khỏi Danh Sách Yêu Thích", "Đã Xóa Lớp Khỏi Danh Sách Yêu Thích", SweetAlertIcon.Success);
+            }
+            else
+            {
+                await Swal.FireAsync("Xóa Khỏi Danh Sách Yêu Thích", " Xóa Lớp Khỏi Danh Sách Yêu Thích Thất Bại", SweetAlertIcon.Error);
+
+            }
+            await GetClassList(_searchDTO);
+            await GetFavoriteClass();
+        }
+    }
+    private async Task JoinClass(string joinCodeAssign)
+    {
+        var stuClassUP = _lstStuClass.Where(c => c.JoinCodeAsign == joinCodeAssign && c.StudentId == student.Id).FirstOrDefault();
+        StudentClassUPUpdateVm stuClassUpdate = new StudentClassUPUpdateVm()
+            {
+                StudentId = stuClassUP.StudentId,
+                ClassId = stuClassUP.ClassId,
+                JoinCodeAsign = joinCodeAssign,
+                Status = stuClassUP.Status,
+                StatusOfStudent = 0
+            };
+
+        await OnInitializedAsync();
+    }
+}

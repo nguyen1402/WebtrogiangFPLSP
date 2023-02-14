@@ -1,0 +1,56 @@
+﻿@page "/lessonContentVideo/{idRsLink:guid}/{idLessonConten:guid}"
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.LessonContentCP
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+
+<div class="container">
+    <iframe class="modal-lg" width="100%" height="500px" src="@LinkRs" title="YouTube video player"
+            frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media;
+            gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+
+</div>
+<div class="col-1">
+    <div class="dropdown float-end">
+        <a class="dropdown-toggle" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+
+        </a>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+            <li><a class="dropdown-item" @onclick="() => Next()">Next</a></li>
+        </ul>
+    </div>
+</div>
+@code {
+    [Parameter]
+    public Guid idRsLink { get; set; }
+
+    [Parameter]
+    public Guid idLessonConten { get; set; }
+    [Inject]
+    public IResourceLinkRepo _iResourcelinkClient { get; set; }
+    [Inject]
+    public ILessonContentCPRepo _iLessonContentClient { get; set; }
+
+    private IEnumerable<ResourceLinkDto> lsDtoLink;
+    private LessonContentListSearch _parameters = new LessonContentListSearch();
+    public List<LessonContentDto> CPList { get; set; } = new List<LessonContentDto>();
+    private string LinkRs = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        lsDtoLink = await _iResourcelinkClient.GetAllAsync();
+        LinkRs = lsDtoLink.Where(c => Guid.Equals(idRsLink, c.Id)).Select(c => c.Path).FirstOrDefault();
+        GetTasks();
+    }
+    private void Next()
+    {
+
+    }
+    private async Task GetTasks()
+    {
+        var pagingResponse = await _iLessonContentClient.GetLessons(idLessonConten, _parameters);
+        CPList = pagingResponse.Items;
+    }
+}
+
+

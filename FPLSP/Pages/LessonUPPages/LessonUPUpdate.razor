@@ -1,0 +1,142 @@
+﻿@page "/lessonUPUpdate/{Id}"
+@using Blazored.Toast.Services
+@using FPLSP.Repositories.Interfaces
+@using FPLSP.Server.Domain.Dtos
+@using FPLSP.Server.Infrastructure.ViewModels.LessonUP
+@attribute [Authorize(Roles = "AdminCore,AdminCS")]
+<div class="row pt-3">
+    <h3>Cập nhật</h3>
+    @if (ShowAuthError)
+    {
+        <div class="alert alert-danger" role="alert">
+            @Error
+        </div>
+    }
+    @if (request != null)
+    {
+        <EditForm Model="request" OnValidSubmit="UpdateSubmit" class="card card-body bg-light mt-5">
+            <DataAnnotationsValidator />
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="row">
+                            <div class="form-group pt-2 col-md-12">
+                                <label for="name" class="col-md-3 col-form-label">Tên bài học:</label>
+                                <div class="col-md-12">
+                                    <InputText id="name" class="form-control" @bind-Value="request.LessonName" />
+                                    <div class="text-danger"><ValidationMessage For="@(() => request.LessonName)" /></div>
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group pt-2 col-md-12">
+                                <label for="name" class="col-md-2 col-form-label">Trạng thái :</label>
+                                <div class="col-md-12">
+                                    <InputSelect @bind-Value="request.Status" class="form-select">
+                                        <option value="0">Không hoạt động</option>
+                                        <option value="1">Đang hoạt động</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-group pt-2 col-md-12">
+                            <label for="name" class="col-md-2 col-form-label">Mô tả :</label>
+                            <div class="col-md-12">
+                                <InputText class="form-control" @bind-Value="request.Descriptions" />
+                                <div class="text-danger"><ValidationMessage For="@(() => request.Descriptions)" /></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group pt-2 col-md-12">
+                                <label for="name" class="col-md-2 col-form-label">Tiến độ :</label>
+                                <div class="col-md-12">
+                                    <InputSelect @bind-Value="request.IsCompleted" class="form-select">
+                                        <option value=false>Chưa hoàn thành</option>
+                                        <option value=true>Hoàn thành</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-4"></div>
+                <div class="col-4" style="text-align:center">
+                    <button type="submit" class="btn btn-primary me-2">Cập Nhật</button>
+                    <button type="button" class="btn btn-outline-success me-2" @onclick="Khoiphuc">Khôi Phục</button>
+                    <a @onclick="() => Quaylai()" class="btn btn-outline-danger">Quay Lại</a>
+                </div>
+                <div class="col-4"></div>
+
+            </div>
+        </EditForm>
+    }
+</div>
+@code {
+    [Parameter]
+    public string Id { get; set; }
+
+    [Inject] ILessonUPRepo LessonUPRepo { get; set; }
+    [Inject] NavigationManager NavigationManager { get; set; }
+    [Inject] private ISubjectUPRepo _subjectUPRepo { get; set; }
+    [Inject] private IToastService toastService { get; set; }
+    private List<SubjectDto> _lstsubjectDtos { get; set; }
+    [Inject] public NavigationManager Navigation { get; set; }
+    private LessonUPUpdateRequest request { get; set; } = new LessonUPUpdateRequest();
+    private LessonUPViewModel data { get; set; } = new LessonUPViewModel();
+    public bool ShowAuthError { get; set; }
+    [CascadingParameter]
+    private Error Error { get; set; }
+    public string status { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _lstsubjectDtos = await _subjectUPRepo.GetAllSubjectAsync();
+        data = await LessonUPRepo.GetById(Id);
+        request.LessonName = data.LessonName;
+        request.LessonCode = data.LessonCode;
+        request.Descriptions = data.Descriptions;
+        request.IsCompleted = data.IsCompleted;
+        request.SubjectId = data.SubjectId;
+        request.Status = data.Status;
+        status = data.Status.ToString();
+        request.SubjectId = data.SubjectId;
+    }
+
+
+    private async Task UpdateSubmit(EditContext context)
+    {
+        try
+        {
+
+            var result = await LessonUPRepo.Update(Guid.Parse(Id), request);
+            if (result)
+            {
+                toastService.ShowSuccess("Cập nhật thành công");
+                Navigation.NavigateTo($"/lessonup/{request.SubjectId}");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError("Cập nhật thất bại");
+        }
+    }
+    void Quaylai()
+    {
+        Navigation.NavigateTo($"/lessonup/{request.SubjectId}");
+    }
+    public async Task Khoiphuc()
+    {
+        request.LessonName = data.LessonName;
+        request.LessonCode = data.LessonCode;
+        request.Descriptions = data.Descriptions;
+        request.IsCompleted = data.IsCompleted;
+        request.Status = data.Status;
+        status = data.Status.ToString();
+        request.SubjectId = data.SubjectId;
+    }
+}
